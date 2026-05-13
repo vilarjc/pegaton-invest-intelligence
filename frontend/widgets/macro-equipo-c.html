@@ -1,0 +1,272 @@
+<div class="macro-equipo-c" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;width:400px;color:#e0e6f0;font-size:13px;line-height:1.4">
+  <style>
+    @keyframes macro-fade-in { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+    @keyframes macro-pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
+    .macro-c-score-ring { transition: stroke-dashoffset 0.8s ease; }
+    .macro-c-indicator { animation: macro-fade-in 0.4s ease forwards; opacity:0; }
+    .macro-c-indicator:nth-child(1) { animation-delay:0.05s }
+    .macro-c-indicator:nth-child(2) { animation-delay:0.10s }
+    .macro-c-indicator:nth-child(3) { animation-delay:0.15s }
+    .macro-c-indicator:nth-child(4) { animation-delay:0.20s }
+    .macro-c-indicator:nth-child(5) { animation-delay:0.25s }
+    .macro-c-loading-pulse { animation: macro-pulse 1.5s ease-in-out infinite; }
+  </style>
+
+  <div id="macro-c-root" style="background:linear-gradient(135deg,#0b1325 0%,#0f1a30 100%);border-radius:14px;border:1px solid #1a2848;overflow:hidden">
+
+    <!-- HEADER -->
+    <div style="padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1a2848">
+      <div>
+        <div style="font-size:10px;color:#5a7a9f;letter-spacing:0.8px;text-transform:uppercase;font-weight:600">🐂 Panorama Macroeconómico</div>
+        <div id="macro-c-timestamp" style="font-size:9px;color:#3a5a7f;margin-top:2px"></div>
+      </div>
+      <div id="macro-c-trend-badge" style="display:none;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:0.3px"></div>
+    </div>
+
+    <!-- SCORE + DIAGNOSIS SECTION -->
+    <div style="padding:14px 16px 12px;display:flex;gap:16px;align-items:center;border-bottom:1px solid #111d30">
+      <!-- Score Ring -->
+      <div style="flex-shrink:0;position:relative;width:64px;height:64px">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <circle cx="32" cy="32" r="28" fill="none" stroke="#142040" stroke-width="4"/>
+          <circle id="macro-c-score-ring" class="macro-c-score-ring" cx="32" cy="32" r="28" fill="none" stroke-width="4"
+            stroke-linecap="round" stroke="#00e676"
+            stroke-dasharray="176" stroke-dashoffset="176" transform="rotate(-90,32,32)"/>
+        </svg>
+        <div id="macro-c-score" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:18px;font-weight:800;text-align:center">
+          <span id="macro-c-score-num" style="display:block;line-height:1">--</span>
+        </div>
+      </div>
+
+      <!-- Summary Text -->
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:#5a7a9f;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Diagnóstico</div>
+        <div id="macro-c-summary" style="font-size:11px;color:#b0c4e0;line-height:1.5;max-height:48px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- BANDS SECTION -->
+    <div id="macro-c-bands" style="padding:10px 16px 12px;display:flex;flex-direction:column;gap:10px"></div>
+
+    <!-- DIAGNOSIS BAR -->
+    <div id="macro-c-diagnosis-bar" style="margin:0 16px 12px;padding:8px 12px;border-radius:8px;font-size:10px;font-weight:500;display:none;text-align:center"></div>
+
+    <!-- LOADING -->
+    <div id="macro-c-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;gap:10px">
+      <div class="macro-c-loading-pulse" style="font-size:28px;line-height:1">📊</div>
+      <div style="font-size:11px;color:#4a6a8f">Cargando indicadores...</div>
+    </div>
+
+    <!-- ERROR -->
+    <div id="macro-c-error" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px;gap:8px">
+      <div style="font-size:28px;line-height:1">⚠️</div>
+      <div style="font-size:12px;color:#ff6b6b;font-weight:500">Error al cargar datos</div>
+      <div id="macro-c-error-msg" style="font-size:10px;color:#5a5a7f;text-align:center"></div>
+      <button onclick="macroEquipoC.fetchData()" style="margin-top:6px;padding:6px 16px;font-size:11px;background:#1a3060;color:#8ab4f8;border:1px solid #2a4570;border-radius:6px;cursor:pointer">Reintentar</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  // Namespace singleton to allow retry button
+  if (window.macroEquipoC) return;
+  const M = window.macroEquipoC = {};
+
+  const COLORS = {
+    green:  { main:'#00e676', bg:'rgba(0,230,118,0.12)', border:'rgba(0,230,118,0.3)', label:'Estable',   emoji:'🟢' },
+    yellow: { main:'#ffc107', bg:'rgba(255,193,7,0.12)',  border:'rgba(255,193,7,0.3)',  label:'Precaución', emoji:'🟡' },
+    red:    { main:'#ff5252', bg:'rgba(255,82,82,0.12)',  border:'rgba(255,82,82,0.3)',  label:'Alerta',     emoji:'🔴' },
+    gray:   { main:'#4a6a8f', bg:'rgba(74,106,143,0.1)',  border:'rgba(74,106,143,0.2)', label:'N/A',        emoji:'⚪' }
+  };
+
+  const BAND_META = [
+    { id:'riesgo', icon:'🛡️', name:'Riesgo', desc:'Volatilidad y refugio' },
+    { id:'ciclo',  icon:'🔄',  name:'Ciclo',  desc:'Actividad económica' },
+    { id:'global', icon:'🌍',  name:'Global', desc:'Mercados y energía' }
+  ];
+
+  // --- DOM refs ---
+  function el(id) { return document.getElementById(id); }
+
+  M.render = function(data) {
+    const inds = data.indicators || [];
+    const diag = data.diagnosis || '';
+    const summary = data.summary || '';
+    const ts = data.timestamp || '';
+
+    el('macro-c-loading').style.display = 'none';
+    el('macro-c-error').style.display = 'none';
+    el('macro-c-bands').style.display = 'flex';
+    el('macro-c-diagnosis-bar').style.display = '';
+
+    // Timestamp
+    if (ts) {
+      try {
+        const d = new Date(ts.replace(' ','T'));
+        el('macro-c-timestamp').textContent = 'Actualizado ' + d.toLocaleString('es-ES', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+      } catch(e) {
+        el('macro-c-timestamp').textContent = 'Actualizado ' + ts;
+      }
+    }
+
+    // --- Compute overall score ---
+    const scored = inds.filter(function(i){ return i.level !== 'gray'; });
+    const total = scored.length;
+    let scoreVal = 0;
+    if (total > 0) {
+      const weights = { green:1, yellow:0.5, red:0 };
+      scored.forEach(function(i){ scoreVal += (weights[i.level] || 0); });
+      scoreVal = Math.round((scoreVal / total) * 100);
+    }
+    const scoreNum = el('macro-c-score-num');
+    scoreNum.textContent = total > 0 ? scoreVal : '--';
+
+    // Score ring animation
+    const ring = el('macro-c-score-ring');
+    const circumference = 176;
+    const pct = total > 0 ? scoreVal / 100 : 0;
+    const offset = circumference * (1 - pct);
+    const scoreColor = scoreVal >= 70 ? '#00e676' : scoreVal >= 40 ? '#ffc107' : '#ff5252';
+    ring.setAttribute('stroke', scoreColor);
+
+    // Schedule ring animation
+    requestAnimationFrame(function(){
+      ring.setAttribute('stroke-dashoffset', offset);
+      scoreNum.style.color = scoreColor;
+    });
+
+    // --- Trend badge ---
+    const trendBadge = el('macro-c-trend-badge');
+    if (total > 0) {
+      const trendEmoji = scoreVal >= 70 ? '✅' : scoreVal >= 40 ? '⚡' : '🚨';
+      const trendText = scoreVal >= 70 ? 'Saludable' : scoreVal >= 40 ? 'Mixto' : 'Alerta';
+      const trendColor = scoreVal >= 70 ? '#00e676' : scoreVal >= 40 ? '#ffc107' : '#ff5252';
+      const trendBg   = scoreVal >= 70 ? 'rgba(0,230,118,0.15)' : scoreVal >= 40 ? 'rgba(255,193,7,0.15)' : 'rgba(255,82,82,0.15)';
+      trendBadge.style.display = 'inline-block';
+      trendBadge.style.background = trendBg;
+      trendBadge.style.color = trendColor;
+      trendBadge.textContent = trendEmoji + ' ' + trendText;
+    }
+
+    // --- Summary text ---
+    el('macro-c-summary').textContent = summary || diag || 'Sin datos disponibles';
+    el('macro-c-summary').scrollTop = 0;
+
+    // --- Build bands ---
+    let bandsHtml = '';
+    BAND_META.forEach(function(band){
+      const bandInds = inds.filter(function(i){ return i.band === band.id; });
+      if (!bandInds.length) return;
+      const bandGreen = bandInds.filter(function(i){ return i.level === 'green'; }).length;
+      const bandYellow = bandInds.filter(function(i){ return i.level === 'yellow'; }).length;
+      const bandRed = bandInds.filter(function(i){ return i.level === 'red'; }).length;
+      const bandGray = bandInds.filter(function(i){ return i.level === 'gray'; }).length;
+
+      bandsHtml += '<div class="macro-c-band" style="background:rgba(13,25,50,0.7);border:1px solid #182848;border-radius:10px;overflow:hidden">';
+      // Band header
+      bandsHtml += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(15,30,55,0.8);border-bottom:1px solid #142040">';
+      bandsHtml += '<div style="display:flex;align-items:center;gap:6px">';
+      bandsHtml += '<span style="font-size:13px;line-height:1">' + band.icon + '</span>';
+      bandsHtml += '<span style="font-size:11px;font-weight:600;color:#b0cce0">' + band.name + '</span>';
+      bandsHtml += '<span style="font-size:9px;color:#4a6a8f;font-weight:400">' + band.desc + '</span>';
+      bandsHtml += '</div>';
+      // Mini status dots
+      bandsHtml += '<div style="display:flex;gap:4px">';
+      if (bandGreen > 0)  bandsHtml += '<span style="width:8px;height:8px;border-radius:50%;background:#00e676;box-shadow:0 0 4px rgba(0,230,118,0.4)"></span>';
+      if (bandYellow > 0) bandsHtml += '<span style="width:8px;height:8px;border-radius:50%;background:#ffc107;box-shadow:0 0 4px rgba(255,193,7,0.4)"></span>';
+      if (bandRed > 0)    bandsHtml += '<span style="width:8px;height:8px;border-radius:50%;background:#ff5252;box-shadow:0 0 4px rgba(255,82,82,0.4)"></span>';
+      if (bandGray > 0)   bandsHtml += '<span style="width:8px;height:8px;border-radius:50%;background:#3a5a7f"></span>';
+      bandsHtml += '</div></div>';
+
+      // Indicators
+      bandInds.forEach(function(ind){
+        const c = COLORS[ind.level] || COLORS.gray;
+        const isUp = ind.change && ind.change !== '—' && ind.change !== '' && !ind.change.startsWith('-') && ind.change !== '+0.0%' && ind.change !== '0.0%';
+        const isDown = ind.change && ind.change !== '—' && ind.change !== '' && ind.change.startsWith('-');
+        const changeColor = isUp ? '#00e676' : isDown ? '#ff5252' : '#4a6a8f';
+        const changeArrow = isUp ? '▲' : isDown ? '▼' : '—';
+        const changeDisplay = ind.change && ind.change !== '—' ? ind.change.replace('+','') : '—';
+
+        bandsHtml += '<div class="macro-c-indicator" style="display:flex;align-items:center;padding:7px 12px;gap:8px">';
+        // Traffic light dot
+        bandsHtml += '<div style="width:10px;height:10px;border-radius:50%;background:' + c.main + ';flex-shrink:0;box-shadow:0 0 6px ' + c.main + '50"></div>';
+        // Name + label
+        bandsHtml += '<div style="flex:1;min-width:0">';
+        bandsHtml += '<div style="display:flex;align-items:center;gap:6px">';
+        bandsHtml += '<span style="font-size:11px;color:#6a8aaf;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + ind.label + '</span>';
+        bandsHtml += '<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:' + c.bg + ';color:' + c.main + ';font-weight:500;flex-shrink:0">' + ind.name + '</span>';
+        bandsHtml += '</div>';
+        bandsHtml += '<div style="display:flex;align-items:baseline;gap:5px;margin-top:1px">';
+        bandsHtml += '<span style="font-size:14px;font-weight:700;color:#e0ecf5">' + ind.value + '</span>';
+        bandsHtml += '<span style="font-size:9px;color:' + changeColor + ';font-weight:600">' + changeArrow + ' ' + changeDisplay + '</span>';
+        bandsHtml += '</div></div>';
+        // Level chip
+        bandsHtml += '<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:' + c.bg + ';border:1px solid ' + c.border + ';color:' + c.main + ';font-weight:600;flex-shrink:0">' + c.emoji + ' ' + c.label + '</span>';
+        bandsHtml += '</div>';
+      });
+
+      bandsHtml += '</div>';
+    });
+
+    el('macro-c-bands').innerHTML = bandsHtml;
+
+    // --- Diagnosis bar ---
+    const diagBar = el('macro-c-diagnosis-bar');
+    diagBar.style.display = '';
+    diagBar.textContent = diag;
+    if (diag.includes('alerta')) {
+      diagBar.style.background = 'rgba(255,82,82,0.1)';
+      diagBar.style.border = '1px solid rgba(255,82,82,0.25)';
+      diagBar.style.color = '#ff8a8a';
+    } else if (diag.includes('precaución') || diag.includes('precaucion')) {
+      diagBar.style.background = 'rgba(255,193,7,0.1)';
+      diagBar.style.border = '1px solid rgba(255,193,7,0.25)';
+      diagBar.style.color = '#ffe082';
+    } else {
+      diagBar.style.background = 'rgba(0,230,118,0.08)';
+      diagBar.style.border = '1px solid rgba(0,230,118,0.2)';
+      diagBar.style.color = '#81d4a8';
+    }
+  };
+
+  M.showError = function(msg) {
+    el('macro-c-loading').style.display = 'none';
+    el('macro-c-bands').style.display = 'none';
+    el('macro-c-diagnosis-bar').style.display = 'none';
+    el('macro-c-error').style.display = 'flex';
+    el('macro-c-error-msg').textContent = msg || 'No se pudieron obtener los datos del endpoint';
+  };
+
+  M.fetchData = function() {
+    el('macro-c-loading').style.display = 'flex';
+    el('macro-c-error').style.display = 'none';
+    el('macro-c-bands').style.display = 'none';
+    el('macro-c-diagnosis-bar').style.display = 'none';
+
+    fetch('/api/widgets/macro/data')
+      .then(function(r){ return r.json(); })
+      .then(function(response){
+        if (response.data && response.data.indicators) {
+          M.render(response.data);
+        } else if (response.error) {
+          M.showError(response.error);
+        } else {
+          M.showError('Formato de respuesta inesperado');
+        }
+      })
+      .catch(function(err){
+        M.showError('Error de conexión: ' + err.message);
+      });
+  };
+
+  // Initial load
+  M.fetchData();
+
+  // Auto-refresh cada 60s
+  setInterval(M.fetchData, 60000);
+
+})();
+</script>
+</div>

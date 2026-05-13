@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Macro Dashboard — Equipo B</title>
+<style>
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+html, body {
+    height: 100%;
+}
+body {
+    background: #080c18;
+    color: #d8e0f0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 12px;
+    min-height: 100vh;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.widget {
+    background: #0b1120;
+    border-radius: 14px;
+    padding: 18px 18px 14px;
+    width: 400px;
+    max-height: 500px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+    border: 1px solid #162032;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ===== HEADER ===== */
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+.widget-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: #7889a0;
+}
+.widget-timestamp {
+    font-size: 10px;
+    color: #3a4f65;
+    font-variant-numeric: tabular-nums;
+}
+.widget-timestamp .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00e676;
+    margin-right: 5px;
+    vertical-align: middle;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* ===== DIAGNOSIS BANNER ===== */
+.diagnosis-banner {
+    background: linear-gradient(135deg, #0f1830 0%, #0d1425 100%);
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border: 1px solid #1a2640;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.diagnosis-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+.diagnosis-text {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #9aadc8;
+    flex: 1;
+    min-width: 0;
+}
+.diagnosis-text strong {
+    color: #d8e0f0;
+    font-weight: 600;
+}
+
+/* ===== BANDS CONTAINER ===== */
+.bands-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding-bottom: 4px;
+    flex: 1;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #1e2f48 transparent;
+}
+.bands-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+.bands-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+.bands-scroll::-webkit-scrollbar-thumb {
+    background: #1e2f48;
+    border-radius: 4px;
+}
+
+/* ===== BAND CARD ===== */
+.band-card {
+    flex: 0 0 auto;
+    width: 210px;
+    background: #0d1528;
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #18233a;
+    display: flex;
+    flex-direction: column;
+}
+.band-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+.band-icon {
+    font-size: 14px;
+}
+.band-name {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #7889a0;
+}
+.band-count {
+    font-size: 9px;
+    color: #3a4f65;
+    margin-left: auto;
+}
+
+/* ===== INDICATOR ROW ===== */
+.indicator-row {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 4px;
+    background: #0a101f;
+    border-radius: 7px;
+    gap: 8px;
+    border-left: 3px solid transparent;
+    transition: border-color 0.3s ease, background 0.3s ease;
+}
+.indicator-row:last-child {
+    margin-bottom: 0;
+}
+
+/* Traffic light */
+.traffic-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: box-shadow 0.3s ease;
+}
+
+/* Indicator info */
+.indicator-info {
+    flex: 1;
+    min-width: 0;
+}
+.indicator-label-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.indicator-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #b8c8e0;
+}
+.indicator-tag {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 500;
+}
+.indicator-label {
+    font-size: 9px;
+    color: #5a6f85;
+    margin-top: 1px;
+}
+
+/* Value row */
+.indicator-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 1px;
+}
+.indicator-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #e8f0ff;
+    letter-spacing: -0.3px;
+    font-variant-numeric: tabular-nums;
+}
+.indicator-change {
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* ===== FOOTER ===== */
+.widget-footer {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #162032;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.footer-summary {
+    font-size: 10px;
+    color: #3a4f65;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.4;
+}
+.footer-refresh {
+    font-size: 9px;
+    color: #1f3450;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+/* ===== STATES ===== */
+.loading-state, .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    flex: 1;
+}
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #1a2640;
+    border-top-color: #4a7fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.loading-text {
+    font-size: 12px;
+    color: #4a5f75;
+}
+.error-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+}
+.error-text {
+    font-size: 12px;
+    color: #ff6b6b;
+}
+.error-sub {
+    font-size: 10px;
+    color: #5a4f4f;
+    margin-top: 4px;
+}
+
+/* ===== EMPTY BAND MESSAGE ===== */
+.empty-band {
+    font-size: 10px;
+    color: #2a3f55;
+    text-align: center;
+    padding: 12px;
+}
+
+/* Responsive: shrink card width on small screens */
+@media (max-width: 420px) {
+    .widget { width: 100%; padding: 14px 12px; }
+    .band-card { width: 195px; }
+}
+</style>
+</head>
+<body>
+
+<div class="widget" id="widget">
+  <!-- HEADER -->
+  <div class="widget-header">
+    <div class="widget-title">📊 Panel Macroeconómico</div>
+    <div class="widget-timestamp" id="timestamp"><span class="dot"></span>Cargando...</div>
+  </div>
+
+  <!-- DIAGNOSIS BANNER -->
+  <div class="diagnosis-banner" id="diagnosisBanner" style="display:none">
+    <div class="diagnosis-icon" id="diagIcon">📋</div>
+    <div class="diagnosis-text" id="diagnosisText"></div>
+  </div>
+
+  <!-- BANDS SCROLL -->
+  <div class="bands-scroll" id="bandsContainer" style="display:none"></div>
+
+  <!-- LOADING -->
+  <div class="loading-state" id="loadingState">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Cargando indicadores...</div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-state" id="errorState" style="display:none">
+    <div class="error-icon">⚠️</div>
+    <div class="error-text" id="errorText">Error al cargar datos</div>
+    <div class="error-sub" id="errorSub"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="widget-footer" id="footer" style="display:none">
+    <div class="footer-summary" id="footerSummary"></div>
+    <div class="footer-refresh" id="refreshTimer">60s</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const W = {
+    el: document.getElementById('widget'),
+    ts: document.getElementById('timestamp'),
+    diagBanner: document.getElementById('diagnosisBanner'),
+    diagIcon: document.getElementById('diagIcon'),
+    diagText: document.getElementById('diagnosisText'),
+    bands: document.getElementById('bandsContainer'),
+    loading: document.getElementById('loadingState'),
+    error: document.getElementById('errorState'),
+    errorText: document.getElementById('errorText'),
+    errorSub: document.getElementById('errorSub'),
+    footer: document.getElementById('footer'),
+    footerSummary: document.getElementById('footerSummary'),
+    refreshTimer: document.getElementById('refreshTimer'),
+  };
+
+  const API_URL = '/api/widgets/macro/data';
+  const REFRESH_MS = 60000;
+
+  const LEVEL_CONFIG = {
+    green:  { color: '#00e676', glow: 'rgba(0,230,118,0.25)', label: 'Bajo', tagBg: 'rgba(0,230,118,0.12)', tagColor: '#00e676' },
+    yellow: { color: '#ffc107', glow: 'rgba(255,193,7,0.25)', label: 'Precaución', tagBg: 'rgba(255,193,7,0.12)', tagColor: '#ffc107' },
+    red:    { color: '#ff5252', glow: 'rgba(255,82,82,0.25)', label: 'Alerta', tagBg: 'rgba(255,82,82,0.12)', tagColor: '#ff5252' },
+    gray:   { color: '#3a4f65', glow: 'rgba(58,79,101,0.25)', label: 'N/A', tagBg: 'rgba(58,79,101,0.12)', tagColor: '#5a6f85' },
+  };
+
+  const BANDS = [
+    { id: 'riesgo', icon: '🛡️', name: 'Riesgo' },
+    { id: 'ciclo',  icon: '📈', name: 'Ciclo' },
+    { id: 'global', icon: '🌐', name: 'Global' },
+  ];
+
+  // Diagnosis icon based on alert levels
+  function getDiagIcon(diagnosis) {
+    if (!diagnosis) return '📋';
+    if (diagnosis.includes('🔴')) return '🔴';
+    if (diagnosis.includes('🟡') && !diagnosis.includes('🔴')) return '🟡';
+    if (diagnosis.includes('🟢') && !diagnosis.includes('🔴') && !diagnosis.includes('🟡')) return '🟢';
+    return '📋';
+  }
+
+  function formatTimestamp(ts) {
+    if (!ts) return '';
+    try {
+      const d = new Date(ts.replace(' ', 'T'));
+      return d.toLocaleString('es-ES', {
+        day: '2-digit', month: 'short',
+        hour: '2-digit', minute: '2-digit'
+      });
+    } catch(e) {
+      return ts;
+    }
+  }
+
+  function render(data) {
+    const indicators = data.indicators || [];
+    const diagnosis = data.diagnosis || '';
+    const summary = data.summary || '';
+    const timestamp = data.timestamp || '';
+
+    // Hide loading/error, show content
+    W.loading.style.display = 'none';
+    W.error.style.display = 'none';
+
+    // Timestamp
+    if (timestamp) {
+      W.ts.innerHTML = '<span class="dot"></span>' + formatTimestamp(timestamp);
+    }
+
+    // Diagnosis banner
+    if (diagnosis) {
+      W.diagBanner.style.display = 'flex';
+      W.diagIcon.textContent = getDiagIcon(diagnosis);
+      W.diagText.innerHTML = diagnosis;
+    } else {
+      W.diagBanner.style.display = 'none';
+    }
+
+    // Build bands
+    let bandsHtml = '';
+    BANDS.forEach(function(band) {
+      const bandIndicators = indicators.filter(function(i) { return i.band === band.id; });
+      bandsHtml += '<div class="band-card">';
+      bandsHtml += '<div class="band-header">';
+      bandsHtml += '<span class="band-icon">' + band.icon + '</span>';
+      bandsHtml += '<span class="band-name">' + band.name + '</span>';
+      bandsHtml += '<span class="band-count">' + bandIndicators.length + '</span>';
+      bandsHtml += '</div>';
+
+      if (bandIndicators.length === 0) {
+        bandsHtml += '<div class="empty-band">Sin indicadores</div>';
+      } else {
+        bandIndicators.forEach(function(ind) {
+          const cfg = LEVEL_CONFIG[ind.level] || LEVEL_CONFIG.gray;
+          const isUp = ind.change && ind.change !== '—' && ind.change !== '0.0%' && !ind.change.startsWith('-');
+          const isDown = ind.change && ind.change !== '—' && ind.change.startsWith('-');
+          const changeColor = ind.change === '—' || !ind.change ? '#3a4f65' : isUp ? '#00e676' : isDown ? '#ff5252' : '#7889a0';
+          const changeArrow = isUp ? '▲' : isDown ? '▼' : '—';
+
+          bandsHtml += '<div class="indicator-row" style="border-left-color:' + cfg.color + '">';
+          // Traffic light
+          bandsHtml += '<div class="traffic-dot" style="background:' + cfg.color + ';box-shadow:0 0 6px ' + cfg.glow + '"></div>';
+          // Info
+          bandsHtml += '<div class="indicator-info">';
+          bandsHtml += '<div class="indicator-label-row">';
+          bandsHtml += '<span class="indicator-name">' + ind.name + '</span>';
+          bandsHtml += '<span class="indicator-tag" style="background:' + cfg.tagBg + ';color:' + cfg.tagColor + '">' + cfg.label + '</span>';
+          bandsHtml += '</div>';
+          bandsHtml += '<div class="indicator-label">' + ind.label + '</div>';
+          bandsHtml += '<div class="indicator-value-row">';
+          bandsHtml += '<span class="indicator-value">' + ind.value + '</span>';
+          bandsHtml += '<span class="indicator-change" style="color:' + changeColor + '">' + changeArrow + ' ' + ind.change + '</span>';
+          bandsHtml += '</div>';
+          bandsHtml += '</div>';
+          bandsHtml += '</div>';
+        });
+      }
+
+      bandsHtml += '</div>';
+    });
+
+    W.bands.innerHTML = bandsHtml;
+    W.bands.style.display = 'flex';
+
+    // Footer
+    W.footer.style.display = 'flex';
+    W.footerSummary.textContent = summary || '';
+  }
+
+  function showError(msg, detail) {
+    W.loading.style.display = 'none';
+    W.bands.style.display = 'none';
+    W.diagBanner.style.display = 'none';
+    W.footer.style.display = 'none';
+    W.error.style.display = 'flex';
+    W.errorText.textContent = msg || 'Error al cargar datos';
+    W.errorSub.textContent = detail || '';
+  }
+
+  // Refresh countdown
+  var countdown = 60;
+  function updateCountdown() {
+    countdown = 60;
+  }
+  setInterval(function() {
+    if (W.refreshTimer && W.footer.style.display !== 'none') {
+      countdown--;
+      if (countdown <= 0) countdown = 60;
+      W.refreshTimer.textContent = countdown + 's';
+    }
+  }, 1000);
+
+  function fetchData() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', API_URL, true);
+    xhr.timeout = 15000;
+
+    xhr.onload = function() {
+      if (xhr.status !== 200) {
+        showError('Error del servidor (' + xhr.status + ')');
+        return;
+      }
+      try {
+        var response = JSON.parse(xhr.responseText);
+        if (response.data && response.data.indicators) {
+          render(response.data);
+        } else if (response.error) {
+          showError(response.error);
+        } else {
+          showError('Formato de respuesta inesperado');
+        }
+      } catch(e) {
+        showError('Error al procesar datos', e.message);
+      }
+    };
+
+    xhr.onerror = function() {
+      showError('Error de conexión');
+    };
+
+    xhr.ontimeout = function() {
+      showError('Tiempo de espera agotado');
+    };
+
+    xhr.send();
+  }
+
+  // Initial load
+  fetchData();
+
+  // Auto-refresh every 60s
+  setInterval(fetchData, REFRESH_MS);
+})();
+</script>
+</body>
+</html>

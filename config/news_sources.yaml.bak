@@ -1,0 +1,69 @@
+# News Sources Configuration for News Sentiment Widget
+# Used by scripts/ingest_news_sentiment.py and endpoint /api/v1/news-sentiment
+
+sources:
+  - name: "X/Twitter Finance Feed"
+    type: "rss"
+    url: "https://nitter.net/finance/rss"  # Alternative Twitter frontend
+    keywords:
+      - "stock market"
+      - "bearish"
+      - "bullish"
+      - "recession"
+      - "rally"
+    weight: 0.30
+    enabled: false  # Requires Nitter instance; alternative methods below
+
+  - name: "Google News - Mercados Financieros"
+    type: "rss"
+    url: "https://news.google.com/rss/topics/CAAqJggKIiBDQkFTRWdvSUwyMHZNRGx6TVdZU0FtVnVHZ0pWVXlnQVAB"
+    keywords: []
+    weight: 0.25
+    enabled: true
+
+  - name: "Reuters Business News"
+    type: "rss"
+    url: "https://www.reutersagency.com/feed/?best-topics=business-finance&post_type=best"
+    keywords: []
+    weight: 0.20
+    enabled: true
+
+  - name: "CNBC Top News"
+    type: "rss"
+    url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=100003114"
+    keywords: []
+    weight: 0.15
+    enabled: true
+
+  - name: "MarketWatch Top Stories"
+    type: "rss"
+    url: "https://feeds.marketwatch.com/marketwatch/topstories"
+    keywords: []
+    weight: 0.10
+    enabled: true
+
+# Sentiment Analysis Configuration
+sentiment:
+  method: "lexicon"  # Options: lexicon, transformer
+  lexicon: "vader"   # Options: vader, textblob, custom
+  language: "en"     # Primary language for analysis
+  fallback_language: "es"  # Spanish fallback using SENTIESP or simple keyword
+
+# Update Schedule
+update:
+  interval_minutes: 240  # Every 4 hours
+  max_articles_per_source: 20
+  max_age_hours: 72  # Discard articles older than 3 days
+
+# Scoring Rules
+scoring:
+  # Sentiment score 0-100 derived from compound score multiplier
+  # VADER compound: -1 (very negative) to +1 (very positive)
+  compound_to_score:
+    min: -1.0
+    max: 1.0
+    # > 0.5 → bullish (> 75 score)
+    # 0.05 to 0.5 → slightly bullish (55-75)
+    # -0.05 to 0.05 → neutral (45-55)
+    # -0.5 to -0.05 → slightly bearish (25-45)
+    # < -0.5 → bearish (< 25 score)

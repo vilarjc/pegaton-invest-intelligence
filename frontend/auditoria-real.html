@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 Fear & Greed — Auditoría Real</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0e17; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; padding: 16px; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 2px; }
+  .subtitle { color: #64748b; font-size: 12px; margin-bottom: 14px; }
+
+  .tabs { display: flex; gap: 3px; background: #0f172a; border-radius: 10px; padding: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; background: transparent; color: #64748b; font-weight: 600; font-size: 12px; transition: .15s; }
+  .tab:hover { color: #e2e8f0; background: #1a2332; }
+  .tab.active { background: #1e293b; color: #e2e8f0; }
+  .tab .badge { font-size: 9px; background: #334155; padding: 1px 6px; border-radius: 8px; margin-left: 5px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; }
+  .card-title { padding: 8px 12px; background: #1a2332; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 6px; }
+  .card-title .right { margin-left: auto; font-size: 9px; color: #475569; }
+
+  iframe.widget-frame { width: 100%; height: 300px; border: none; display: block; background: #000; }
+
+  .code-box { overflow: auto; max-height: 300px; padding: 8px 10px; font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 10px; line-height: 1.4; color: #c9d1d9; white-space: pre; tab-size: 2; background: #0d1117; }
+  .code-box::-webkit-scrollbar { width: 5px; }
+  .code-box::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  .code-box.full, .spec-box.full { max-height: none !important; overflow: visible; }
+
+  .spec-box { max-height: 300px; overflow: auto; padding: 10px 12px; font-size: 11px; line-height: 1.5; color: #c9d1d9; background: #0d1117; }
+  .spec-box strong { color: #e2e8f0; }
+  .spec-box .section-title { color: #f0883e; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: .3px; margin-top: 10px; display: block; }
+
+  .decision { background: #1a2332; border-radius: 6px; padding: 8px 10px; margin: 4px 0; border-left: 3px solid #6366f1; }
+  .decision .why { color: #94a3b8; font-size: 11px; margin-top: 2px; }
+  .decision em { color: #475569; font-size: 9px; }
+
+  .brief-row { background: #0d1117; border-radius: 6px; padding: 8px 12px; margin: 0; font-family: monospace; font-size: 10px; color: #8b949e; white-space: pre-wrap; line-height: 1.4; max-height: 100px; overflow: auto; cursor: pointer; }
+  .brief-row.full { max-height: none; }
+
+  .stats { display: flex; gap: 12px; padding: 6px 12px; background: #161b22; border-top: 1px solid #1e293b; font-size: 9px; color: #8b949e; flex-wrap: wrap; }
+  .stats span { display: flex; align-items: center; gap: 4px; }
+  .copy-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 9px; margin-left: auto; }
+  .copy-btn:hover { background: #334155; color: #e2e8f0; }
+
+  .meta-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .score-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .score-badge.good { background: #063; color: #3fb950; }
+  .score-badge.ok { background: #3d2900; color: #d29922; }
+  .score-badge.bad { background: #3d0014; color: #f85149; }
+
+  .spec-toggle { cursor: pointer; color: #58a6ff; font-size: 10px; }
+  .spec-toggle:hover { text-decoration: underline; }
+  pre { margin: 0; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧪 Fear & Greed — Auditoría de Equipos</h1>
+  <div class="subtitle">
+    <strong>Brief único</strong> (yo como organizador) → <strong>3 PMs</strong> analizan y especifican → <strong>3 Developers</strong> implementan → <strong>3 widgets</strong> con mismos datos reales
+  </div>
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" onclick="switchTeam('a')">Equipo A <span class="badge">Gemini PM + HY3 Dev</span></button>
+    <button class="tab" onclick="switchTeam('b')">Equipo B <span class="badge">Nemotron PM + Owl Dev</span></button>
+    <button class="tab" onclick="switchTeam('c')">Equipo C <span class="badge">DeepSeek V4 Flash PM + V4 Flash Dev</span></button>
+  
+    <button class="tab" onclick="switchTeam('d')">📰 Equipo D <span class="badge">Noticias VADER</span></button>
+</div>
+
+  <div id="panel-a" class="panel active"></div>
+  <div id="panel-b" class="panel"></div>
+  <div id="panel-c" class="panel"></div>
+
+  <div id="panel-d" class="panel">
+    <div id="news-team-content" style="padding:10px">
+      <iframe class="widget-frame" src="/widgets/news-sentimiento.html" style="height:380px"></iframe>
+      <div class="stats" style="margin-top:8px">
+        <span>📰 Sentimiento de Noticias</span>
+        <span>📄 news-sentimiento.html</span>
+        <span>🔄 <span id="refresh-d">recargar</span></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TEAMS = {
+  a: { label:'Equipo A', widget:'fear-greed-equipo-a.html',
+    pm:'Gemini 2.5 Flash', dev:'Tencent HY3', pmId:'pm-gemini', pmColor:'#10b981',
+    specId:8, specFile:'FEAR_GREED_EQUIPO_A',
+    decisions: [
+      {t:'RSS feeds vacíos', by:'Gemini (PM)', w:'Los feeds RSS de CNBC no devolvían artículos parseables. Fallback a score neutral (50) en lugar de romper. NewsAPI requeriría API key y viola stack gratuito.'},
+      {t:'Canvas gauge con aguja', by:'Tencent HY3 (Dev)', w:'Diseño semicircular con gradiente multicolor y aguja blanca animada. Similar a velocímetro clásico.'},
+      {t:'Clic expande factores', by:'Gemini (PM)', w:'UX: un clic en el velocímetro expande barras de VIX/Macro/Sentimiento con colores y scores.'}
+    ]},
+  b: { label:'Equipo B', widget:'fear-greed-equipo-b.html',
+    pm:'Nemotron 3 Super', dev:'Owl Alpha', pmId:'pm-nemotron', pmColor:'#6366f1',
+    specId:9, specFile:'FEAR_GREED_EQUIPO_B',
+    decisions: [
+      {t:'Diferenciación visual', by:'Nemotron (PM)', w:'Equipo A ya usó semicírculo con aguja. Especificó anillo tipo "speedometer" con glow progresivo multicolor.'},
+      {t:'Loading/Error states', by:'Owl Alpha (Dev)', w:'Implementó states de carga con animación CSS y estado de error con fallback visual.'},
+      {t:'Reutiliza endpoint A', by:'Nemotron (PM)', w:'No crear nuevo backend. El widget consume el endpoint existente /api/v1/fear-greed implementado por Equipo A.'}
+    ]},
+  c: { label:'Equipo C', widget:'fear-greed-equipo-c.html',
+    pm:'DeepSeek V4 Flash', dev:'DeepSeek V4 Flash', pmId:'pm-deepseek-v4-flash', pmColor:'#a855f7',
+    specId:10, specFile:'FEAR_GREED_EQUIPO_C',
+    decisions: [
+      {t:'Barra termómetro horizontal', by:'DeepSeek V4 Flash (PM)', w:'Diseño único: barra horizontal con gradiente y marcador triangular deslizante. Diferente de semicírculo (A) y anillo (B).'}
+
+  // ── Equipo D: Noticias ──
+  d: { label:'Equipo D', widget:'news-sentimiento.html',
+    pm:'Hermes Agent (Orquestador)', dev:'Hermes Agent (backup)', pmId:'pm-hermes', pmColor:'#f59e0b',
+    specId:18, specFile:'NEWS_SENTIMIENTO',
+    decisions: [
+      {t:'0 LLM tokens en ingesta', by:'Hermes Agent (PM)', w:'La ingesta usa RSS + VADER puro en Python. Crontab del sistema cada 4h. Sin sesiones LLM para ingesta.'},
+      {t:'Gauge Canvas multicolor', by:'Hermes Agent (Dev backup)', w:'5 bandas de color: rojo/naranja/amarillo/verde/morado. Animación con requestAnimationFrame.'},
+      {t:'Retrocompatible endpoint', by:'Hermes Agent (PM)', w:'El widget funciona con endpoint actual (score, sources, timestamp) y con el extendido (delta, alert, keywords, distribution). Computa delta local si no viene del API.'}
+    ]},
+,
+      {t:'DOM puro sin Canvas', by:'DeepSeek V4 Flash (Dev)', w:'Implementó todo con divs + CSS, sin Canvas API. Más legible, debuggeable y compatible entre navegadores.'},
+      {t:'Acordeón en clic', by:'DeepSeek V4 Flash (PM)', w:'Clic expande panel con desglose detallado de factores (VIX, UNRATE, CPI, sentimiento).'}
+    ]}
+};
+
+// Real specs from harness.db
+const SPECS = {};
+
+async function loadSpecs() {
+  // Spec 17 (Equipo A) - full engine + widget
+  const r = await fetch('/api/specs/17');
+  if (r.ok) SPECS[17] = await r.text();
+  const r2 = await fetch('/api/specs/18');
+  if (r2.ok) SPECS[18] = await r2.text();
+  const r3 = await fetch('/api/specs/19');
+  if (r3.ok) SPECS[19] = await r3.text();
+}
+
+const BRIEF = `# Plan Ejecutivo: Indicador Fear & Greed Mejorado
+
+## Stack (100% gratuito)
+- Backend: Python + FastAPI (puerto 8000)
+- VIX: yfinance | Macro: FRED API | Sentimiento: RSS feeds
+- Frontend: HTML/CSS/JS autónomo, 1 archivo
+- Coste: $0/mes
+
+## Entregables
+1. Endpoint GET /api/v1/fear-greed → JSON {score, action, factores, timestamp}
+2. Widget HTML autónomo (iframe-ready)
+3. Auto-refresh cada 60s, dark theme
+4. Clic expande desglose de factores`;
+
+async function loadTeam(id) {
+  const panel = document.getElementById('panel-' + id);
+  const team = TEAMS[id];
+
+  // Load widget code
+  let codeContent = 'Cargando...', codeLines = 0, codeChars = 0;
+  try {
+    const r = await fetch('/widgets/' + team.widget);
+    const code = await r.text();
+    codeContent = code;
+    codeLines = code.split('\\n').length;
+    codeChars = code.length;
+  } catch(e) { codeContent = '// Error: ' + e.message; }
+
+  // Load spec from API
+  let specContent = '<p style="color:#475569;font-size:11px">Cargando spec...</p>';
+  try {
+      const r = await fetch('/api/specs/' + team.specId);
+      if (r.ok) {
+        const spec = await r.json();
+        specContent = formatSpec(spec.content || spec.spec_text || JSON.stringify(spec));
+      } else {
+      specContent = '<p style="color:#475569;font-size:11px">Spec no disponible (código ' + r.status + ')</p>';
+    }
+  } catch(e) {
+    specContent = '<p style="color:#475569;font-size:11px">Error: ' + e.message + '</p>';
+  }
+
+  // Build decisions
+  const decisionsHTML = team.decisions.map(d =>
+    `<div class="decision"><strong>${d.t}</strong> <em>(${d.by})</em><div class="why">${d.w}</div></div>`
+  ).join('');
+
+  const highlightedCode = highlightCode(codeContent);
+
+  panel.innerHTML = `
+    <div class="grid-3">
+      <!-- Widget -->
+      <div class="card">
+        <div class="card-title">🖥️ Widget (datos reales) <span class="right">${team.widget}</span></div>
+        <iframe class="widget-frame" src="/widgets/${team.widget}?t=${Date.now()}"></iframe>
+        <div class="stats">
+          <span>👨‍💻 ${team.dev}</span>
+          <span style="cursor:pointer;color:#58a6ff" onclick="this.parentElement.previousElementSibling.previousElementSibling.src='/widgets/${team.widget}?t='+Date.now()">⟳ recargar</span>
+        </div>
+      </div>
+
+      <!-- Código -->
+      <div class="card">
+        <div class="card-title">📝 Código Fuente <span class="right">${codeLines} líneas · ${codeChars.toLocaleString()} chars</span></div>
+        <div class="code-box" id="code-${id}"><pre>${highlightedCode}</pre></div>
+        <div class="stats">
+          <span>👨‍💻 Developer: ${team.dev}</span>
+          <span style="cursor:pointer;color:#58a6ff;font-size:10px" onclick="toggleFull('code-${id}', this, ${codeChars})">📐 Ver completo</span>
+          <button class="copy-btn" onclick="copyCode('code-${id}')">📋 Copiar</button>
+        </div>
+      </div>
+
+      <!-- PM Analysis (SPEC) -->
+      <div class="card">
+        <div class="card-title">📋 Análisis del PM — ${team.pm} <span class="right" style="color:${team.pmColor}">●</span></div>
+        <div class="spec-box" id="spec-${id}">${specContent}</div>
+        <div class="stats">
+          <span>🧑‍💼 PM: ${team.pm}</span>
+          <span style="cursor:pointer;color:#58a6ff;font-size:10px" onclick="toggleFull('spec-${id}', this)">📐 Ver completo</span>
+          <button class="copy-btn" onclick="copyCode('spec-${id}')">📋 Copiar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Brief original -->
+    <div class="card" style="margin-top:10px">
+      <div class="card-title">📜 Brief original (yo como organizador)</div>
+      <div class="stats" style="border-bottom:1px solid #1e293b">
+        <span>📄 El mismo brief para los 3 equipos</span>
+        <span class="spec-toggle" onclick="toggleBrief('brief-${id}')">▸ Expandir</span>
+      </div>
+      <div class="brief-row" id="brief-${id}">${escapeHTML(BRIEF)}</div>
+    </div>
+
+    <!-- Decisiones técnicas -->
+    <div class="card" style="margin-top:10px">
+      <div class="card-title">💡 Decisiones Técnicas — ${team.label} <span class="right">${team.decisions.length} registradas</span></div>
+      <div style="padding:6px 12px 10px">${decisionsHTML}</div>
+    </div>
+  `;
+}
+
+function formatSpec(text) {
+  if (!text) return '<p style="color:#475569">Spec vacía</p>';
+  let h = escapeHTML(text);
+  // Format section headers
+  h = h.replace(/### Context/g, '<span class="section-title">🎯 Contexto</span>');
+  h = h.replace(/### Stack/g, '<span class="section-title">🔧 Stack</span>');
+  h = h.replace(/### Diseño Distintivo/g, '<span class="section-title">🎨 Diseño</span>');
+  h = h.replace(/### Diseño \(Barra/g, '<span class="section-title">🎨 Diseño (Barra</span>');
+  h = h.replace(/### Reglas de Negocio/g, '<span class="section-title">📐 Reglas</span>');
+  h = h.replace(/### Criterios de Aceptación/g, '<span class="section-title">✅ Criterios</span>');
+  h = h.replace(/### Architecture/g, '<span class="section-title">🏗️ Arquitectura</span>');
+  h = h.replace(/### Fuentes de Datos/g, '<span class="section-title">📊 Datos</span>');
+  h = h.replace(/### Score Compuesto/g, '<span class="section-title">🧮 Score</span>');
+  h = h.replace(/### Action Mapping/g, '<span class="section-title">🎯 Acciones</span>');
+  h = h.replace(/### API Endpoint/g, '<span class="section-title">🔌 API</span>');
+  h = h.replace(/### Widget HTML/g, '<span class="section-title">🖥️ Widget</span>');
+  h = h.replace(/### Files/g, '<span class="section-title">📁 Archivos</span>');
+  h = h.replace(/### Notas Técnicas/g, '<span class="section-title">📝 Notas</span>');
+  h = h.replace(/### Contexto/g, '<span class="section-title">🎯 Contexto</span>');
+  h = h.replace(/### Diseno/g, '<span class="section-title">🎨 Diseño</span>');
+  h = h.replace(/### Criterios/g, '<span class="section-title">✅ Criterios</span>');
+  h = h.replace(/\n/g, '<br>');
+  h = h.replace(/<br><br>/g, '</p><p>');
+  return '<p>' + h + '</p>';
+}
+
+function escapeHTML(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function highlightCode(code) {
+  if (!code) return '<span style="color:#475569">// Sin código</span>';
+  let h = escapeHTML(code);
+  h = h.replace(/\/\/(.*)/g, '<span style="color:#8b949e">//$1</span>');
+  h = h.replace(/("(?:[^"\\\\]|\\\\.)*"|'(?:[^'\\\\]|\\\\.)*')/g, '<span style="color:#a5d6ff">$1</span>');
+  h = h.replace(/(`(?:[^`\\\\]|\\\\.)*`)/g, '<span style="color:#a5d6ff">$1</span>');
+  const keywords = ['function','const','let','var','if','else','return','for','while','class','new','this','async','await','import','export','from','try','catch','throw','null','undefined','true','false','document','window'];
+  const kwPatt = new RegExp('\\b(' + keywords.join('|') + ')\\b','g');
+  h = h.replace(kwPatt, '<span style="color:#ff7b72;font-weight:600">$1</span>');
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span style="color:#79c0ff">$1</span>');
+  h = h.replace(/(&lt;\/?)(\w+)/g, (m,lt,tag) => lt + '<span style="color:#7ee787">' + tag + '</span>');
+  return h;
+}
+
+function switchTeam(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + id + "'")) t.classList.add('active');
+  });
+  document.getElementById('panel-' + id).classList.add('active');
+  loadTeam(id);
+}
+
+function toggleFull(id, btn, chars) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isFull = el.style.maxHeight === 'none' || el.classList.contains('full');
+  if (isFull) {
+    el.style.maxHeight = '300px';
+    el.classList.remove('full');
+    btn.textContent = chars > 100000 ? '📐 Ver completo (' + Math.round(chars/1000) + 'k)' : '📐 Ver completo';
+  } else {
+    el.style.maxHeight = 'none';
+    el.classList.add('full');
+    btn.textContent = '📐 ▼ Mostrar menos';
+  }
+}
+
+function toggleBrief(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('full');
+  el.previousElementSibling.querySelector('.spec-toggle').textContent =
+    el.classList.contains('full') ? '▾ Ocultar' : '▸ Expandir';
+}
+
+async function copyCode(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.textContent;
+  try { await navigator.clipboard.writeText(text); } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+// Load first team
+loadTeam('a');
+
+// Refresh for Equipo D
+const refreshD = document.getElementById('refresh-d');
+if (refreshD) {
+  refreshD.style.cursor = 'pointer';
+  refreshD.onclick = function() {
+    const frame = document.querySelector('#panel-d iframe');
+    if (frame) frame.src = '/widgets/news-sentimiento.html?t=' + Date.now();
+  };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DateTime Widget</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: #0a0e17;
+    color: #e0e0e0;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+.widget-container {
+    background: #0e1520;
+    border-radius: 16px;
+    padding: 32px 40px;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    border: 1px solid #1a2332;
+}
+.widget-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #6b7fa3;
+    margin-bottom: 12px;
+}
+.datetime-display {
+    font-size: 42px;
+    font-weight: 600;
+    color: #00d4ff;
+    text-shadow: 0 0 20px rgba(0,212,255,0.3);
+    letter-spacing: 2px;
+}
+.date-display {
+    font-size: 16px;
+    color: #8899aa;
+    margin-top: 4px;
+}
+</style>
+</head>
+<body>
+<div class="widget-container">
+    <div class="widget-title">Current Time</div>
+    <div class="datetime-display" id="time">--:--:--</div>
+    <div class="date-display" id="date">Loading...</div>
+</div>
+<script>
+function update() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('time').textContent = h + ':' + m + ':' + s;
+    const y = now.getFullYear();
+    const mo = String(now.getMonth()+1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    document.getElementById('date').textContent = y + '-' + mo + '-' + d;
+}
+update();
+setInterval(update, 1000);
+</script>
+</body>
+</html>

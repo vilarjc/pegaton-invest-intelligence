@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Financial Dashboard Widget</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#0d0d0d;color:#eee;}
+  .container{position:relative;width:100%;max-width:960px;margin:0 auto;padding:10px;box-sizing:border-box;}
+  canvas{display:block;width:100%;height:auto;background:#111;}
+  #tooltip{
+    position:absolute;pointer-events:none;background:rgba(0,0,0,0.7);color:#fff;
+    padding:6px 10px;border-radius:4px;font-size:13px;white-space:nowrap;
+    border:1px solid #333;transform:translate(-50%,-100%);z-index:10;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <canvas id="priceCanvas"></canvas>
+  <canvas id="volumeCanvas"></canvas>
+  <div id="tooltip" class="tooltip"></div>
+</div>
+
+<script>
+/* ==== Seeded Random (Mulberry32) ==== */
+function mulberry32(seed) {
+  return function() {
+    var t = (seed += 0x6D2B79F5) >>> 0;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ==== Data Generation ==== */
+const rand = mulberry32(12345); // fixed seed
+const totalDays = 30;
+const data = [];
+let price = 100; // starting price
+const startDate = new Date(Date.now() - totalDays * 24 * 60 * 60 * 1000);
+
+for (let i = 0; i < totalDays; i++) {
+  const change = (rand() * 2 - 1) * 0.02; // +/-2%
+  price = Math.max(1, price + price * change);
+
+  const open = price;
+  const close = price * (1 + (rand() * 2 - 1) * 0.01);
+  const high = Math.max(open, close) * (1 + rand() * 0.005);
+  const low = Math.min(open, close) * (1 - rand() * 0.005);
+  const volume = rand() * 1_000_000 + 500_000;
+
+  const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+  data.push({
+    time: date,
+    dateString: date.toISOString().split('T')[0],
+    open, high, low, close, volume
+  });
+}
+
+/* ==== Moving Averages ==== */
+function computeSMA(arr, period) {
+  const sma = new Array(arr.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < arr.length; i++) {
+    sum += arr[i];
+    if (i >= period) sum -= arr[i - period];
+    if (i >= period - 1) sma[i] = sum / period;
+  }
+  return sma;
+}
+const closes = data.map(d => d.close);
+const sma7 = computeSMA(closes, 7);
+const sma21 = computeSMA(closes, 21);
+
+/* ==== Canvas Setup ==== */
+const priceCanvas = document.getElementById('priceCanvas');
+const volumeCanvas = document.getElementById('volumeCanvas');
+const ctxPrice = priceCanvas.getContext('2d');
+const ctxVol = volumeCanvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+
+let priceDirty = true;
+let volDirty = true;
+let isDragging = false;
+let startMouseX = 0;
+let startOffsetX = 0;
+const zoomSpeed = 0.001;
+
+// view parameters (pixel space)
+let xScale = 1;   // pixels per bar
+let xOffset = 0;  // pixel offset where index 0 maps
+const padding = 40; // left/right space for axis
+
+function resizeCanvases() {
+  const dpr = window.devicePixelRatio || 1;
+  const container = document.querySelector('.container');
+  const w = container.clientWidth;
+  const hPrice = Math.round(container.clientHeight * 0.55);
+  const hVol = Math.round(container.clientHeight * 0.35);
+
+  priceCanvas.width = w * dpr;
+  priceCanvas.height = hPrice * dpr;
+  priceCanvas.style.width = w + 'px';
+  priceCanvas.style.height = hPrice + 'px';
+  ctxPrice.scale(dpr, dpr);
+
+  volumeCanvas.width = w * dpr;
+  volumeCanvas.height = hVol * dpr;
+  volumeCanvas.style.width = w + 'px';
+  volumeCanvas.style.height = hVol + 'px';
+  ctxVol.scale(dpr, dpr);
+
+  priceDirty = volDirty = true;
+}
+window.addEventListener('resize', resizeCanvases);
+resizeCanvases();
+
+/* ==== Helper: map index <-> pixel ==== */
+function indexToX(i) { return i * xScale + xOffset; }
+function xToIndex(x) { return (x - xOffset) / xScale; }
+
+/* ==== Compute visible index range ==== */
+function getVisibleIndexRange() {
+  const left = -xOffset / xScale;
+  const right = (priceCanvas.clientWidth - xOffset) / xScale;
+  return { left: Math.max(0, left), right: Math.min(totalDays - 1, right) };
+}
+
+/* ==== Draw Price Chart ==== */
+function drawPrice() {
+  ctxPrice.clearRect(0, 0, priceCanvas.width, priceCanvas.height);
+  const width = priceCanvas.clientWidth;
+  const height = priceCanvas.clientHeight;
+
+  // Determine visible data indices
+  const { left: visLeft, right: visRight } = getVisibleIndexRange();
+  const startIdx = Math.floor(visLeft);
+  const endIdx = Math.ceil(visRight);
+
+  // Find min/max price for y scaling (include SMA lines)
+  let minPrice = Infinity, maxPrice = -Infinity;
+  for (let i = startIdx; i <= endIdx; i++) {
+    const d = data[i];
+    minPrice = Math.min(minPrice, d.low);
+    maxPrice = Math.max(maxPrice, d.high);
+    if (sma7[i] !== null) {
+      minPrice = Math.min(minPrice, sma7[i]);
+      maxPrice = Math.max(maxPrice, sma7[i]);
+    }
+    if (sma21[i] !== null) {
+      minPrice = Math.min(minPrice, sma21[i]);
+      maxPrice = Math.max(maxPrice, sma21[i]);
+    }
+  }
+  const priceRange = maxPrice - minPrice;
+  if (priceRange === 0) return; // avoid division by zero
+  const yScale = (height - 2 * padding) / priceRange;
+  const yOffset = padding; // top margin
+
+  function priceToY(p) { return height - ( (p - minPrice) * yScale + yOffset ); }
+
+  // Draw candlesticks
+  const candleWidth = Math.max(1, xScale * 0.6);
+  for (let i = startIdx; i <= endIdx; i++) {
+    const d = data[i];
+    const x = indexToX(i);
+    if (x < -candleWidth || x > width + candleWidth) continue;
+
+    const openY = priceToY(d.open);
+    const closeY = priceToY(d.close);
+    const highY = priceToY(d.high);
+    const lowY = priceToY(d.low);
+
+    ctxPrice.beginPath();
+    ctxPrice.moveTo(x, highY);
+    ctxPrice.lineTo(x, lowY);
+    ctxPrice.strokeStyle = d.close >= d.open ? '#26a69a' : '#ef5350';
+    ctxPrice.lineWidth = 1;
+    ctxPrice.stroke();
+
+    ctxPrice.fillStyle = d.close >= d.open ? '#26a69a' : '#ef5350';
+    if (closeY > openY) {
+      ctxPrice.fillRect(x - candleWidth/2, openY, candleWidth, closeY - openY);
+    } else {
+      ctxPrice.fillRect(x - candleWidth/2, closeY, candleWidth, openY - closeY);
+    }
+  }
+
+  // Draw SMA lines
+  function drawSMA(sma, color) {
+    ctxPrice.beginSession = ctxPrice.beginPath();
+    ctxPrice.beginPath();
+    ctxPrice.strokeStyle = color;
+    ctxPrice.lineWidth = 2;
+    let first = true;
+    for (let i = startIdx; i <= endIdx; i++) {
+      if (sma[i] === null) continue;
+      const x = indexToX(i);
+      const y = priceToY(sma[i]);
+      if (first) { ctxPrice.moveTo(x, y); first = false; }
+      else ctxPrice.lineTo(x, y);
+    }
+    if (!first) ctxPrice.stroke();
+  }
+  drawSMA(sma7, '#64b5f6');   // light blue
+  drawSMA(sma21, '#ffb74d');  // orange
+
+  // Axis (optional)
+  ctxPrice.strokeStyle = '#444';
+  ctxPrice.lineWidth = 1;
+  ctxPrice.beginPath();
+  ctxPrice.moveTo(padding, padding);
+  ctxPrice.lineTo(padding, height - padding);
+  ctxPrice.lineTo(width - padding, height - padding);
+  ctxPrice.stroke();
+}
+
+/* ==== Draw Volume Chart ==== */
+function drawVolume() {
+  ctxVol.clearRect(0, 0, volumeCanvas.width, volumeCanvas.height);
+  const width = volumeCanvas.clientWidth;
+  const height = volumeCanvas.clientHeight;
+
+  const { left: visLeft, right: visRight } = getVisibleIndexRange();
+  const startIdx = Math.floor(visLeft);
+  const endIdx = Math.ceil(visRight);
+
+  // Find max volume for scaling
+  let maxVol = 0;
+  for (let i = startIdx; i <= endIdx; i++) maxVol = Math.max(maxVol, data[i].volume);
+  if (maxVol === 0) return;
+  const volScale = (height - 2 * padding) / maxVol;
+  const volYOffset = padding;
+
+  const barWidth = Math.max(1, xScale * 0.6);
+  for (let i = startIdx; i <= endIdx; i++) {
+    const d = data[i];
+    const x = indexToX(i);
+    if (x < -barWidth || x > width + barWidth) continue;
+    const barHeight = d.volume * volScale;
+    ctxVol.fillStyle = d.close >= d.open ? 'rgba(100,180,255,0.6)' : 'rgba(255,100,100,0.6)';
+    ctxVol.fillRect(x - barWidth/2, height - volYOffset - barHeight, barWidth, barHeight);
+  }
+
+  // Axis
+  ctxVol.strokeStyle = '#444';
+  ctxVol.lineWidth = 1;
+  ctxVol.beginPath();
+  ctxVol.moveTo(padding, padding);
+  ctxVol.lineTo(padding, height - padding);
+  ctxVol.lineTo(width - padding, height - padding);
+  ctxVol.stroke();
+}
+
+/* ==== Render Loop ==== */
+function render() {
+  if (priceDirty) { drawPrice(); priceDirty = false; }
+  if (volDirty)   { drawVolume(); volDirty = false; }
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+
+/* ==== Interaction ==== */
+function getMousePos(evt, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (evt.clientX - rect.left) * (canvas.width  / canvas.clientWidth),
+    y: (evt.clientY - rect.top)  * (canvas.height / canvas.clientHeight)
+  };
+}
+
+// Wheel zoom
+priceCanvas.addEventListener('wheel', function(e) {
+  e.preventDefault();
+  const mouse = getMousePos(e, priceCanvas);
+  const mouseIndex = xToIndex(mouse.x);
+  const zoomFactor = 1 + e.deltaY * -zoomSpeed; // wheel up -> zoom in
+  const newScale = xScale * zoomFactor;
+  // clamp scale
+  const maxScale = (priceCanvas.clientWidth - 2*padding) / 1; // one bar fills width
+  const minScale = (priceCanvas.clientWidth - 2*padding) / (totalDays * 2); // show all bars with space
+  const clampedScale = Math.min(Math.max(newScale, minScale), maxScale);
+  if (clampedScale === xScale) return;
+  xOffset = mouse.x - mouseIndex * clampedScale;
+  xScale = clampedScale;
+  priceDirty = volDirty = true;
+}, { passive: false });
+
+// Drag pan
+priceCanvas.addEventListener('mousedown', function(e) {
+  isDragging = true;
+  startMouseX = e.clientX;
+  startOffsetX = xOffset;
+});
+priceCanvas.addEventListener('mousemove', function(e) {
+  if (!isDragging) return;
+  const dx = e.clientX - startMouseX;
+  xOffset = startOffsetX + dx;
+  // clamp panning so we don't go beyond data
+  const { left, right } = getVisibleIndexRange();
+  if (left < 0) xOffset = -0 * xScale; // left bound
+  if (right > totalDays - 1) {
+    xOffset = (totalDays - 1 - (priceCanvas.clientWidth - 2*padding)/xScale) * -1;
+  }
+  priceDirty = volDirty = true;
+});
+window.addEventListener('mouseup', function() { isDragging = false; });
+window.addEventListener('mouseleave', function() { isDragging = false; });
+
+// Tooltip on mousemove over price canvas
+priceCanvas.addEventListener('mousemove', function(e) {
+  const mouse = getMousePos(e, priceCanvas);
+  const index = Math.round(xToIndex(mouse.x));
+  if (index < 0) index = 0;
+  if (index >= totalDays) index = totalDays - 1;
+  const d = data[index];
+  tooltip.innerHTML = `
+    <strong>${d.dateString}</strong><br>
+    O: ${d.open.toFixed(2)} H: ${d.high.toFixed(2)}<br>
+    L: ${d.low.toFixed(2)} C: ${d.close.toFixed(2)}<br>
+    V: ${(d.volume/1000).toFixed(0)}k
+  `;
+  tooltip.style.left = (e.pageX) + 'px';
+  tooltip.style.top  = (e.pageY) + 'px';
+  tooltip.style.display = 'block';
+});
+priceCanvas.addEventListener('mouseleave', function() { tooltip.style.display = 'none'; });
+
+</script>
+</body>
+</html>
+</html>

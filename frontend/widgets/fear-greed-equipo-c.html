@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fear &amp; Greed Widget — Equipo C</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+    background: #0a0e17;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.widget-container {
+    background: #0e1520;
+    border-radius: 16px;
+    padding: 22px 20px 18px;
+    width: 320px;
+    max-width: 100%;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+    border: 1px solid #1a2332;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+    user-select: none;
+}
+
+.widget-container:hover {
+    box-shadow: 0 6px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.widget-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #6b7a8f;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.widget-header .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #1a2332, #2a3a4f);
+    border-radius: 4px;
+    font-size: 10px;
+    color: #a0b0c0;
+    border: 1px solid #2a3a4f;
+}
+
+.widget-header .team-name {
+    color: #8899aa;
+}
+
+/* --- Thermometer Bar --- */
+.thermometer-section {
+    position: relative;
+    padding-top: 6px;
+    margin-bottom: 6px;
+}
+
+.score-number {
+    text-align: center;
+    font-size: 48px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 2px;
+    transition: color 0.5s ease;
+    letter-spacing: -1px;
+}
+
+.score-number.error {
+    color: #555;
+}
+
+.score-label {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    transition: color 0.5s ease;
+    letter-spacing: 0.3px;
+}
+
+.score-label.error {
+    color: #777;
+}
+
+.bar-wrapper {
+    position: relative;
+    height: 40px;
+    margin: 0 6px 14px;
+}
+
+.thermobar {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    border-radius: 10px;
+    background: linear-gradient(to right,
+        #ff3333 0%,
+        #ff8833 25%,
+        #ffdd33 50%,
+        #66dd66 75%,
+        #33cc33 100%
+    );
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.thermobar-track {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    right: 0;
+    height: 20px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid #1a2332;
+}
+
+/* Pointer / marker — triangular */
+.pointer {
+    position: absolute;
+    top: -6px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 12px solid #e0e0e0;
+    transform: translateX(-50%);
+    transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    z-index: 2;
+}
+
+/* Tick marks */
+.tick-marks {
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 0;
+    font-size: 9px;
+    color: #4a5a6f;
+    font-weight: 500;
+}
+
+.tick-marks span {
+    position: relative;
+    text-align: center;
+    width: 0;
+    overflow: visible;
+    white-space: nowrap;
+}
+
+.tick-marks span::before {
+    content: '';
+    position: absolute;
+    top: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 6px;
+    background: #2a3a4f;
+}
+
+/* --- Accordion (detalles expandibles) --- */
+.accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    opacity: 0;
+}
+
+.accordion-body.open {
+    max-height: 500px;
+    opacity: 1;
+}
+
+.accordion-inner {
+    padding-top: 12px;
+    border-top: 1px solid #1a2332;
+}
+
+.factor-group {
+    margin-bottom: 10px;
+}
+
+.factor-group:last-child {
+    margin-bottom: 0;
+}
+
+.factor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b0c0d0;
+}
+
+.factor-header .factor-name {
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.factor-header .factor-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.factor-header .factor-value {
+    color: #e0e0e0;
+}
+
+.factor-header .factor-score {
+    background: rgba(255,255,255,0.06);
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.factor-header .factor-peso {
+    color: #4a5a6f;
+    font-size: 10px;
+}
+
+.factor-subitems {
+    padding: 4px 8px 2px 20px;
+}
+
+.subitem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 11px;
+    color: #8a9aa8;
+}
+
+.subitem .subitem-name {
+    font-weight: 400;
+}
+
+.subitem .subitem-values {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.subitem .subitem-value {
+    color: #b0c0d0;
+}
+
+.subitem .subitem-score {
+    background: rgba(255,255,255,0.04);
+    padding: 0 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #a0b0c0;
+}
+
+.sentiment-details {
+    padding: 4px 8px 2px 20px;
+    font-size: 11px;
+    color: #8a9aa8;
+}
+
+.sentiment-details .sentiment-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+}
+
+.footer-note {
+    text-align: center;
+    font-size: 9px;
+    color: #3a4a5f;
+    margin-top: 10px;
+    letter-spacing: 0.2px;
+}
+
+/* Loading pulse */
+@keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+.loading .score-number,
+.loading .score-label {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Error state */
+.error-state .score-number {
+    color: #555;
+}
+
+.error-state .score-label {
+    color: #555;
+}
+
+/* Transition helper for smooth refreshes */
+.widget-container.refreshing .score-number,
+.widget-container.refreshing .score-label,
+.widget-container.refreshing .pointer {
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+</style>
+</head>
+<body>
+
+<div class="widget-container" id="widget">
+    <!-- Header -->
+    <div class="widget-header">
+        <span class="badge">C</span>
+        <span class="team-name">Equipo C · DeepSeek V4 Flash</span>
+    </div>
+
+    <!-- Score -->
+    <div class="thermometer-section">
+        <div class="score-number" id="scoreDisplay">--</div>
+        <div class="score-label" id="actionDisplay">Sin datos</div>
+
+        <!-- Bar -->
+        <div class="bar-wrapper">
+            <div class="thermobar-track"></div>
+            <div class="thermobar"></div>
+            <div class="pointer" id="pointer" style="left: 50%;"></div>
+            <div class="tick-marks">
+                <span>0</span>
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accordion -->
+    <div class="accordion-body" id="accordionBody">
+        <div class="accordion-inner" id="accordionContent">
+            <!-- Filled dynamically -->
+        </div>
+    </div>
+
+    <div class="footer-note" id="footerNote">&#x1f504; Actualizando cada 60s</div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const WIDGET = document.getElementById('widget');
+    const SCORE_EL = document.getElementById('scoreDisplay');
+    const ACTION_EL = document.getElementById('actionDisplay');
+    const POINTER_EL = document.getElementById('pointer');
+    const ACCORDION_BODY = document.getElementById('accordionBody');
+    const ACCORDION_CONTENT = document.getElementById('accordionContent');
+    const FOOTER = document.getElementById('footerNote');
+
+    let currentData = null;
+    let accordionOpen = false;
+    let refreshInterval = null;
+
+    // --- Helper: get score-based color ---
+    function getScoreColor(score) {
+        if (score < 25) return '#ff3333';
+        if (score < 45) return '#ff8833';
+        if (score < 55) return '#ffdd33';
+        if (score < 75) return '#66dd66';
+        return '#33cc33';
+    }
+
+    function getActionInfo(score) {
+        if (score === null || score === undefined) return { label: 'Sin datos', emoji: '⚪' };
+        if (score < 20) return { label: 'Miedo Extremo', emoji: '🔴' };
+        if (score < 45) return { label: 'Miedo', emoji: '🟠' };
+        if (score < 55) return { label: 'Neutral', emoji: '🟡' };
+        if (score < 75) return { label: 'Ganancia', emoji: '🟢' };
+        return { label: 'Euforia Extrema', emoji: '🟣' };
+    }
+
+    // --- Build factor items HTML ---
+    function buildFactorsHTML(data) {
+        if (!data || !data.factores) {
+            return '<div style="color:#4a5a6f;font-size:11px;text-align:center;padding:8px;">Sin datos de factores</div>';
+        }
+
+        const f = data.factores;
+        let html = '';
+
+        // VIX
+        if (f.vix) {
+            const vixColor = getScoreColor(f.vix.score);
+            html += '<div class="factor-group">';
+            html += '<div class="factor-header">';
+            html += '<span class="factor-name">📊 VIX</span>';
+            html += '<span class="factor-stats">';
+            html += '<span class="factor-value">' + (f.vix.value != null ? f.vix.value : '--') + '</span>';
+            html += '<span class="factor-score" style="color:' + vixColor + '">' + (f.vix.score != null ? f.vix.score : '--') + '</span>';
+            html += '<span class="factor-peso">' + (f.vix.peso || '') + '</span>';
+            html += '</span></div></div>';
+        }
+
+        // Macro
+        if (f.macro) {
+            const macroColor = getScoreColor(f.macro.score);
+            html += '<div class="factor-group">';
+            html += '<div class="factor-header">';
+            html += '<span class="factor-name">🏛️ Macro</span>';
+            html += '<span class="factor-stats">';
+            html += '<span class="factor-score" style="color:' + macroColor + '">' + (f.macro.score != null ? f.macro.score : '--') + '</span>';
+            html += '<span class="factor-peso">' + (f.macro.peso || '') + '</span>';
+            html += '</span></div>';
+
+            if (f.macro.detalles) {
+                html += '<div class="factor-subitems">';
+                const det = f.macro.detalles;
+                if (det.unemployment) {
+                    html += '<div class="subitem">';
+                    html += '<span class="subitem-name">Desempleo</span>';
+                    html += '<span class="subitem-values">';
+                    html += '<span class="subitem-value">' + (det.unemployment.value != null ? det.unemployment.value : '--') + '%</span>';
+                    html += '<span class="subitem-score" style="color:' + getScoreColor(det.unemployment.score) + '">' + (det.unemployment.score != null ? det.unemployment.score : '--') + '</span>';
+                    html += '</span></div>';
+                }
+                if (det.inflation) {
+                    html += '<div class="subitem">';
+                    html += '<span class="subitem-name">Inflación</span>';
+                    html += '<span class="subitem-values">';
+                    html += '<span class="subitem-value">' + (det.inflation.value != null ? det.inflation.value : '--') + '%</span>';
+                    html += '<span class="subitem-score" style="color:' + getScoreColor(det.inflation.score) + '">' + (det.inflation.score != null ? det.inflation.score : '--') + '</span>';
+                    html += '</span></div>';
+                }
+                if (det.output_gap) {
+                    html += '<div class="subitem">';
+                    html += '<span class="subitem-name">Output Gap</span>';
+                    html += '<span class="subitem-values">';
+                    html += '<span class="subitem-value">' + (det.output_gap.value != null ? det.output_gap.value : '--') + '%</span>';
+                    html += '<span class="subitem-score" style="color:' + getScoreColor(det.output_gap.score) + '">' + (det.output_gap.score != null ? det.output_gap.score : '--') + '</span>';
+                    html += '</span></div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        // Sentimiento
+        if (f.sentimiento) {
+            const sentColor = getScoreColor(f.sentimiento.score);
+            html += '<div class="factor-group">';
+            html += '<div class="factor-header">';
+            html += '<span class="factor-name">💬 Sentimiento</span>';
+            html += '<span class="factor-stats">';
+            html += '<span class="factor-score" style="color:' + sentColor + '">' + (f.sentimiento.score != null ? f.sentimiento.score : '--') + '</span>';
+            html += '<span class="factor-peso">' + (f.sentimiento.peso || '') + '</span>';
+            html += '</span></div>';
+
+            if (f.sentimiento.detalles) {
+                const sd = f.sentimiento.detalles;
+                html += '<div class="sentiment-details">';
+                if (sd.sentiment_pct != null) {
+                    html += '<div class="sentiment-row"><span>Sentimiento +</span><span>' + sd.sentiment_pct + '%</span></div>';
+                }
+                if (sd.total_articles != null) {
+                    html += '<div class="sentiment-row"><span>Artículos totales</span><span>' + sd.total_articles + '</span></div>';
+                }
+                if (sd.total_positive != null) {
+                    html += '<div class="sentiment-row"><span>Positivos</span><span>' + sd.total_positive + '</span></div>';
+                }
+                if (sd.total_negative != null) {
+                    html += '<div class="sentiment-row"><span>Negativos</span><span>' + sd.total_negative + '</span></div>';
+                }
+                if (sd.feeds) {
+                    const feedNames = Object.keys(sd.feeds);
+                    for (let i = 0; i < feedNames.length; i++) {
+                        const feed = sd.feeds[feedNames[i]];
+                        if (feed && feed.articles > 0) {
+                            html += '<div class="sentiment-row" style="font-size:10px;color:#5a6a7f;padding-left:8px;">';
+                            html += '<span>' + feedNames[i].replace(/^www\./, '').replace(/\.com$/, '') + '</span>';
+                            html += '<span>' + (feed.positive || 0) + '👍 / ' + (feed.negative || 0) + '👎</span>';
+                            html += '</div>';
+                        }
+                    }
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        return html;
+    }
+
+    // --- Update the UI with data ---
+    function updateUI(data) {
+        // Remove loading/error classes
+        WIDGET.classList.remove('loading', 'error-state');
+
+        if (!data || data.score === null || data.score === undefined) {
+            SCORE_EL.textContent = '--';
+            ACTION_EL.textContent = 'Sin datos';
+            POINTER_EL.style.left = '50%';
+            SCORE_EL.style.color = '#555';
+            ACTION_EL.style.color = '#555';
+            return;
+        }
+
+        const score = data.score;
+        const actionInfo = getActionInfo(score);
+        const color = getScoreColor(score);
+
+        // Score number
+        SCORE_EL.textContent = score;
+        SCORE_EL.style.color = color;
+
+        // Action label
+        const actionLabel = data.action || actionInfo.label;
+        const actionEmoji = data.action_emoji || actionInfo.emoji;
+        ACTION_EL.textContent = actionEmoji + ' ' + actionLabel;
+        ACTION_EL.style.color = color;
+
+        // Pointer position: map score 0-100 to left 0%-100%
+        // The bar has some margin via tick-marks, so we adjust pointer
+        // Left edge of usable bar: ~3% (where first tick is), right edge: ~97%
+        const pct = 3 + (score / 100) * 94;
+        POINTER_EL.style.left = pct + '%';
+
+        // Update accordion content if open
+        if (accordionOpen) {
+            ACCORDION_CONTENT.innerHTML = buildFactorsHTML(data);
+        }
+
+        currentData = data;
+    }
+
+    // --- Show error state ---
+    function showError() {
+        WIDGET.classList.remove('loading');
+        WIDGET.classList.add('error-state');
+        SCORE_EL.textContent = '--';
+        SCORE_EL.style.color = '#555';
+        ACTION_EL.textContent = 'Sin datos';
+        ACTION_EL.style.color = '#555';
+        POINTER_EL.style.left = '50%';
+    }
+
+    // --- Fetch data ---
+    function fetchData() {
+        fetch('/api/v1/fear-greed')
+            .then(function(response) {
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                return response.json();
+            })
+            .then(function(data) {
+                updateUI(data);
+                // Update accordion if it's open
+                if (accordionOpen) {
+                    ACCORDION_CONTENT.innerHTML = buildFactorsHTML(data);
+                }
+            })
+            .catch(function(err) {
+                console.warn('Fear & Greed fetch error:', err);
+                showError();
+            });
+    }
+
+    // --- Toggle accordion ---
+    function toggleAccordion() {
+        accordionOpen = !accordionOpen;
+        if (accordionOpen) {
+            ACCORDION_BODY.classList.add('open');
+            if (currentData) {
+                ACCORDION_CONTENT.innerHTML = buildFactorsHTML(currentData);
+            } else {
+                ACCORDION_CONTENT.innerHTML = '<div style="color:#4a5a6f;font-size:11px;text-align:center;padding:8px;">Cargando...</div>';
+            }
+        } else {
+            ACCORDION_BODY.classList.remove('open');
+        }
+    }
+
+    // --- Initialize ---
+    function init() {
+        // Click to expand/collapse accordion
+        WIDGET.addEventListener('click', toggleAccordion);
+
+        // Initial fetch
+        WIDGET.classList.add('loading');
+        fetchData();
+
+        // Auto-refresh every 60s
+        refreshInterval = setInterval(fetchData, 60000);
+    }
+
+    // Start
+    init();
+})();
+</script>
+</body></html>

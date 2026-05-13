@@ -1,0 +1,58 @@
+{
+  "recarga_total": 5.0,
+  "projects": {
+    "pegaton": {
+      "name": "PEGATON INVEST INTELLIGENCE",
+      "budget_limit": 3.0,
+      "alert_threshold": 0.8,
+      "spent": 0.0992,
+      "tasks": [
+        {
+          "date": "2026-05-01",
+          "time": "23:24",
+          "model": "deepseek-v4-flash",
+          "tokens_in": 50000,
+          "tokens_out": 2000,
+          "cost": 0.00756,
+          "description": "Prueba sistema tracking"
+        },
+        {
+          "date": "2026-05-01",
+          "time": "23:24",
+          "model": "deepseek-v4-flash",
+          "tokens_in": 50000,
+          "tokens_out": 2000,
+          "cost": 0.00756,
+          "description": "Setup sistema tracking"
+        },
+        {
+          "date": "2026-05-01",
+          "time": "23:32",
+          "model": "deepseek-v4-flash",
+          "tokens_in": 500000,
+          "tokens_out": 50000,
+          "cost": 0.084,
+          "description": "Sesi\u00f3n completa: MVP Pegaton (backen, frontend, 5 cron jobs,"
+        }
+      ]
+    }
+  },
+  "budgets": {
+    "daily": {
+      "limit": 1.0,
+      "spent": 0.0992,
+      "date": "2026-05-01"
+    },
+    "weekly": {
+      "limit": 3.0,
+      "spent": 0.0992,
+      "week_start": "2026-05-01"
+    },
+    "monthly": {
+      "limit": 5.0,
+      "spent": 0.0992,
+      "month": "2026-05"
+    }
+  },
+  "created": "2026-05-01"
+}

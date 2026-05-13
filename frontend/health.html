@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON - Salud del Servidor</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  .metric-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+  .metric { background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center; }
+  .metric .val { font-size:28px;font-weight:700; }
+  .metric .lbl { font-size:11px;color:var(--text-dim);text-transform:uppercase;margin-top:2px; }
+  .bar { height:6px;background:#0d1525;border-radius:3px;margin-top:8px;overflow:hidden; }
+  .bar-fill { height:100%;border-radius:3px;transition:width 0.5s; }
+  .services { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px; }
+  .svc { background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px; }
+  .svc .name { font-size:13px;font-weight:600; }
+  .svc .status { font-size:11px; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Panel</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval">🏆 Eval</a>
+  <a href="/processes">⚙️ Procesos</a>
+  <a href="/health" class="active">🩺 Salud</a>
+  <a href="/agents">🤖 Agentes</a>
+  <a href="/projects">📁 Proyectos</a>
+</nav>
+<div class="container">
+  <div class="section-title">🩺 SALUD DEL SERVIDOR</div>
+  <div class="metric-grid" id="metrics"><div class="loading">Cargando...</div></div>
+  
+  <div class="card" style="margin-top:16px;">
+    <div class="section-title">🗄️ Base de Datos</div>
+    <div id="dbStats"></div>
+  </div>
+  
+  <div class="card" style="margin-top:12px;">
+    <div class="section-title">🔌 Servicios</div>
+    <div class="services" id="services"></div>
+  </div>
+  <div class="footer">Actualizado cada 10s · Servidor 8GB RAM · 4 vCPU</div>
+</div>
+<script>
+async function load(){
+  try{
+    const h=await(await fetch('/api/v1/system/health')).json();
+    const db=await(await fetch('/api/v1/system/database-stats')).json();
+    
+    const metrics=[
+      {v:`${h.cpu?.percent||'?'}%`,l:'CPU',pct:h.cpu?.percent||0,c:'#00e676'},
+      {v:`${h.ram?.used_gb||'?'}/${h.ram?.total_gb||'?'}GB`,l:'RAM',pct:h.ram?.percent||0,c:'#ffc107'},
+      {v:`${h.disk?.used_gb||'?'}/${h.disk?.total_gb||'?'}GB`,l:'Disco',pct:h.disk?.percent||0,c:'#ff6d00'},
+      {v:h.uptime_seconds?`${Math.floor(h.uptime_seconds/86400)}d ${Math.floor((h.uptime_seconds%86400)/3600)}h`:'--',l:'Uptime',pct:0,c:'#00d4ff'},
+    ];
+    document.getElementById('metrics').innerHTML=metrics.map(m=>`
+      <div class="metric"><div class="val">${m.v}</div><div class="lbl">${m.l}</div>
+      ${m.pct?`<div class="bar"><div class="bar-fill" style="width:${m.pct}%;background:${m.c}"></div></div>`:''}</div>
+    `).join('');
+    
+    let table='<table><tr><th>Tabla</th><th>Filas</th><th>Último registro</th></tr>';
+    for(const[t,s]of Object.entries(db)){
+      table+=`<tr><td>${t}</td><td><strong>${s.rows?.toLocaleString()||0}</strong></td><td>${s.latest_date||'--'}</td></tr>`;
+    }
+    document.getElementById('dbStats').innerHTML=table;
+    
+    const svcs=[
+      {n:'🌐 API Server',s:'🟢',d:'Puerto 8000'},
+      {n:'🗄️ Base SQLite',s:db.macro_indicators?.rows?'🟢':'🔴',d:`${(db.macro_indicators?.rows||0)+(db.precios_ohlcv?.rows||0)} registros`},
+      {n:'⏰ Cron Jobs',s:'🟢',d:'3 jobs activos'},
+      {n:'📡 FRED API',s:'🟢',d:'Macro data OK'},
+    ];
+    document.getElementById('services').innerHTML=svcs.map(s=>`
+      <div class="svc"><div class="name">${s.n}</div><div class="status">${s.s} ${s.d}</div></div>
+    `).join('');
+  }catch(e){document.getElementById('metrics').innerHTML='<div class="loading">Error de conexión</div>';}
+}
+load(); setInterval(load, 10000);
+</script>
+</body>
+</html>

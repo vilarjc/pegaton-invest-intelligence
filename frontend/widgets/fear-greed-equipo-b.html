@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fear &amp; Greed Widget — Equipo B</title>
+<style>
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+html, body {
+    height: 100%;
+}
+body {
+    background: #0a0e17;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+.widget-container {
+    background: #0a0e17;
+    border-radius: 14px;
+    padding: 20px;
+    width: 330px;
+    max-width: 100%;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+    border: 1px solid #151e2a;
+    position: relative;
+    overflow: hidden;
+}
+/* Subtle top glow accent */
+.widget-container::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 120px;
+    background: radial-gradient(ellipse, rgba(175,82,222,0.06) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* === RING GAUGE === */
+.gauge-wrapper {
+    position: relative;
+    width: 230px;
+    height: 230px;
+    margin: 0 auto 12px;
+}
+canvas#ringGauge {
+    display: block;
+    width: 230px;
+    height: 230px;
+}
+.ring-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 2;
+}
+.ring-score {
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -2px;
+    transition: color 0.6s ease;
+    text-shadow: 0 0 30px rgba(175,82,222,0.15);
+}
+.ring-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 4px;
+    letter-spacing: 0.3px;
+    transition: color 0.6s ease;
+    opacity: 0.9;
+}
+
+/* === ACTION BADGE === */
+.action-badge {
+    text-align: center;
+    padding: 6px 0 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s;
+}
+.action-badge:hover {
+    opacity: 0.8;
+}
+.action-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.action-emoji {
+    font-size: 26px;
+    line-height: 1;
+}
+.action-text {
+    font-size: 18px;
+    font-weight: 700;
+    transition: color 0.6s ease;
+}
+.expand-hint {
+    font-size: 11px;
+    color: #3a4a5e;
+    margin-top: 3px;
+    letter-spacing: 0.3px;
+}
+
+/* === BREAKDOWN PANEL === */
+.breakdown-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 0;
+}
+.breakdown-panel.open {
+    max-height: 520px;
+    margin-top: 14px;
+}
+.breakdown-inner {
+    background: #0f1824;
+    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #1a2332;
+}
+.breakdown-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #5a6a7e;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+}
+.factor-row {
+    margin-bottom: 10px;
+}
+.factor-row:last-child {
+    margin-bottom: 0;
+}
+.factor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+}
+.factor-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #9aabbe;
+}
+.factor-weight {
+    font-size: 10px;
+    color: #4a5a6e;
+    margin-left: 4px;
+}
+.factor-score-val {
+    font-size: 12px;
+    font-weight: 700;
+}
+.bar-track {
+    height: 5px;
+    background: #1a2332;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+}
+.bar-detail {
+    font-size: 10px;
+    color: #4a5a6e;
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+/* Macro sub-factors */
+.macro-sub {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #0d1520;
+    border-radius: 8px;
+    border: 1px solid #1a2332;
+}
+.macro-sub-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: #4a5a6e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.macro-sub-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    font-size: 11px;
+}
+.macro-sub-name {
+    color: #8a9aae;
+}
+.macro-sub-value {
+    color: #5a6a7e;
+}
+.macro-sub-score {
+    font-weight: 700;
+    margin-left: 6px;
+}
+
+/* Sentimiento details */
+.sentimiento-details {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #0d1520;
+    border-radius: 8px;
+    border: 1px solid #1a2332;
+    font-size: 11px;
+    color: #7a8a9e;
+}
+.sentimiento-details span {
+    margin-right: 12px;
+}
+.sentimiento-details strong {
+    color: #b0c0d0;
+}
+
+/* === FOOTER === */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 10px;
+}
+.timestamp-display {
+    color: #3a4a5e;
+}
+.cache-badge {
+    font-weight: 500;
+}
+.cache-badge.fresh {
+    color: #34c759;
+}
+.cache-badge.cached {
+    color: #8a8a8a;
+    font-style: italic;
+}
+
+/* === STATES === */
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: #3a4a5e;
+    font-size: 13px;
+}
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #1a2332;
+    border-top-color: #af52de;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 12px;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    color: #ff3b30;
+    font-size: 13px;
+}
+.error-state .error-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.hidden {
+    display: none !important;
+}
+</style>
+</head>
+<body>
+
+<div class="widget-container" id="widgetRoot">
+    <!-- Loading State -->
+    <div class="loading-state" id="loadingState">
+        <div class="loading-spinner"></div>
+        <div>Cargando datos...</div>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state hidden" id="errorState">
+        <div class="error-icon">⚠️</div>
+        <div>Error al cargar datos</div>
+        <div style="font-size:11px;color:#5a3a3a;margin-top:4px">Reintentando...</div>
+    </div>
+
+    <!-- Main Content (hidden during loading) -->
+    <div id="mainContent" style="display:none">
+        <!-- Ring Gauge -->
+        <div class="gauge-wrapper">
+            <canvas id="ringGauge" width="460" height="460"></canvas>
+            <div class="ring-center">
+                <div class="ring-score" id="ringScore">--</div>
+                <div class="ring-label" id="ringLabel">Cargando...</div>
+            </div>
+        </div>
+
+        <!-- Action Badge (click to expand) -->
+        <div class="action-badge" id="actionBadge" onclick="toggleBreakdown()">
+            <div class="action-line">
+                <span class="action-emoji" id="actionEmoji">⏳</span>
+                <span class="action-text" id="actionText">Cargando</span>
+            </div>
+            <div class="expand-hint" id="expandHint">▼ Ver desglose</div>
+        </div>
+
+        <!-- Breakdown Panel -->
+        <div class="breakdown-panel" id="breakdownPanel">
+            <div class="breakdown-inner" id="breakdownInner">
+                <div class="breakdown-title">Desglose de Factores</div>
+                <div id="factorBars"></div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <span class="timestamp-display" id="timestampDisplay">--</span>
+            <span class="cache-badge" id="cacheBadge"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const canvas = document.getElementById('ringGauge');
+    const ctx = canvas.getContext('2d');
+    const W = 460, H = 460;
+    canvas.width = W;
+    canvas.height = H;
+
+    const cx = W / 2;
+    const cy = H / 2;
+    const outerR = 200;
+    const ringWidth = 32;
+    const innerR = outerR - ringWidth;
+
+    // Gauge arc goes from 135° (bottom-left) to 405° (bottom-right) — 270° sweep
+    const startAngle = Math.PI * 0.75;     // 135°
+    const endAngle = Math.PI * 2.25;       // 405°
+    const range = endAngle - startAngle;   // 270°
+
+    let currentScore = 50;
+    let targetScore = 50;
+    let currentDisplayScore = 50;
+    let animFrame = null;
+    let dataCache = null;
+
+    function getScoreColor(score) {
+        if (score <= 24) return '#ff3b30';
+        if (score <= 44) return '#ff9500';
+        if (score <= 54) return '#ffcc02';
+        if (score <= 74) return '#34c759';
+        return '#af52de';
+    }
+
+    function getActionData(score) {
+        if (score <= 24) return { label: 'Miedo Extremo', emoji: '🔴', color: '#ff3b30' };
+        if (score <= 44) return { label: 'Miedo', emoji: '🟠', color: '#ff9500' };
+        if (score <= 54) return { label: 'Neutral', emoji: '🟡', color: '#ffcc02' };
+        if (score <= 74) return { label: 'Ganancia', emoji: '🟢', color: '#34c759' };
+        return { label: 'Euforia Extrema', emoji: '🟣', color: '#af52de' };
+    }
+
+    function lerpColor(c1, c2, t) {
+        const r1 = parseInt(c1.slice(1,3), 16);
+        const g1 = parseInt(c1.slice(3,5), 16);
+        const b1 = parseInt(c1.slice(5,7), 16);
+        const r2 = parseInt(c2.slice(1,3), 16);
+        const g2 = parseInt(c2.slice(3,5), 16);
+        const b2 = parseInt(c2.slice(5,7), 16);
+        const r = Math.round(r1 + (r2 - r1) * t);
+        const g = Math.round(g1 + (g2 - g1) * t);
+        const b = Math.round(b1 + (b2 - b1) * t);
+        return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+    }
+
+    function getGradientColorAt(score) {
+        // Smooth gradient across the full range
+        if (score <= 24) return lerpColor('#ff3b30', '#ff3b30', 1);
+        if (score <= 44) return lerpColor('#ff3b30', '#ff9500', (score - 25) / 19);
+        if (score <= 54) return lerpColor('#ff9500', '#ffcc02', (score - 45) / 9);
+        if (score <= 74) return lerpColor('#ffcc02', '#34c759', (score - 55) / 19);
+        return lerpColor('#34c759', '#af52de', (score - 75) / 25);
+    }
+
+    function drawRing(score) {
+        ctx.clearRect(0, 0, W, H);
+
+        const progress = Math.max(0, Math.min(1, score / 100));
+        const fillAngle = startAngle + progress * range;
+        const color = getScoreColor(score);
+
+        // Draw glow behind the ring
+        const glowAngle = fillAngle;
+        ctx.save();
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, startAngle, glowAngle);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = ringWidth;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        ctx.restore();
+
+        // Draw the dark track ring (background)
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, startAngle, endAngle);
+        ctx.strokeStyle = '#151e2a';
+        ctx.lineWidth = ringWidth;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Draw the colored active arc with gradient segments for smooth transition
+        if (progress > 0) {
+            const segments = 120;
+            for (let i = 0; i < segments; i++) {
+                const t = i / segments;
+                const segScore = t * score;
+                const segAngle = startAngle + t * range * progress;
+                const segColor = getGradientColorAt(segScore);
+
+                // Small segments to build the gradient arc
+                const segStart = startAngle + (i / segments) * range * progress;
+                const segEnd = startAngle + ((i + 1) / segments) * range * progress;
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, outerR, segStart, segEnd);
+                ctx.strokeStyle = segColor;
+                ctx.lineWidth = ringWidth;
+                ctx.lineCap = 'butt';
+                ctx.stroke();
+            }
+        }
+
+        // Draw thin inner ring for definition
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR + 2, startAngle, endAngle);
+        ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Draw endcap circles at both ends
+        // Start cap
+        const capStartX = cx + Math.cos(startAngle) * outerR;
+        const capStartY = cy + Math.sin(startAngle) * outerR;
+        ctx.beginPath();
+        ctx.arc(capStartX, capStartY, ringWidth / 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#151e2a';
+        ctx.fill();
+
+        // End cap (only if there's progress)
+        if (progress > 0.01) {
+            const capEndX = cx + Math.cos(fillAngle) * outerR;
+            const capEndY = cy + Math.sin(fillAngle) * outerR;
+            ctx.beginPath();
+            ctx.arc(capEndX, capEndY, ringWidth / 2, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            // Glow on end cap
+            ctx.save();
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(capEndX, capEndY, ringWidth / 2 - 2, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Draw tick marks along the arc for reference
+        const tickCount = 10;
+        for (let i = 0; i <= tickCount; i++) {
+            const t = i / tickCount;
+            const tickAngle = startAngle + t * range;
+            const tickScore = t * 100;
+            const tickColor = getScoreColor(tickScore);
+            const isActive = t <= progress;
+
+            const innerRadius = outerR + 5;
+            const outerRadius = outerR + 12;
+
+            const x1 = cx + Math.cos(tickAngle) * innerRadius;
+            const y1 = cy + Math.sin(tickAngle) * innerRadius;
+            const x2 = cx + Math.cos(tickAngle) * outerRadius;
+            const y2 = cy + Math.sin(tickAngle) * outerRadius;
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = isActive ? tickColor : '#1a2332';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+
+    function animateScore() {
+        if (animFrame) {
+            cancelAnimationFrame(animFrame);
+            animFrame = null;
+        }
+
+        const startScore = currentScore;
+        const startDisplay = currentDisplayScore;
+        const startTime = performance.now();
+        const duration = 800; // ms
+
+        function step(now) {
+            const elapsed = now - startTime;
+            const t = Math.min(1, elapsed / duration);
+            // Ease-out cubic
+            const ease = 1 - Math.pow(1 - t, 3);
+
+            const current = startScore + (targetScore - startScore) * ease;
+            currentScore = current;
+            currentDisplayScore = startDisplay + (targetScore - startDisplay) * ease;
+            drawRing(currentScore);
+
+            // Update center text with animated count
+            const displayVal = Math.round(currentDisplayScore);
+            const color = getScoreColor(currentDisplayScore);
+            document.getElementById('ringScore').textContent = displayVal;
+            document.getElementById('ringScore').style.color = color;
+
+            if (t < 1) {
+                animFrame = requestAnimationFrame(step);
+            } else {
+                currentScore = targetScore;
+                currentDisplayScore = targetScore;
+                drawRing(targetScore);
+                document.getElementById('ringScore').textContent = Math.round(targetScore);
+                document.getElementById('ringScore').style.color = getScoreColor(targetScore);
+                animFrame = null;
+            }
+        }
+        animFrame = requestAnimationFrame(step);
+    }
+
+    function updateUI(data) {
+        const score = data.score;
+        targetScore = score;
+        animateScore();
+
+        const action = getActionData(score);
+
+        document.getElementById('ringLabel').textContent = action.label;
+        document.getElementById('ringLabel').style.color = action.color;
+        document.getElementById('actionText').textContent = action.label;
+        document.getElementById('actionText').style.color = action.color;
+        document.getElementById('actionEmoji').textContent = action.emoji;
+
+        // Timestamp
+        if (data.timestamp) {
+            const dt = new Date(data.timestamp);
+            const timeStr = dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = dt.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+            document.getElementById('timestampDisplay').textContent = dateStr + ' ' + timeStr;
+        }
+
+        // Cache badge
+        const badge = document.getElementById('cacheBadge');
+        if (data.cacheado) {
+            badge.textContent = '📦 cache';
+            badge.className = 'cache-badge cached';
+        } else {
+            badge.textContent = '🔄 fresh';
+            badge.className = 'cache-badge fresh';
+        }
+
+        // Factor breakdown bars
+        const factores = data.factores;
+        if (factores) {
+            buildBreakdown(factores, data);
+        }
+    }
+
+    function buildBreakdown(factores, data) {
+        const container = document.getElementById('factorBars');
+        container.innerHTML = '';
+
+        const items = [
+            {
+                name: 'VIX',
+                score: factores.vix?.score ?? 50,
+                weight: '40%',
+                detail: factores.vix?.value != null ? 'VIX: ' + factores.vix.value.toFixed(1) : ''
+            },
+            {
+                name: 'Macro',
+                score: factores.macro?.score ?? 50,
+                weight: '35%',
+                detail: null,
+                isMacro: true,
+                detalles: factores.macro?.detalles
+            },
+            {
+                name: 'Sentimiento',
+                score: factores.sentimiento?.score ?? 50,
+                weight: '25%',
+                detail: null,
+                isSentimiento: true,
+                detalles: factores.sentimiento?.detalles
+            }
+        ];
+
+        items.forEach(function(item) {
+            const row = document.createElement('div');
+            row.className = 'factor-row';
+
+            const header = document.createElement('div');
+            header.className = 'factor-header';
+            header.innerHTML =
+                '<span class="factor-name">' + item.name +
+                '<span class="factor-weight">(' + item.weight + ')</span></span>' +
+                '<span class="factor-score-val" style="color:' + getScoreColor(item.score) + '">' +
+                Math.round(item.score) + '</span>';
+
+            const track = document.createElement('div');
+            track.className = 'bar-track';
+            const fill = document.createElement('div');
+            fill.className = 'bar-fill';
+            fill.style.width = item.score + '%';
+            fill.style.background = getScoreColor(item.score);
+            track.appendChild(fill);
+
+            row.appendChild(header);
+            row.appendChild(track);
+
+            // Macro sub-factors
+            if (item.isMacro && item.detalles) {
+                const md = item.detalles;
+                const sub = document.createElement('div');
+                sub.className = 'macro-sub';
+                sub.innerHTML = '<div class="macro-sub-title">Sub-factores Macro</div>';
+
+                if (md.unemployment != null) {
+                    const r = document.createElement('div');
+                    r.className = 'macro-sub-row';
+                    r.innerHTML = '<span class="macro-sub-name">Desempleo</span>' +
+                        '<span><span class="macro-sub-value">' + md.unemployment.value + '%</span>' +
+                        ' <span class="macro-sub-score" style="color:' + getScoreColor(md.unemployment.score) + '">' +
+                        Math.round(md.unemployment.score) + '</span></span>';
+                    sub.appendChild(r);
+                }
+                if (md.inflation != null) {
+                    const r = document.createElement('div');
+                    r.className = 'macro-sub-row';
+                    r.innerHTML = '<span class="macro-sub-name">Inflación (IPC)</span>' +
+                        '<span><span class="macro-sub-value">' + md.inflation.value.toFixed(1) + '%</span>' +
+                        ' <span class="macro-sub-score" style="color:' + getScoreColor(md.inflation.score) + '">' +
+                        Math.round(md.inflation.score) + '</span></span>';
+                    sub.appendChild(r);
+                }
+                if (md.output_gap != null) {
+                    const r = document.createElement('div');
+                    r.className = 'macro-sub-row';
+                    r.innerHTML = '<span class="macro-sub-name">Output Gap</span>' +
+                        '<span><span class="macro-sub-value">' + md.output_gap.value + '%</span>' +
+                        ' <span class="macro-sub-score" style="color:' + getScoreColor(md.output_gap.score) + '">' +
+                        Math.round(md.output_gap.score) + '</span></span>';
+                    sub.appendChild(r);
+                }
+                row.appendChild(sub);
+            }
+
+            // Sentimiento details
+            if (item.isSentimiento && item.detalles) {
+                const sd = item.detalles;
+                const div = document.createElement('div');
+                div.className = 'sentimiento-details';
+                let html = '';
+                if (sd.total_articles != null) {
+                    html += '<span><strong>' + sd.total_articles + '</strong> artículos</span>';
+                }
+                if (sd.total_positive != null) {
+                    html += '<span>👍 <strong>' + sd.total_positive + '</strong></span>';
+                }
+                if (sd.total_negative != null) {
+                    html += '<span>👎 <strong>' + sd.total_negative + '</strong></span>';
+                }
+                if (sd.sentiment_pct != null) {
+                    html += '<span>Sent. <strong>' + sd.sentiment_pct.toFixed(1) + '%</strong></span>';
+                }
+                div.innerHTML = html;
+                row.appendChild(div);
+            }
+
+            // Simple detail line for VIX
+            if (item.detail && typeof item.detail === 'string') {
+                const detailDiv = document.createElement('div');
+                detailDiv.className = 'bar-detail';
+                detailDiv.textContent = item.detail;
+                row.appendChild(detailDiv);
+            }
+
+            container.appendChild(row);
+        });
+    }
+
+    function showContent() {
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('errorState').classList.add('hidden');
+        document.getElementById('mainContent').style.display = 'block';
+    }
+
+    function showError() {
+        document.getElementById('loadingState').classList.add('hidden');
+        document.getElementById('errorState').classList.remove('hidden');
+        document.getElementById('mainContent').style.display = 'none';
+    }
+
+    // --- Breakdown toggle ---
+    let breakdownOpen = false;
+    window.toggleBreakdown = function() {
+        breakdownOpen = !breakdownOpen;
+        const panel = document.getElementById('breakdownPanel');
+        const hint = document.getElementById('expandHint');
+        panel.classList.toggle('open', breakdownOpen);
+        hint.textContent = breakdownOpen ? '▲ Ocultar desglose' : '▼ Ver desglose';
+    };
+
+    // --- Data fetching ---
+    let fetchCount = 0;
+
+    function fetchData() {
+        fetch('/api/v1/fear-greed')
+            .then(function(r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function(data) {
+                dataCache = data;
+                showContent();
+                updateUI(data);
+            })
+            .catch(function(err) {
+                console.error('Fear&Greed fetch error:', err);
+                if (fetchCount === 0) {
+                    showError();
+                }
+                fetchCount++;
+            });
+    }
+
+    // Initial fetch
+    fetchData();
+
+    // Auto-refresh every 60 seconds
+    setInterval(fetchData, 60000);
+})();
+</script>
+</body></html>

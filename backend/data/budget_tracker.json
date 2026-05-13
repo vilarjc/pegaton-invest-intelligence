@@ -1,0 +1,29 @@
+{
+  "tasks": [
+    {
+      "date": "2026-05-01",
+      "time": "23:12",
+      "level": "complex",
+      "model": "deepseek-v4-flash",
+      "cost": 0.02,
+      "description": "Sesion construccion MVP Pegaton"
+    }
+  ],
+  "budgets": {
+    "daily": {
+      "limit": 1.0,
+      "spent": 0.02,
+      "date": "2026-05-01"
+    },
+    "weekly": {
+      "limit": 5.0,
+      "spent": 0.02,
+      "week_start": "2026-05-01"
+    },
+    "monthly": {
+      "limit": 20.0,
+      "spent": 0.02,
+      "month": "2026-05"
+    }
+  }
+}

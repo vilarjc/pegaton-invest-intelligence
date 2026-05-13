@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>PEGATON - Inversor Inteligente</title>
+<style>
+  :root{--card-bg:#131b2e;--border:#1e2a45;--bg:#0d1525}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a0e17;color:#e6edf5;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;margin:0;padding:12px;overflow-x:hidden}
+  .container{max-width:1400px;margin:0 auto;width:100%}
+  h1{font-size:clamp(18px,4vw,26px);margin:10px 0 2px}
+  .subtitle{color:#8b9bb5;font-size:clamp(11px,2.5vw,13px);margin-bottom:14px}
+
+  nav.navbar{display:flex;gap:4px;background:#0f172a;border-radius:12px;padding:6px 10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  nav.navbar .logo{font-weight:700;font-size:clamp(11px,2.5vw,14px);background:linear-gradient(135deg,#7b2ff7,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-right:auto}
+  nav.navbar a{color:#64748b;text-decoration:none;padding:5px 8px;border-radius:8px;font-size:clamp(10px,2vw,12px);font-weight:500;transition:.15s;white-space:nowrap}
+  nav.navbar a:hover{color:#e2e8f0;background:#1a2332}
+  nav.navbar a.active{color:#e2e8f0;background:#1e293b}
+
+  .system-bar{display:flex;gap:clamp(8px,2vw,20px);flex-wrap:wrap;background:var(--card-bg);border-radius:12px;padding:10px 14px;border:1px solid var(--border);margin-bottom:14px;font-size:clamp(10px,2vw,12px);align-items:center}
+  .system-bar .dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px}
+  .system-bar .dot.green{background:#00e676}
+  .system-bar strong{color:#00d4ff}
+
+  .widget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:12px}
+
+  .widget-container{background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:12px;transition:all 0.2s}
+  .widget-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:6px}
+  .widget-header h3{font-size:clamp(12px,2.5vw,14px);font-weight:600;margin:0;color:#e6edf5}
+  .widget-header .w-by{font-size:clamp(9px,1.8vw,10px);color:#6b7a8f;text-align:right;flex-shrink:0}
+  .widget-body{min-height:60px}
+  .widget-body iframe{width:100%;border:none;display:block;background:transparent}
+
+  .widget-error{padding:20px;text-align:center;color:#ff5252;font-size:13px}
+  .widget-loading{padding:30px;text-align:center;color:#6b7a8f;font-size:13px}
+
+  .empty-state{text-align:center;padding:60px 12px;color:#6b7a8f}
+  .empty-state h2{font-size:clamp(16px,4vw,20px);margin-bottom:6px;color:#8b9bb5}
+  .empty-state p{font-size:clamp(11px,2.5vw,13px);margin-bottom:16px}
+  .empty-state a{color:#7b2ff7;font-weight:600}
+
+  /* Mobile: single column */
+  @media(max-width:480px){
+    body{padding:8px}
+    .widget-grid{grid-template-columns:1fr}
+    .system-bar{flex-direction:column;gap:4px;align-items:flex-start}
+    nav.navbar{gap:2px;padding:4px 6px}
+    nav.navbar a{padding:4px 6px;font-size:10px}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav class="navbar">
+    <span class="logo">⚡ PEGATON</span>
+    <a href="/">🏠 Hub</a>
+    <a href="/inversor" class="active">📊 Inversor</a>
+    <a href="/widget-auditoria">🧪 Auditoría</a>
+    <a href="/widget-evaluator">⭐ Evaluador</a>
+  </nav>
+
+  <h1>📊 Inversor Inteligente</h1>
+  <p class="subtitle">Dashboard modular — solo widgets evaluados y aprobados</p>
+
+  <div class="system-bar" id="systemBar">
+    <span><span class="dot green"></span>Widgets: <strong id="widgetCount">0</strong></span>
+    <span>Última actualización: <strong id="lastUpdate">—</strong></span>
+  </div>
+
+  <div class="widget-grid" id="widgetGrid">
+    <div class="empty-state" id="emptyState">
+      <h2>📭 No hay widgets integrados aún</h2>
+      <p>Los widgets aparecerán aquí cuando los evalúes y actives desde la <a href="/widget-auditoria">🧪 Auditoría</a></p>
+      <p style="font-size:11px;color:#3a4a5f">Cada widget es desarrollado por un equipo: Experto → PM → Programador → Tú evalúas</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function getWidgetHeight(name) {
+  // Known widget heights for proper iframe sizing
+  const heights = {
+    'fear-greed': 420,
+    'macro': 480,
+    'sentimiento': 400,
+  };
+  for (const [key, h] of Object.entries(heights)) {
+    if (name.toLowerCase().includes(key)) return h;
+  }
+  return 380;
+}
+
+function loadDashboard() {
+  fetch('/api/widgets/integrated').then(r=>r.json()).then(widgets => {
+    const grid = document.getElementById('widgetGrid');
+    const empty = document.getElementById('emptyState');
+    document.getElementById('widgetCount').textContent = widgets.length;
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+
+    if (!widgets.length) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    grid.innerHTML = widgets.map(w => `
+      <div class="widget-container" data-widget="${w.id}">
+        <div class="widget-header">
+          <h3>${w.name}</h3>
+          <span class="w-by">${w.expert || ''} · ${w.team_label || ''}</span>
+        </div>
+        <div class="widget-body">
+          <div class="widget-loading" id="load-${w.id}">⚡ Cargando widget...</div>
+          <iframe id="frame-${w.id}" src="/widgets/${w.html_file}" 
+            style="display:none;height:${getWidgetHeight(w.name)}px"
+            onload="document.getElementById('load-${w.id}').style.display='none';this.style.display='block'"
+            sandbox="allow-scripts allow-same-origin">
+          </iframe>
+        </div>
+      </div>
+    `).join('');
+  }).catch(() => {
+    document.getElementById('widgetCount').textContent = 'Error';
+  });
+}
+
+// Auto-refresh every 60s (just refresh data via iframe reload)
+function refreshWidgets() {
+  document.querySelectorAll('.widget-container iframe').forEach(iframe => {
+    iframe.contentWindow.location.reload();
+  });
+  document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+}
+
+loadDashboard();
+setInterval(loadDashboard, 60000);
+</script>
+</body>
+</html>

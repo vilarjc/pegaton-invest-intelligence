@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+.env
+
+# DB files (keep structure, ignore contents for git)
+*.db
+*.db-wal
+*.db-shm
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Crontab backups
+*.crontab.bak

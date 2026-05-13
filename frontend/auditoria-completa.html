@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 Fear & Greed — Auditoría Completa</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0e17; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; padding: 16px; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 2px; }
+  .subtitle { color: #64748b; font-size: 12px; margin-bottom: 16px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 3px; background: #0f172a; border-radius: 10px; padding: 4px; margin-bottom: 12px; }
+  .tab { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; background: transparent; color: #64748b; font-weight: 600; font-size: 13px; transition: .15s; }
+  .tab:hover { color: #e2e8f0; background: #1a2332; }
+  .tab.active { background: #1e293b; color: #e2e8f0; }
+  .tab .badge { font-size: 10px; background: #334155; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Layout */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; }
+  .card-title { padding: 10px 14px; background: #1a2332; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #94a3b8; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 8px; }
+  .card-title .right { margin-left: auto; font-size: 10px; color: #475569; }
+
+  /* Widget */
+  iframe.widget-frame { width: 100%; height: 340px; border: none; display: block; background: #000; }
+
+  /* Code */
+  .code-box { overflow: auto; height: 340px; padding: 10px; font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 10.5px; line-height: 1.45; color: #c9d1d9; white-space: pre; tab-size: 2; background: #0d1117; }
+  .code-box::-webkit-scrollbar { width: 6px; height: 6px; }
+  .code-box::-webkit-scrollbar-track { background: #161b22; }
+  .code-box::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  .code-box .hl-kw { color: #ff7b72; }
+  .code-box .hl-str { color: #a5d6ff; }
+  .code-box .hl-fn { color: #d2a8ff; }
+  .code-box .hl-num { color: #79c0ff; }
+  .code-box .hl-com { color: #8b949e; }
+  .code-box .hl-tag { color: #7ee787; }
+  .code-box .hl-var { color: #ffa657; }
+
+  /* PM Response */
+  .pm-box { max-height: 340px; overflow: auto; padding: 12px 14px; font-size: 13px; line-height: 1.6; color: #c9d1d9; }
+  .pm-box strong { color: #e2e8f0; }
+  .pm-box .section { color: #f0883e; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .3px; margin-top: 12px; display: block; }
+
+  /* Decisions */
+  .decision { background: #1a2332; border-radius: 8px; padding: 10px 12px; margin: 6px 0; border-left: 3px solid #6366f1; }
+  .decision .why { color: #94a3b8; font-size: 12px; margin-top: 3px; }
+  .decision em { color: #475569; font-size: 10px; }
+
+  /* Stats bar */
+  .stats { display: flex; gap: 16px; padding: 8px 14px; background: #161b22; border-top: 1px solid #1e293b; font-size: 10px; color: #8b949e; }
+  .stats span { display: flex; align-items: center; gap: 5px; }
+
+  /* Buttons */
+  .copy-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 2px 10px; border-radius: 4px; cursor: pointer; font-size: 10px; margin-left: auto; }
+  .copy-btn:hover { background: #334155; color: #e2e8f0; }
+
+  /* Prompt collapsed */
+  .prompt-collapse { cursor: pointer; color: #64748b; font-size: 11px; padding: 6px 14px; border-bottom: 1px solid #1e293b; }
+  .prompt-collapse:hover { color: #e2e8f0; }
+  .prompt-full { display: none; padding: 12px 14px; font-size: 12px; line-height: 1.5; color: #94a3b8; background: #0d1117; white-space: pre-wrap; border-bottom: 1px solid #1e293b; }
+  .prompt-full.open { display: block; }
+
+  /* Synthax highlight */
+  pre { margin: 0; }
+
+  .meta-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .tag { font-size: 10px; background: #1e293b; padding: 2px 8px; border-radius: 4px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧪 Fear & Greed — Auditoría Completa</h1>
+  <div class="subtitle">3 equipos · mismo prompt · datos reales (VIX, FRED, RSS) · código + análisis PM</div>
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab active" onclick="switchTeam('a')">🧠 Equipo A <span class="badge">Gemini 2.5 Flash + HY3</span></button>
+    <button class="tab" onclick="switchTeam('b')">💎 Equipo B <span class="badge">Nemotron 3 + Owl Alpha</span></button>
+    <button class="tab" onclick="switchTeam('c')">🔮 Equipo C <span class="badge">DeepSeek V4 Flash ×2</span></button>
+    <button class="tab" onclick="switchTab('news')">📰 Noticias <span class="badge">VADER</span></button>
+  </div>
+
+  <div id="panel-a" class="panel active"></div>
+  <div id="panel-b" class="panel"></div>
+  <div id="panel-c" class="panel"></div>
+  <div id="panel-news" class="panel">
+    <div class="grid-3">
+      <!-- Widget Noticias -->
+      <div class="card">
+        <div class="card-title">📰 Sentimiento de Noticias <span class="right">VADER · 6 fuentes RSS</span></div>
+        <iframe class="widget-frame" src="/widgets/news-sentimiento.html"></iframe>
+        <div class="stats">
+          <span>📄 news-sentimiento.html</span>
+          <span>🔄 <span id="refresh-news">recargar</span></span>
+        </div>
+      </div>
+
+      <!-- Código fuente -->
+      <div class="card">
+        <div class="card-title">📝 Código Fuente <span class="right">news-sentimiento.html</span></div>
+        <div class="code-box" id="code-news">Cargando...</div>
+        <div class="stats">
+          <span>👨‍💻 Hermes Agent (backup)</span>
+          <button class="copy-btn" onclick="copyCode('code-news')">📋 Copiar</button>
+        </div>
+      </div>
+
+      <!-- Decisiones PM -->
+      <div class="card">
+        <div class="card-title">📋 Decisiones PM <span class="right">HU-NEWS-01</span></div>
+        <div class="pm-box">
+          <strong>Spec HU-NEWS-01</strong><br>
+          Gauge circular Canvas con 5 bandas de color (VADER score 0-100).<br>
+          <br><strong>Datos:</strong> score agregado, delta vs snapshot anterior, alertas EXTREME_FEAR/GREED.<br>
+          <strong>Fuentes:</strong> Reuters, CNBC, Google News, MarketWatch, Yahoo Finance, X/Twitter.<br>
+          <strong>Keywords:</strong> extracción por conteo puro (0 LLM tokens), top 10, mínimo 3 apariciones.<br>
+          <strong>Distribución:</strong> clasificación artículos por rango (fear 0-24, neutral 25-74, greed 75-100).<br>
+          <br><em>Nota: retrocompatible — funciona con endpoint actual y con el extendido (HU-NEWS-02).</em>
+        </div>
+        <div class="stats">
+          <span>📊 4 tareas · 4 specs · EP-NEWS (id=8)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de tendencia y alertas -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">📈 Tendencia y Distribución</div>
+      <div style="padding:12px">
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          <div>
+            <span style="font-size:11px;color:#64748b">DELTA vs snapshot anterior</span><br>
+            <span id="news-delta" style="font-size:28px;font-weight:800;color:#4a5a6e">—</span>
+          </div>
+          <div>
+            <span style="font-size:11px;color:#64748b">ALERTA</span><br>
+            <span id="news-alert" style="font-size:14px;font-weight:700;color:#4a5a6e">Sin datos</span>
+          </div>
+          <div>
+            <span style="font-size:11px;color:#64748b">KEYWORDS</span><br>
+            <span id="news-keywords" style="font-size:11px;color:#8b9bb5">Cargando...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TEAMS = {
+  a: {
+    label: 'Gemini 2.5 Flash + Tencent HY3',
+    widget: 'fear-greed-equipo-a.html',
+    pmId: 'pm-gemini',
+    coderName: 'Gemini 2.5 Flash (orquestador) + Tencent HY3 (codificador)',
+    decisions: [
+      { title: 'Stack Gratuito', by: 'Gemini 2.5 Flash', why: 'Priorizó yfinance + FRED + RSS scraping. Coste operativo $0/mes. Rechazó APIs de pago por presupuesto.' },
+      { title: 'Widget Canvas', by: 'Tencent HY3', why: 'Implementó gauge circular con Canvas API. El score VIX está mal calibrado (invertido out_min/out_max en _linear_map).' },
+      { title: 'API Unificada', by: 'PM (Gemini)', why: 'Decidió crear un endpoint central /api/v1/fear-greed sirviendo datos a todos los equipos.' }
+    ]
+  },
+  b: {
+    label: 'Nemotron 3 Super + Owl Alpha',
+    widget: 'fear-greed-equipo-b.html',
+    pmId: 'pm-nemotron',
+    coderName: 'Nemotron 3 (orquestador) + Owl Alpha (codificador)',
+    decisions: [
+      { title: 'Arquitectura Serverless', by: 'Nemotron 3', why: 'Propuso despliegue sin servidor para minimizar costos operativos mensuales.' },
+      { title: 'Widget con meter.js', by: 'Owl Alpha', why: 'Usó librería meter.js para gauge de miedo/codicia con animaciones CSS.' },
+      { title: 'Datos FRED', by: 'Owl Alpha', why: 'Integró directamente datos de FRED para componentes macroeconómicos.' }
+    ]
+  },
+  c: {
+    label: 'DeepSeek V4 Flash ×2',
+    widget: 'fear-greed-equipo-c.html',
+    pmId: 'pm-deepseek-v4-flash',
+    coderName: 'DeepSeek V4 Flash (orquestador + codificador)',
+    decisions: [
+      { title: 'Widget DOM Puro', by: 'DeepSeek V4 Flash', why: 'Evitó Canvas, usó divs con CSS para la barra de miedo/codicia. Más compatible y legible.' },
+      { title: 'Arquitectura Simple', by: 'DeepSeek V4 Flash', why: 'Priorizó simplicidad: una sola página HTML con fetch directo al endpoint.' },
+      { title: 'Fallback Automático', by: 'DeepSeek V4 Flash', why: 'Implementó valores por defecto si algún componente de datos falla.' }
+    ]
+  }
+};
+
+async function loadTeam(id) {
+  const panel = document.getElementById('panel-' + id);
+  const team = TEAMS[id];
+
+  // Load widget code
+  let codeContent = 'Cargando código...';
+  let codeLines = 0, codeChars = 0;
+  try {
+    const r = await fetch('/widgets/' + team.widget);
+    const code = await r.text();
+    codeContent = code;
+    codeLines = code.split('\\n').length;
+    codeChars = code.length;
+  } catch(e) {
+    codeContent = '// Error al cargar: ' + e.message;
+  }
+
+  // Load PM data
+  let pmResponse = '<p style="color:#475569">No disponible</p>';
+  let pmPrompt = '';
+  try {
+    const r = await fetch('/api/pm');
+    const pmData = await r.json();
+    pmPrompt = pmData.prompt || '';
+    const model = (pmData.models || []).find(m => m.id === team.pmId);
+    if (model && model.full_response) {
+      pmResponse = formatPMResponse(model.full_response);
+    }
+  } catch(e) {
+    pmResponse = '<p style="color:#475569">Error: ' + e.message + '</p>';
+  }
+
+  // Build decisions HTML
+  const decisionsHTML = team.decisions.map(d =>
+    `<div class="decision"><strong>${d.title}</strong> <em>(${d.by})</em><div class="why">${d.why}</div></div>`
+  ).join('');
+
+  const highlightedCode = highlightCode(codeContent);
+
+  panel.innerHTML = `
+    <div class="grid-3">
+      <!-- Col 1: Widget -->
+      <div class="card">
+        <div class="card-title">🖥️ Widget <span class="right">${team.label}</span></div>
+        <iframe class="widget-frame" src="/widgets/${team.widget}"></iframe>
+        <div class="stats">
+          <span>📄 ${team.widget}</span>
+          <span>🔄 <span id="refresh-${id}">recargar</span></span>
+        </div>
+      </div>
+
+      <!-- Col 2: Código Fuente -->
+      <div class="card">
+        <div class="card-title">📝 Código Fuente <span class="right">${codeLines} líneas · ${codeChars.toLocaleString()} chars</span></div>
+        <div class="code-box" id="code-${id}"><pre>${highlightedCode}</pre></div>
+        <div class="stats">
+          <span>👨‍💻 ${team.coderName}</span>
+          <button class="copy-btn" onclick="copyCode('${id}')">📋 Copiar</button>
+        </div>
+      </div>
+
+      <!-- Col 3: Análisis PM -->
+      <div class="card">
+        <div class="card-title">📋 Análisis PM — ${team.pmId.replace('pm-', '')}</div>
+        <div class="prompt-collapse" onclick="togglePrompt('prompt-${id}')">▸ Ver prompt completo</div>
+        <div class="prompt-full" id="prompt-${id}"><pre style="white-space:pre-wrap">${escapeHTML(pmPrompt)}</pre></div>
+        <div class="pm-box" id="pm-${id}">${pmResponse}</div>
+        <div class="stats">
+          <span>🧑‍💼 Prompt PM original</span>
+          <button class="copy-btn" onclick="copyPM('${id}')">📋 Copiar respuesta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decisions row -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">💡 Decisiones Técnicas — ${team.label}</div>
+      <div style="padding:8px 14px 12px">
+        ${decisionsHTML}
+      </div>
+      <div class="stats">
+        <span>📊 ${team.decisions.length} decisiones documentadas</span>
+      </div>
+    </div>
+  `;
+
+  // Wire up manual refresh of widget iframe
+  document.getElementById('refresh-' + id).style.cursor = 'pointer';
+  document.getElementById('refresh-' + id).onclick = () => {
+    const frame = panel.querySelector('iframe');
+    frame.src = '/widgets/' + team.widget + '?t=' + Date.now();
+  };
+}
+
+function formatPMResponse(text) {
+  if (!text) return '<p style="color:#475569">Respuesta no disponible</p>';
+  // Split into sections
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>')
+    .replace(/<br><br>/g, '</p><p>')
+    .replace(/INTERPRETACION:/g, '<span class="section">📖 INTERPRETACIÓN</span><br>')
+    .replace(/ANALISIS:/g, '<span class="section">🔧 ANÁLISIS TÉCNICO</span><br>')
+    .replace(/PLAN:/g, '<span class="section">📋 PLAN DE ACCIÓN</span><br>')
+    .replace(/COMUNICACION:/g, '<span class="section">📨 COMUNICACIÓN AL CLIENTE</span><br>');
+  return '<p>' + html + '</p>';
+}
+
+function switchTeam(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  // Find the tab by its onclick content
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'" + id + "'")) {
+      t.classList.add('active');
+    }
+  });
+  document.getElementById('panel-' + id).classList.add('active');
+  loadTeam(id);
+}
+
+function togglePrompt(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+  const btn = el.previousElementSibling;
+  btn.textContent = el.classList.contains('open') ? '▾ Ocultar prompt' : '▸ Ver prompt completo';
+}
+
+function escapeHTML(s) {
+  if (!s) return '';
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function highlightCode(code) {
+  if (!code) return '<span style="color:#475569">// Sin código</span>';
+  // Basic syntax highlighting
+  let h = escapeHTML(code);
+  // Comments
+  h = h.replace(/\/\/(.*)/g, '<span class="hl-com">//$1</span>');
+  h = h.replace(/\/\*[\s\S]*?\*\//g, m => '<span class="hl-com">' + m + '</span>');
+  // Strings
+  h = h.replace(/("(?:[^"\\\\]|\\\\.)*"|'(?:[^'\\\\]|\\\\.)*')/g, '<span class="hl-str">$1</span>');
+  // Template literals
+  h = h.replace(/(`(?:[^`\\\\]|\\\\.)*`)/g, '<span class="hl-str">$1</span>');
+  // Keywords
+  const keywords = ['function', 'const', 'let', 'var', 'if', 'else', 'return', 'for', 'while', 'class', 'new', 'this', 'async', 'await', 'import', 'export', 'from', 'try', 'catch', 'throw', 'switch', 'case', 'break', 'default', 'typeof', 'instanceof', 'null', 'undefined', 'true', 'false', 'document', 'window'];
+  const kwPattern = new RegExp('\\b(' + keywords.join('|') + ')\\b', 'g');
+  h = h.replace(kwPattern, '<span class="hl-kw">$1</span>');
+  // Numbers
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="hl-num">$1</span>');
+  // HTML tags
+  h = h.replace(/(&lt;\/?)(\w+)/g, (m, lt, tag) => lt + '<span class="hl-tag">' + tag + '</span>');
+  return h;
+}
+
+async function copyCode(id) {
+  const code = document.getElementById('code-' + id);
+  if (!code) return;
+  const text = code.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch(e) {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+async function copyPM(id) {
+  const pm = document.getElementById('pm-' + id);
+  if (!pm) return;
+  const text = pm.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+// Load first team on page load
+loadTeam('a');
+
+// ── Noticias tab ──
+if (document.getElementById('panel-news')) {
+  document.getElementById('panel-news').style.display = 'none';
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes("'news'")) {
+      t.addEventListener('click', function() { loadNewsPanel(); });
+    }
+  });
+}
+
+function loadNewsPanel() {
+  // Load source code
+  const codeBox = document.getElementById('code-news');
+  if (codeBox && codeBox.textContent === 'Cargando...') {
+    fetch('/widgets/news-sentimiento.html')
+      .then(r => r.text())
+      .then(code => { codeBox.textContent = code; })
+      .catch(e => { codeBox.textContent = '// Error: ' + e.message; });
+  }
+  // Refresh widget
+  const frame = document.querySelector('#panel-news iframe');
+  if (frame) frame.src = '/widgets/news-sentimiento.html?t=' + Date.now();
+}
+
+// Wire up manual refresh for news tab
+const newsRefresh = document.getElementById('refresh-news');
+if (newsRefresh) {
+  newsRefresh.style.cursor = 'pointer';
+  newsRefresh.onclick = function() {
+    const frame = document.querySelector('#panel-news iframe');
+    if (frame) frame.src = '/widgets/news-sentimiento.html?t=' + Date.now();
+  };
+}
+
+// Listen for tab switches to update news data
+const observer = new MutationObserver(function(mutations) {
+  mutations.forEach(function(m) {
+    if (m.attributeName === 'class') {
+      const el = m.target;
+      if (el.id === 'panel-news' && el.classList.contains('active')) {
+        loadNewsPanel();
+        // Try to read delta/alert from iframe widget
+        setTimeout(function() { updateNewsMetrics(); }, 2000);
+      }
+    }
+  });
+});
+
+document.querySelectorAll('.panel').forEach(function(panel) {
+  observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+});
+
+function updateNewsMetrics() {
+  // These would be populated from the widget's live data via postMessage or direct API call
+  fetch('/api/v1/news-sentiment?t=' + Date.now())
+    .then(r => r.json())
+    .then(function(d) {
+      const deltaEl = document.getElementById('news-delta');
+      if (deltaEl && typeof d.delta === 'number') {
+        deltaEl.textContent = (d.delta >= 0 ? '+' : '') + d.delta;
+        deltaEl.style.color = d.delta > 0 ? '#34c759' : d.delta < 0 ? '#ff3b30' : '#4a5a6e';
+      }
+      const alertEl = document.getElementById('news-alert');
+      if (alertEl) {
+        if (d.alert === 'EXTREME_FEAR') {
+          alertEl.textContent = '⚠️ PÁNICO EXTREMO';
+          alertEl.style.color = '#ff3b30';
+        } else if (d.alert === 'EXTREME_GREED') {
+          alertEl.textContent = '🚀 EUFORIA EXTREMA';
+          alertEl.style.color = '#af52de';
+        } else {
+          alertEl.textContent = 'Normal';
+          alertEl.style.color = '#34c759';
+        }
+      }
+      const kwEl = document.getElementById('news-keywords');
+      if (kwEl && d.top_keywords && d.top_keywords.length > 0) {
+        kwEl.innerHTML = d.top_keywords.slice(0,5).map(function(k){
+          return '<span class="tag" style="background:#162030;border:1px solid #253548;border-radius:4px;padding:2px 6px;font-size:10px;margin:2px">' + k.word + ' ×' + k.count + '</span>';
+        }).join(' ');
+      }
+    })
+    .catch(function(){});
+}
+</script>
+</body>
+</html>

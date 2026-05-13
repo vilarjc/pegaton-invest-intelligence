@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON - RISE Agent Evaluation</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  :root{--card-bg:#131b2e;--border:#1e2a45;--bg:#0d1525}
+  body{background:#0a0e17;color:#e6edf5;font-family:'Segoe UI',sans-serif}
+
+  .header { text-align:center;padding:16px 0 6px; }
+  .header h1 { font-size:20px;margin:0;background:linear-gradient(135deg,#ff6d00,#ffc107);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+  .header p { color:var(--text-dim);font-size:12px;margin:2px 0; }
+
+  .tabs { display:flex;gap:4px;margin:10px 0;flex-wrap:wrap; }
+  .tab { padding:7px 16px;border-radius:8px 8px 0 0;border:1px solid var(--border);border-bottom:none;background:var(--bg);cursor:pointer;font-size:12px;transition:all 0.2s;color:var(--text-dim); }
+  .tab.active { background:var(--card);color:var(--text);border-color:var(--accent); }
+  .tab:hover { color:var(--text); }
+  .tab-panel { display:none;background:var(--card);border:1px solid var(--border);border-radius:0 8px 8px 8px;padding:16px;margin-bottom:12px; }
+  .tab-panel.active { display:block; }
+
+  .bell-curve { text-align:center;padding:12px; }
+  .bc-bars { display:flex;align-items:flex-end;justify-content:center;gap:4px;height:100px;margin:8px 0; }
+  .bc-bar { width:50px;border-radius:4px 4px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:4px; }
+  .bc-bar .bc-count { font-size:16px;font-weight:700; }
+  .bc-bar .bc-label { font-size:9px;margin-top:2px; }
+
+  .model-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;transition:all 0.2s; }
+  .model-card:hover { border-color:var(--accent); }
+  .mc-header { display:flex;justify-content:space-between;align-items:center; }
+  .mc-left { display:flex;align-items:center;gap:10px; }
+  .mc-rank { font-size:18px;font-weight:700;color:var(--text-dim);min-width:24px; }
+  .mc-name { font-size:15px;font-weight:600; }
+  .mc-model-id { font-size:10px;color:var(--text-dim); }
+  .mc-score { font-size:22px;font-weight:700;text-align:right; }
+  .mc-class { display:inline-block;padding:1px 8px;border-radius:4px;font-size:10px;font-weight:600; }
+  .mc-stats { display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;font-size:11px;color:var(--text-dim); }
+  .mc-stats strong { color:var(--text); }
+
+  .okr-card { background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin:4px 0; }
+  .okr-header { display:flex;justify-content:space-between;align-items:center; }
+  .okr-model { font-size:13px;font-weight:600; }
+  .okr-status { font-size:11px;padding:2px 8px;border-radius:4px; }
+  .okr-metrics { display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px;margin-top:6px; }
+  .okr-metric { font-size:10px;display:flex;justify-content:space-between;padding:2px 6px;border-radius:3px;background:var(--card); }
+  .okr-metric .bar { height:3px;border-radius:2px;margin-top:2px;transition:width 0.3s; }
+
+  .tier-card { background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin:4px 0; }
+  .tier-header { font-size:13px;font-weight:600;margin-bottom:4px; }
+  .tier-models { display:flex;gap:6px;flex-wrap:wrap; }
+  .tier-model { padding:3px 8px;border-radius:4px;font-size:11px;background:var(--card);border:1px solid var(--border); }
+
+  .period-bar { display:flex;gap:4px;margin:8px 0; }
+  .period-btn { padding:4px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;font-size:11px;color:var(--text-dim); }
+  .period-btn.active { border-color:#ffc107;background:rgba(255,193,7,0.1);color:var(--text); }
+
+  .event-log { font-size:11px; }
+  .event-item { padding:4px 0;border-bottom:1px solid rgba(30,42,69,0.3);display:flex;gap:8px; }
+  .event-time { color:var(--text-dim);min-width:80px; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Hub</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval" class="active">🏆 Eval</a>
+  <a href="/processes">⚙️ Procesos</a>
+  <a href="/health">🩺 Salud</a>
+  <a href="/agents">🤖 Agentes</a>
+  <a href="/projects">📁 Proyectos</a>
+</nav>
+
+<div class="container">
+  <div class="header">
+    <h1>🏆 RISE — Evaluación de Agentes</h1>
+    <p>KPIs · OKRs · Campana de Gauss · Auto-asignación inteligente de tareas</p>
+  </div>
+
+  <div class="period-bar" style="justify-content:center;">
+    <button class="period-btn active" onclick="setPeriod(7,this)">7 días</button>
+    <button class="period-btn" onclick="setPeriod(30,this)">30 días</button>
+    <button class="period-btn" onclick="setPeriod(90,this)">90 días</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('rankings',this)">📊 Rankings</div>
+    <div class="tab" onclick="switchTab('okrs',this)">🎯 OKRs</div>
+    <div class="tab" onclick="switchTab('assignment',this)">🤖 Auto-Asignación</div>
+    <div class="tab" onclick="switchTab('events',this)">📋 Eventos</div>
+    <div class="tab" onclick="switchTab('olympiad',this)">🏆 Coding Olympiad</div>
+  </div>
+
+  <!-- RANKINGS TAB -->
+  <div class="tab-panel active" id="tab-rankings">
+    <div class="bell-curve" id="bellCurve"><div class="loading">Calculando campana de Gauss...</div></div>
+    <div id="modelRankings"><div class="loading">Cargando rankings...</div></div>
+  </div>
+
+  <!-- OKRs TAB -->
+  <div class="tab-panel" id="tab-okrs">
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">
+      Cada modelo tiene objetivos (OKRs) configurables. El gap mide % de cumplimiento.
+      <button style="margin-left:8px;padding:2px 10px;border-radius:4px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-size:11px;" onclick="initDefaults()">🔄 Inicializar OKRs</button>
+    </p>
+    <div id="okrList"><div class="loading">Cargando OKRs...</div></div>
+  </div>
+
+  <!-- ASSIGNMENT TAB -->
+  <div class="tab-panel" id="tab-assignment">
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">
+      Asignación automática de modelos a tareas según su evaluación RISE.
+    </p>
+    <div id="assignmentList"><div class="loading">Calculando asignaciones...</div></div>
+  </div>
+
+  <!-- EVENTS TAB -->
+  <div class="tab-panel" id="tab-events">
+    <div id="eventLog"><div class="loading">Cargando eventos...</div></div>
+  </div>
+
+  <!-- CODING OLYMPIAD TAB -->
+  <div class="tab-panel" id="tab-olympiad">
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;line-height:1.6">
+      <strong>📝 Reto:</strong> Construir un widget financiero interactivo con gráfico de velas, medias móviles, tooltips y zoom — mismo prompt para todos los modelos.
+    </div>
+
+    <!-- Comparison Table -->
+    <div style="overflow-x:auto">
+      <table class="oly-table" id="olyTable">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Modelo</th>
+            <th style="width:50px">Pts</th>
+            <th style="width:50px">Líneas</th>
+            <th style="width:70px">⏱️ Tiempo</th>
+            <th style="width:80px">Tokens</th>
+            <th style="width:70px">Coste</th>
+            <th style="width:120px">Features</th>
+          </tr>
+        </thead>
+        <tbody id="olyTableBody">
+          <tr><td colspan="8" class="loading">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Preview panel (hidden until row clicked) -->
+    <div id="olyPreview" style="display:none;margin-top:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:14px;font-weight:600" id="olyPreviewTitle">▶️ Widget</div>
+        <button onclick="closePreview()" style="background:var(--bg);border:1px solid var(--border);color:var(--text-dim);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:12px">✕ Cerrar</button>
+      </div>
+      <div style="background:#fff;border-radius:8px;border:1px solid var(--border);overflow:hidden;min-height:300px">
+        <iframe id="olyFrame" style="width:100%;height:500px;border:none;display:block" srcdoc=""></iframe>
+      </div>
+    </div>
+
+    <style>
+    .oly-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .oly-table th { text-align:left; padding:8px 10px; background:var(--bg); color:var(--text-dim); font-weight:500; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; letter-spacing:0.3px; }
+    .oly-table td { padding:8px 10px; border-bottom:1px solid var(--border); }
+    .oly-table tbody tr { cursor:pointer; transition:background 0.15s; }
+    .oly-table tbody tr:hover { background:rgba(99,102,241,0.06); }
+    .oly-table tbody tr.active-row { background:rgba(99,102,241,0.1); }
+    .oly-feat { font-size:13px;cursor:help; }
+    .oly-badge { font-size:9px;padding:2px 6px;border-radius:4px; }
+    .oly-badge-free { background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.2); }
+    .oly-badge-paid { background:rgba(239,68,68,0.12); color:#ef4444; border:1px solid rgba(239,68,68,0.2); }
+    .oly-rank { font-size:15px;font-weight:700; }
+    .oly-score { font-size:16px;font-weight:700; }
+    </style>
+  </div>
+
+  <div class="footer" style="margin-top:8px;font-size:11px;">
+    RISE Agent Evaluation · Harness Engineering para AI · Targets configurables · Auto-assignment
+  </div>
+</div>
+
+<script>
+let currentPeriod = 7;
+
+function setPeriod(d, btn) {
+  currentPeriod = d;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  loadAll();
+}
+
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  el.classList.add('active');
+}
+
+function scoreColor(s) {
+  if (s >= 80) return '#00c853';
+  if (s >= 60) return '#00bcd4';
+  if (s >= 40) return '#ffc107';
+  if (s >= 20) return '#ff6d00';
+  return '#d50000';
+}
+function lvlColor(l) {
+  const m = {outstanding:'#00e676',good:'#00bcd4',average:'#ffc107',below_average:'#ff6d00',poor:'#d50000'};
+  return m[l]||'#3a4a5f';
+}
+const medals = ['🥇','🥈','🥉'];
+
+async function loadAll() {
+  try {
+    const r = await fetch(`/api/v1/objectives/full-dashboard?days=${currentPeriod}`);
+    const d = await r.json();
+    
+    renderRankings(d.evaluation);
+    renderOKRs(d.objectives);
+    renderAssignment(d.auto_assignment);
+    renderEvents(d.auto_log);
+  } catch(e) {
+    const msg = '<div class="loading" style="color:#ff5252">Error: ' + e.message + '</div>';
+    document.getElementById('modelRankings').innerHTML = msg;
+    console.error(e);
+  }
+}
+
+function renderRankings(evalData) {
+  if (!evalData) return;
+  const models = evalData.models || [];
+  const dist = evalData.distribution || {};
+  
+  // Bell curve
+  const levels = [
+    {key:'outstanding',label:'⭐',color:'#00e676'},
+    {key:'good',label:'✅',color:'#00bcd4'},
+    {key:'average',label:'📊',color:'#ffc107'},
+    {key:'below_average',label:'⚠️',color:'#ff6d00'},
+    {key:'poor',label:'❌',color:'#d50000'},
+  ];
+  const maxC = Math.max(...levels.map(l=>dist[l.key]?.count||0),1);
+  let bcHtml = '<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">📊 Campana de Gauss</div><div class="bc-bars">';
+  for (const l of levels) {
+    const info = dist[l.key] || {};
+    const h = Math.max(15, (info.count||0)/maxC*80);
+    bcHtml += `<div class="bc-bar" style="height:${h}px;background:${l.color}20;border:1px solid ${l.color}50">
+      <div class="bc-count" style="color:${l.color}">${info.count||0}</div>
+      <div class="bc-label" style="color:${l.color}">${info.pct||0}%</div>
+    </div>`;
+  }
+  bcHtml += `</div><div style="display:flex;gap:10px;justify-content:center;font-size:10px;color:var(--text-dim);flex-wrap:wrap;">
+    ${levels.map(l=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${l.color}"></span> ${l.label}</span>`).join('')}</div>`;
+  document.getElementById('bellCurve').innerHTML = bcHtml;
+  
+  // Rankings
+  if (models.length === 0) {
+    document.getElementById('modelRankings').innerHTML = '<div class="loading">Sin datos — ejecuta la Mesa Redonda primero</div>';
+    return;
+  }
+  let h = '';
+  for (let i = 0; i < models.length; i++) {
+    const m = models[i];
+    const met = m.metrics || {};
+    const lc = lvlColor(m.level);
+    h += `<div class="model-card" style="border-left:3px solid ${lc}">
+      <div class="mc-header">
+        <div class="mc-left">
+          <div class="mc-rank">${i < 3 ? medals[i] : '#'+(i+1)}</div>
+          <div><div class="mc-name">${m.model_name}</div><div class="mc-model-id">${m.model_id}</div></div>
+        </div>
+        <div style="text-align:right">
+          <div class="mc-score" style="color:${scoreColor(m.percentile_score)}">${m.percentile_score}</div>
+          <div class="mc-class" style="background:${lc}20;color:${lc}">${m.classification}</div>
+        </div>
+      </div>
+      <div class="mc-stats">
+        <span>⚡ <strong>${met.avg_response_time||0}s</strong></span>
+        <span>💰 <strong>$${(met.avg_cost_per_task||0).toFixed(6)}</strong>/task</span>
+        <span>📐 <strong>${met.json_compliance_rate||0}%</strong> JSON</span>
+        <span>🛡️ <strong>${(100-(met.error_rate||0)).toFixed(0)}%</strong> fiab</span>
+        <span>📊 <strong>${m.task_count}</strong> tasks</span>
+      </div>
+      <div style="font-size:11px;color:${lc};margin-top:4px;">${m.recommended_responsibility}</div>
+    </div>`;
+  }
+  document.getElementById('modelRankings').innerHTML = h;
+}
+
+function renderOKRs(objData) {
+  if (!objData) return;
+  const gaps = objData.gaps || [];
+  const settings = objData.settings || {};
+  
+  if (gaps.length === 0) {
+    document.getElementById('okrList').innerHTML = '<div class="loading">Sin datos de OKRs — inicializa los objetivos primero</div>';
+    return;
+  }
+  
+  let h = '';
+  for (const g of gaps) {
+    const statColor = g.status.includes('Superando')?'#00e676':g.status.includes('Cumpliendo')?'#00bcd4':g.status.includes('Riesgo')?'#ffc107':'#ff5252';
+    h += `<div class="okr-card">
+      <div class="okr-header">
+        <div class="okr-model">${g.model_name}</div>
+        <div class="okr-status" style="background:${statColor}15;color:${statColor}">${g.status} · ${g.overall_score}%</div>
+      </div>
+      <div class="okr-metrics">
+        <div class="okr-metric"><span>💰 Coste</span><span>$${g.actual.avg_cost_per_task.toFixed(6)} / $${g.targets.target_cost_per_task}</span></div>
+        <div class="okr-metric"><span>⚡ Velocidad</span><span>${g.actual.avg_response_time}s / ${g.targets.target_response_time}s</span></div>
+        <div class="okr-metric"><span>📐 Calidad JSON</span><span>${g.actual.json_compliance_rate}% / ${g.targets.target_json_compliance}%</span></div>
+        <div class="okr-metric"><span>🛡️ Fiabilidad</span><span>${(100-g.actual.error_rate).toFixed(0)}% / ${g.targets.target_reliability}%</span></div>
+        <div class="okr-metric"><span>🤝 Consenso</span><span>${g.actual.consensus_alignment}% / ${g.targets.target_consensus_alignment}%</span></div>
+        <div class="okr-metric"><span>📊 Tareas</span><span>${g.actual.task_count} / ${g.targets.target_task_count}</span></div>
+      </div>
+      ${g.auto_action ? `<div style="margin-top:4px;font-size:11px;color:${g.auto_action === 'ASCENDER' ? '#00e676' : '#ff5252'}">⚡ Acción automática recomendada: ${g.auto_action}</div>` : ''}
+    </div>`;
+  }
+  document.getElementById('okrList').innerHTML = h;
+}
+
+function renderAssignment(aData) {
+  if (!aData) return;
+  const tiers = aData.tiers || {};
+  const assignments = aData.assignments || {};
+  
+  if (!Object.keys(assignments).length) {
+    document.getElementById('assignmentList').innerHTML = '<div class="loading">Sin datos de asignación</div>';
+    return;
+  }
+  
+  const tierColors = {critico:'#ff5252',alto:'#ff6d00',medio:'#ffc107',basico:'#00e676'};
+  const tierEmoji = {critico:'🔴',alto:'🟠',medio:'🟡',basico:'🟢'};
+  
+  let h = '';
+  for (const [tid, info] of Object.entries(assignments)) {
+    const tierInfo = tiers[tid] || {};
+    const color = tierColors[tid] || '#3a4a5f';
+    h += `<div class="tier-card" style="border-left:3px solid ${color}">
+      <div class="tier-header" style="color:${color}">${tierEmoji[tid]||''} ${tierInfo.label || tid}</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${tierInfo.description || ''}</div>
+      <div class="tier-models">
+        ${info.models && info.models.length > 0 
+          ? info.models.map(m => `<span class="tier-model">${m}</span>`).join('')
+          : `<span style="font-size:11px;color:var(--text-dim)">${info.note || 'Sin modelos asignados'}</span>`}
+      </div>
+      ${info.best ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;">🏆 Mejor: <strong>${info.best}</strong> (${info.best_score}pts)</div>` : ''}
+      ${info.note ? `<div style="font-size:10px;color:#ffc107;margin-top:2px;">⚠️ ${info.note}</div>` : ''}
+    </div>`;
+  }
+  
+  h += `<div style="font-size:10px;color:var(--text-dim);margin-top:6px;">📊 ${aData.evaluated_models} modelos evaluados · ${aData.total_models_with_data} con datos</div>`;
+  document.getElementById('assignmentList').innerHTML = h;
+}
+
+function renderEvents(events) {
+  if (!events || !events.length) {
+    document.getElementById('eventLog').innerHTML = '<div style="font-size:12px;color:var(--text-dim);padding:8px;">Sin eventos registrados aún. Los eventos se generan automáticamente al asignar tareas.</div>';
+    return;
+  }
+  let h = '';
+  for (const e of events) {
+    const evColor = e.event === 'ASCENDER' ? '#00e676' : e.event === 'DEGRADAR' ? '#ff5252' : '#ffc107';
+    h += `<div class="event-item">
+      <div class="event-time">${e.created_at || ''}</div>
+      <div><strong style="color:${evColor}">${e.event}</strong> <strong>${e.model_id}</strong></div>
+      <div style="color:var(--text-dim)">${e.reason || ''}</div>
+    </div>`;
+  }
+  document.getElementById('eventLog').innerHTML = h;
+}
+
+async function initDefaults() {
+  try {
+    await fetch('/api/v1/objectives/init-defaults?force=true', {method:'POST'});
+    loadAll();
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+// ── Coding Olympiad ──────────────────────────────────────────────────
+const OLY_DATA_URL = "/frontend/coding-olympiad/data.json";
+const OLY_CODES = {};
+const OLY_FEAT_ICONS = {canvas:"🎨",tooltip:"💬",zoom:"🔍",pan:"✋",responsive:"📱",dark:"🌙",moving_avg:"📈",volume:"📊",legend:"🏷️",grid:"🔲",labels:"📝"};
+
+async function loadOlympiad() {
+  try {
+    const resp = await fetch(OLY_DATA_URL);
+    const data = await resp.json();
+    const results = data.results || [];
+    
+    const tbody = document.getElementById("olyTableBody");
+    const medals = ["🥇","🥈","🥉","4️⃣","5️⃣","6️⃣"];
+    
+    let html = "";
+    for (const r of results) {
+      // Features icons
+      let feats = "";
+      for (const [k,v] of Object.entries(r.features || {})) {
+        if (v && OLY_FEAT_ICONS[k]) feats += `<span class="oly-feat" title="${k}">${OLY_FEAT_ICONS[k]}</span>`;
+      }
+      
+      // Cost badge
+      const costBadge = r.provider === "deepseek"
+        ? `<span class="oly-badge oly-badge-paid">$${((r.tokens?.total||0)/1e6*0.20).toFixed(4)}</span>`
+        : `<span class="oly-badge oly-badge-free">GRATIS</span>`;
+      
+      // Time color
+      const tc = r.time_s < 10 ? "#22c55e" : r.time_s < 40 ? "#f59e0b" : "#ef4444";
+      
+      html += `<tr onclick="showOlympiad('${r.id}')" data-id="${r.id}">
+        <td><span class="oly-rank" style="color:${r.color}">${medals[r.rank-1] || r.rank}</span></td>
+        <td>${r.icon} <strong>${r.label}</strong><br><span style="font-size:10px;color:var(--text-dim)">${r.model_name}</span></td>
+        <td><span class="oly-score" style="color:${r.color}">${r.score}</span></td>
+        <td>${r.lines}</td>
+        <td style="color:${tc}"><strong>${r.time_s}s</strong></td>
+        <td>${(r.tokens?.total||0).toLocaleString()}</td>
+        <td>${costBadge}</td>
+        <td>${feats}</td>
+      </tr>`;
+    }
+    tbody.innerHTML = html;
+    
+    // Auto-select first
+    if (results.length > 0) showOlympiad(results[0].id);
+    
+  } catch(e) {
+    document.getElementById("olyTableBody").innerHTML = `<tr><td colspan="8" style="color:#ef4444">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function showOlympiad(id) {
+  // Highlight row
+  document.querySelectorAll("#olyTable tbody tr").forEach(r => r.classList.remove("active-row"));
+  const row = document.querySelector(`#olyTable tbody tr[data-id="${id}"]`);
+  if (row) row.classList.add("active-row");
+  
+  // Load code
+  if (!OLY_CODES[id]) {
+    try {
+      const resp = await fetch(`/frontend/coding-olympiad/html/${id}.html`);
+      OLY_CODES[id] = await resp.text();
+    } catch(e) {
+      OLY_CODES[id] = `<div style="padding:40px;text-align:center;color:#ef4444;font-family:sans-serif">Error cargando: ${e.message}</div>`;
+    }
+  }
+  
+  // Show preview panel
+  const preview = document.getElementById("olyPreview");
+  preview.style.display = "block";
+  document.getElementById("olyFrame").srcdoc = OLY_CODES[id];
+  document.getElementById("olyPreviewTitle").textContent = `▶️ ${row ? row.querySelector("td:nth-child(2)").textContent.trim() : 'Widget'}`;
+  preview.scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function closePreview() {
+  document.getElementById("olyPreview").style.display = "none";
+}
+
+// Init
+loadAll();
+loadOlympiad();
+</script>
+</body>
+</html>

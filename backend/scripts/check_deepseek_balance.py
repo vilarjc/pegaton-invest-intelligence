@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Poll DeepSeek API for real-time balance and store history."""
+import json, os, requests
+from datetime import datetime
+
+import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
+
+API_KEY = os.getenv('DEEPSEEK_API_KEY', '')
+if not API_KEY:
+    print("ERROR: DEEPSEEK_API_KEY not found in .env")
+    exit(1)
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'balance_history.json')
+
+def get_balance():
+    resp = requests.get(
+        "https://api.deepseek.com/user/balance",
+        headers={"Authorization": f"Bearer {API_KEY}"},
+        timeout=10
+    )
+    if resp.status_code != 200:
+        return {"error": f"HTTP {resp.status_code}"}
+    data = resp.json()
+    # Even if is_available is False, we might still have balance_infos
+    if data.get("is_available") is False and "balance_infos" not in data:
+        return {"error": "No balance info"}
+    for info in data.get("balance_infos", []):
+        if info.get("currency") == "USD":
+            return {
+                "total_balance": float(info["total_balance"]),
+                "granted_balance": float(info["granted_balance"]),
+                "topped_up_balance": float(info["topped_up_balance"]),
+            }
+    return {"error": "No USD balance info"}
+
+def save_snapshot():
+    balance = get_balance()
+    if "error" in balance:
+        print(f"ERROR: {balance['error']}")
+        return
+    history = []
+    if os.path.exists(DB_PATH):
+        try:
+            with open(DB_PATH) as f:
+                history = json.load(f)
+        except: pass
+    history.append({
+        "timestamp": datetime.now().isoformat(),
+        **balance
+    })
+    # Keep last 1000 entries
+    history = history[-1000:]
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    with open(DB_PATH, "w") as f:
+        json.dump(history, f, indent=2)
+    print(f"Balance: ${balance['total_balance']:.2f} (top-up: ${balance['topped_up_balance']:.2f})")
+
+if __name__ == "__main__":
+    save_snapshot()

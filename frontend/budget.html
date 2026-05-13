@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON - Presupuesto</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  .balance-hero { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center;margin-bottom:16px; }
+  .balance-hero .saldo { font-size:48px;font-weight:700; }
+  .balance-hero .lbl { font-size:13px;color:var(--text-dim);text-transform:uppercase; }
+  .balance-hero .recarga-row { display:flex;justify-content:center;gap:32px;margin-top:8px;font-size:13px;color:var(--text-dim);flex-wrap:wrap; }
+  .model-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:12px; }
+  .model-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px; }
+  .model-card .name { font-size:14px;font-weight:600; }
+  .model-card .stats { font-size:12px;color:var(--text-dim);margin-top:4px; }
+  .model-card .cost { font-size:18px;font-weight:700;margin-top:6px; }
+  .model-card .foot { font-size:10px;color:#3a4a5f;margin-top:4px; }
+  .day-row { display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px; }
+  .projection-bar { height:8px;background:#0d1525;border-radius:4px;margin:8px 0;overflow:hidden; }
+  .projection-fill { height:100%;border-radius:4px;transition:width 0.5s; }
+  .alert-banner { background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.3);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;color:#ff5252; }
+
+  .agent-cost-card { background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px; }
+  .agent-cost-card .ac-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:6px; }
+  .agent-cost-card .ac-name { font-size:14px;font-weight:600; }
+  .agent-cost-card .ac-model { font-size:11px;color:var(--text-dim); }
+  .agent-cost-card .ac-stats { display:flex;gap:16px;font-size:12px; }
+  .agent-cost-card .ac-stats span { color:var(--text-dim); }
+  .agent-cost-card .ac-stats strong { color:var(--text); }
+  .ac-value-low { color:#00e676; }
+  .ac-value-mid { color:#ffc107; }
+  .ac-value-high { color:#ff5252; }
+
+  .forecast-row { display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;align-items:center; }
+  .forecast-row:last-child { border-bottom:none; }
+  .bar-bg { flex:1;height:6px;background:#0d1525;border-radius:3px;margin:0 12px;overflow:hidden;max-width:120px; }
+  .bar-fill { height:100%;border-radius:3px; }
+
+  .recommend-card { background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:12px;margin-bottom:8px;font-size:13px; }
+  .recommend-card .rc-title { font-weight:600;color:var(--accent);margin-bottom:4px; }
+  .recommend-card .rc-desc { color:var(--text-dim);font-size:12px; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Hub</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval">🏆 Eval</a>
+  <a href="/processes">⚙️ Procesos</a>
+  <a href="/health">🩺 Salud</a>
+  <a href="/agents">🤖 Agentes</a>
+  <a href="/projects">📁 Proyectos</a>
+</nav>
+
+<div class="container">
+  <div class="section-title">💰 PRESUPUESTO Y PREVISIÓN</div>
+
+  <div class="balance-hero" id="balanceHero">
+    <div class="loading">Consultando saldo en DeepSeek...</div>
+  </div>
+
+  <div id="alertArea"></div>
+
+  <!-- FORECAST SECTION -->
+  <div class="card">
+    <div class="section-title">📊 PREVISIÓN DE GASTO</div>
+    <div id="forecastSection">
+      <div class="loading">Calculando proyecciones...</div>
+    </div>
+  </div>
+
+  <!-- AGENT COST RECOMMENDATION -->
+  <div class="card" style="margin-top:10px;">
+    <div class="section-title">🤖 COSTE POR AGENTE Y RECOMENDACIONES</div>
+    <div id="agentCostSection">
+      <div class="loading">Analizando costes por agente...</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px;">
+    <div class="section-title">💡 RECOMENDACIONES DE OPTIMIZACIÓN</div>
+    <div id="recommendSection"></div>
+  </div>
+
+  <div class="card" style="margin-top:10px;">
+    <div class="section-title">🤖 CONSUMO POR MODELO</div>
+    <div class="model-grid" id="modelGrid">
+      <div class="loading">Cargando...</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px;">
+    <div class="section-title">📅 GASTO POR DÍA</div>
+    <div id="dayBreakdown"><div class="loading">Cargando...</div></div>
+  </div>
+
+  <div class="card" style="margin-top:10px;">
+    <div class="section-title">📊 PRECIOS DeepSeek</div>
+    <table>
+      <tr><th>Modelo</th><th>Input (por 1M tokens)</th><th>Output (por 1M tokens)</th><th>Uso recomendado</th></tr>
+      <tr><td>V4 Flash</td><td>$0.14</td><td>$0.28</td><td>Tareas simples, rutinarias, alta frecuencia</td></tr>
+      <tr><td>Chat</td><td>$0.28</td><td>$0.42</td><td>Análisis estándar, macro, técnico</td></tr>
+      <tr><td>V4 Pro</td><td>$0.435</td><td>$0.87</td><td>Señales de inversión, decisiones críticas</td></tr>
+      <tr><td>Reasoner</td><td>$0.55</td><td>$2.19</td><td>Análisis profundo, backtesting, revisiones</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">Datos en vivo desde DeepSeek API · Previsión basada en consumo histórico</div>
+</div>
+
+<script>
+const MODEL_PRICES = {
+  'deepseek-v4-flash': {name:'V4 Flash',in:0.14,out:0.28,recom:'Tareas rutinarias'},
+  'deepseek-chat': {name:'Chat',in:0.28,out:0.42,recom:'Análisis estándar'},
+  'deepseek-v4-pro': {name:'V4 Pro',in:0.435,out:0.87,recom:'Decisiones críticas'},
+  'deepseek-reasoner': {name:'Reasoner',in:0.55,out:2.19,recom:'Análisis profundo'},
+};
+
+async function load() {
+  try {
+    const r = await fetch('/api/v1/system/budget');
+    const d = await r.json();
+
+    const balance = d.live_balance || 0;
+    const topped = d.topped_up || 0;
+    const spent = d.spent || 0;
+    const pct = topped > 0 ? (spent / topped) * 100 : 0;
+
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysLeftInMonth = daysInMonth - dayOfMonth + 1;
+    const dailyRate = spent / Math.max(dayOfMonth, 1);
+    const daysRemaining = balance > 0 && dailyRate > 0 ? Math.round(balance / dailyRate) : '?';
+    const projectedMonthly = dailyRate * daysInMonth;
+
+    // === BALANCE HERO ===
+    document.getElementById('balanceHero').innerHTML = `
+      <div class="saldo">$${balance.toFixed(2)}</div>
+      <div class="lbl">Saldo disponible en DeepSeek</div>
+      <div class="recarga-row">
+        <span>💰 Recargado: <strong>$${topped.toFixed(2)}</strong></span>
+        <span>📊 Gastado: <strong>$${spent.toFixed(2)} (${pct.toFixed(0)}%)</strong></span>
+        <span>📅 Proyección: <strong>~${daysRemaining} días</strong></span>
+      </div>
+    `;
+
+    // === ALERTS ===
+    const alertDiv = document.getElementById('alertArea');
+    if (pct > 80) {
+      alertDiv.innerHTML = '<div class="alert-banner">⚠️ Has gastado el ' + pct.toFixed(0) + '% de tu recarga. Quedan ~$' + balance.toFixed(2) + '</div>';
+    } else if (dailyRate > 0.50) {
+      alertDiv.innerHTML = '<div class="alert-banner">📊 Gasto diario alto (~$' + dailyRate.toFixed(2) + '/día). Proyectado mensual: $' + projectedMonthly.toFixed(2) + '</div>';
+    } else {
+      alertDiv.innerHTML = '<div class="alert-banner" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.2);color:#00e676;">✅ Gasto controlado · ~$' + dailyRate.toFixed(2) + '/día · Proyección mensual $' + projectedMonthly.toFixed(2) + '</div>';
+    }
+
+    // === FORECAST ===
+    const tasks = d.tracker?.tasks || [];
+
+    // Aggregate per model + estimate time
+    const byModel = {};
+    for (const t of tasks) {
+      if (!byModel[t.model]) byModel[t.model] = {tokens_in:0,tokens_out:0,cost:0,count:0};
+      byModel[t.model].tokens_in += t.tokens_in || 0;
+      byModel[t.model].tokens_out += t.tokens_out || 0;
+      byModel[t.model].cost += t.cost || 0;
+      byModel[t.model].count++;
+    }
+
+    // === AGENT COST SECTION ===
+    const agentConfigs = {
+      'PM': {model:'deepseek-v4-flash',project:'Inversor',role:'Orquestador'},
+      'Macro': {model:'deepseek-chat',project:'Inversor',role:'Analista macro'},
+      'Técnico': {model:'deepseek-chat',project:'Inversor',role:'Analista técnico'},
+      'Programador': {model:'deepseek-v4-flash',project:'Inversor',role:'Implementador'},
+      'Router': {model:'deepseek-v4-flash',project:'Model Router',role:'Enrutador'},
+    };
+
+    // Estimate $/call and $/week per agent
+    const totalTasks = tasks.length;
+    const totalCost = tasks.reduce((s,t) => s+(t.cost||0),0);
+    const avgCostPerTask = totalTasks > 0 ? totalCost / totalTasks : 0.002; // ~$0.002 per task for Flash
+    const tasksPerDay = totalTasks / Math.max(dayOfMonth, 1);
+    const agents = Object.entries(agentConfigs).map(([name, cfg]) => {
+      const price = MODEL_PRICES[cfg.model] || {name:cfg.model,in:0.14,out:0.28};
+      const estTokensPerCall = cfg.model === 'deepseek-chat' ? 5000 : 3000; // avg tokens per analysis call
+      const costPerCall = (estTokensPerCall / 1e6) * price.in;
+      const callsPerDay = cfg.role === 'Orquestador' ? 48 : cfg.role === 'Analista macro' ? 4 : 12; // estimated frequency
+      const dailyCost = costPerCall * callsPerDay;
+      const weeklyCost = dailyCost * 7;
+      const monthlyCost = dailyCost * 30;
+      return {...cfg, name, dailyCost, weeklyCost, monthlyCost, costPerCall, callsPerDay, price};
+    });
+
+    let acHtml = '';
+    for (const a of agents) {
+      const valueClass = a.monthlyCost > 5 ? 'ac-value-high' : a.monthlyCost > 2 ? 'ac-value-mid' : 'ac-value-low';
+      acHtml += `<div class="agent-cost-card">
+        <div class="ac-header">
+          <div>
+            <div class="ac-name">🤖 ${a.name}</div>
+            <div class="ac-model">${a.price.name} · ${a.role} · ${a.project}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="cost ${valueClass}">$${a.monthlyCost.toFixed(2)}/mes</div>
+            <div style="font-size:10px;color:var(--text-dim)">$${a.weeklyCost.toFixed(2)}/sem · $${a.dailyCost.toFixed(3)}/día</div>
+          </div>
+        </div>
+        <div class="ac-stats">
+          <span>🔄 <strong>~${a.callsPerDay}</strong> llamadas/día</span>
+          <span>📄 <strong>${(estTokensPerCall/1000).toFixed(0)}K</strong> tokens/llamada</span>
+          <span>⚡ <strong>$${(a.costPerCall*1000).toFixed(2)}</strong> por 1000 llamadas</span>
+        </div>
+        <div class="projection-bar">
+          <div class="projection-fill" style="width:${Math.min(a.monthlyCost / 10 * 100, 100)}%;background:${a.monthlyCost > 5 ? '#ff5252' : a.monthlyCost > 2 ? '#ffc107' : '#00e676'}"></div>
+        </div>
+      </div>`;
+    }
+    document.getElementById('agentCostSection').innerHTML = acHtml;
+
+    // === RECOMMENDATIONS ===
+    const highCostAgents = agents.filter(a => a.monthlyCost > 3);
+    const lowValueAgents = agents.filter(a => a.monthlyCost > 2 && (a.role === 'Analista macro' || a.role === 'Analista técnico'));
+
+    let rcHtml = '';
+    if (highCostAgents.length > 0) {
+      rcHtml += `<div class="recommend-card">
+        <div class="rc-title">💰 Agentes de alto coste mensual</div>
+        <div class="rc-desc">${highCostAgents.map(a => `• <strong>${a.name}</strong> (${a.price.name}): $${a.monthlyCost.toFixed(2)}/mes — considerar migrar a V4 Flash si la calidad de respuesta es suficiente`).join('<br>')}</div>
+      </div>`;
+    }
+    if (lowValueAgents.length > 0) {
+      rcHtml += `<div class="recommend-card">
+        <div class="rc-title">🔄 Posibles candidatos a migración a modelo gratuito</div>
+        <div class="rc-desc">${lowValueAgents.map(a => `• <strong>${a.name}</strong>: Tareas repetitivas de análisis — evaluar si V4 Flash da resultados similares a menor coste (${(a.monthlyCost*0.7).toFixed(2)}/mes de ahorro estimado)`).join('<br>')}</div>
+      </div>`;
+    }
+    rcHtml += `<div class="recommend-card">
+      <div class="rc-title">🧠 Mesa redonda multi-modelo (próximamente)</div>
+      <div class="rc-desc">Agentes homólogos con distintos modelos ejecutan el mismo análisis, comparan resultados y toman una decisión consensuada. El coste extra se compensa con mayor precisión en señales de inversión.</div>
+    </div>`;
+    if (!rcHtml) rcHtml = '<div class="loading">Activa el tracking automático para generar recomendaciones personalizadas</div>';
+    document.getElementById('recommendSection').innerHTML = rcHtml;
+
+    // === FORECAST SECTION ===
+    // Calculate running balance projection
+    const balanceHistory = d.balance_history || [];
+    let fHtml = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;">
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:20px;font-weight:700;">$${dailyRate.toFixed(3)}</div>
+        <div style="font-size:11px;color:var(--text-dim)">Gasto diario promedio</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:20px;font-weight:700;">$${(dailyRate * 7).toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--text-dim)">Proyección semanal</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:20px;font-weight:700;${projectedMonthly > 5 ? 'color:#ff5252' : 'color:#00e676'}">$${projectedMonthly.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--text-dim)">Proyección mensual</div>
+      </div>
+    </div>`;
+
+    // Days left projection
+    if (typeof daysRemaining === 'number') {
+      const daysInWeek = Math.min(daysRemaining, 7);
+      const weeksLeft = (daysRemaining / 7).toFixed(1);
+      fHtml += `<div class="forecast-row">
+        <span>🕐 Tiempo restante al ritmo actual</span>
+        <span style="font-weight:700;">${daysRemaining} días (~${weeksLeft} semanas)</span>
+      </div>`;
+    }
+    fHtml += `<div class="forecast-row">
+      <span>📉 Gasto hasta hoy (día ${dayOfMonth}/${daysInMonth})</span>
+      <span><strong>$${spent.toFixed(2)}</strong> de ~$${(dailyRate * daysInMonth).toFixed(2)} proyectados</span>
+    </div>`;
+
+    // Budget utilization bar
+    const budgetUtilPct = Math.min((spent / Math.max(dailyRate * daysInMonth, 0.01)) * 100, 100);
+    fHtml += `<div style="margin-top:8px;">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-dim);margin-bottom:4px;">
+        <span>Utilización presupuestaria</span>
+        <span>${budgetUtilPct.toFixed(0)}%</span>
+      </div>
+      <div class="projection-bar">
+        <div class="projection-fill" style="width:${budgetUtilPct.toFixed(0)}%;background:${budgetUtilPct > 80 ? '#ff5252' : budgetUtilPct > 50 ? '#ffc107' : '#00e676'}"></div>
+      </div>
+    </div>`;
+
+    document.getElementById('forecastSection').innerHTML = fHtml;
+
+    // === MODEL GRID ===
+    let mh = '';
+    for (const [model, info] of Object.entries(byModel).sort((a,b) => b[1].cost - a[1].cost)) {
+      const p = MODEL_PRICES[model] || {name:model,in:'?',out:'?',recom:'?'};
+      mh += `<div class="model-card"><div class="name">🤖 ${p.name}</div>
+        <div class="stats">IN ${info.tokens_in.toLocaleString()} · OUT ${info.tokens_out.toLocaleString()} · ${info.count} reqs</div>
+        <div class="cost">$${info.cost.toFixed(3)}</div>
+        <div class="foot">IN $${p.in}/M · OUT $${p.out}/M · ${p.recom}</div>
+      </div>`;
+    }
+    if (!mh) mh = '<div class="loading">Sin datos de tracking aún — usa track_task.py para registrar consumo</div>';
+    document.getElementById('modelGrid').innerHTML = mh;
+
+    // === DAY BREAKDOWN ===
+    const byDay = {};
+    for (const t of tasks) {
+      if (!byDay[t.date]) byDay[t.date] = {cost:0,tokens_in:0,tokens_out:0,models:new Set()};
+      byDay[t.date].cost += t.cost || 0;
+      byDay[t.date].tokens_in += t.tokens_in || 0;
+      byDay[t.date].tokens_out += t.tokens_out || 0;
+      byDay[t.date].models.add(t.model);
+    }
+    let dh = '<table><tr><th>Día</th><th>Modelos</th><th>Tokens</th><th>$</th><th>Proy. semanal</th></tr>';
+    let dayCount = 0;
+    for (const [day, info] of Object.entries(byDay).sort().reverse().slice(0,14)) {
+      const modelStr = [...info.models].map(m => {
+        const p = MODEL_PRICES[m];
+        return p ? p.name : m.split('-').pop();
+      }).join('/');
+      const totalTokens = (info.tokens_in + info.tokens_out).toLocaleString();
+      const weekProj = (info.cost * 7).toFixed(2);
+      dh += `<tr><td>${day}</td><td>${modelStr}</td><td>${totalTokens}</td><td><strong>$${info.cost.toFixed(3)}</strong></td><td style="color:var(--text-dim)">~$${weekProj}</td></tr>`;
+      dayCount++;
+    }
+    if (Object.keys(byDay).length === 0) dh += '<tr><td colspan="5"><div class="loading">Sin datos de tracking aún</div></td></tr>';
+    dh += '</table>';
+    document.getElementById('dayBreakdown').innerHTML = dh;
+
+  } catch(e) {
+    console.error(e);
+    document.getElementById('balanceHero').innerHTML = '<div class="loading">Error conectando con DeepSeek</div>';
+  }
+}
+load();
+</script>
+</body>
+</html>

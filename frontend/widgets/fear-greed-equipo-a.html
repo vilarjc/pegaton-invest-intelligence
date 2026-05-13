@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fear &amp; Greed Widget — Equipo A</title>
+<style>
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+body {
+    background: #0a0e17;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+.widget-container {
+    background: #0e1520;
+    border-radius: 16px;
+    padding: 24px;
+    width: 340px;
+    max-width: 100%;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    border: 1px solid #1a2332;
+}
+.gauge-wrapper {
+    position: relative;
+    width: 280px;
+    height: 160px;
+    margin: 0 auto 8px;
+    overflow: hidden;
+}
+canvas#gaugeCanvas {
+    display: block;
+    width: 280px;
+    height: 160px;
+}
+.score-display {
+    position: absolute;
+    top: 70px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+}
+.score-number {
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+.score-label {
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 4px;
+    opacity: 0.9;
+}
+.action-badge {
+    text-align: center;
+    padding: 8px 0;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s;
+}
+.action-badge:hover {
+    opacity: 0.8;
+}
+.action-text {
+    font-size: 20px;
+    font-weight: 700;
+}
+.action-emoji {
+    font-size: 28px;
+    margin-left: 8px;
+}
+.expand-hint {
+    font-size: 11px;
+    color: #4a5a6e;
+    margin-top: 2px;
+}
+/* Expandable breakdown panel */
+.breakdown-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    margin-top: 0;
+}
+.breakdown-panel.open {
+    max-height: 400px;
+    margin-top: 16px;
+}
+.breakdown-inner {
+    background: #111a28;
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #1a2332;
+}
+.breakdown-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6a7a8e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+}
+.factor-row {
+    margin-bottom: 12px;
+}
+.factor-row:last-child {
+    margin-bottom: 0;
+}
+.factor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.factor-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #a0b0c0;
+}
+.factor-score {
+    font-size: 13px;
+    font-weight: 700;
+}
+.bar-track {
+    height: 6px;
+    background: #1a2332;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+    width: 0%;
+}
+.bar-detail {
+    font-size: 11px;
+    color: #4a5a6e;
+    margin-top: 2px;
+}
+/* Refresh info */
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    font-size: 11px;
+    color: #2a3a4e;
+}
+.timestamp-display {
+    color: #4a5a6e;
+}
+.cache-badge {
+    color: #2a3a4e;
+    font-style: italic;
+}
+.loading {
+    text-align: center;
+    color: #4a5a6e;
+    padding: 40px 0;
+    font-size: 14px;
+}
+</style>
+</head>
+<body>
+<div class="widget-container" id="widgetRoot">
+    <div class="gauge-wrapper">
+        <canvas id="gaugeCanvas" width="280" height="160"></canvas>
+        <div class="score-display">
+            <div class="score-number" id="scoreNumber">--</div>
+            <div class="score-label" id="scoreLabel">Cargando...</div>
+        </div>
+    </div>
+    <div class="action-badge" id="actionBadge" onclick="toggleBreakdown()">
+        <span class="action-text" id="actionText">Cargando</span>
+        <span class="action-emoji" id="actionEmoji">⏳</span>
+        <div class="expand-hint">▼ Ver desglose</div>
+    </div>
+    <div class="breakdown-panel" id="breakdownPanel">
+        <div class="breakdown-inner">
+            <div class="breakdown-title">Desglose de Factores</div>
+            <div id="factorBars"></div>
+        </div>
+    </div>
+    <div class="footer">
+        <span class="timestamp-display" id="timestampDisplay">--</span>
+        <span class="cache-badge" id="cacheBadge"></span>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const canvas = document.getElementById('gaugeCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = 280, H = 160;
+    canvas.width = W;
+    canvas.height = H;
+
+    const cx = W / 2;
+    const cy = H - 10;
+    const outerR = 130;
+    const innerR = 112;
+    const startAngle = Math.PI + 0.15;
+    const endAngle = 2 * Math.PI - 0.15;
+    const range = endAngle - startAngle;
+
+    let currentScore = 50;
+    let targetScore = 50;
+    let animFrame = null;
+
+    function getScoreColor(score) {
+        if (score <= 24) return '#ff3b30';
+        if (score <= 44) return '#ff9500';
+        if (score <= 54) return '#ffcc02';
+        if (score <= 74) return '#34c759';
+        return '#af52de';
+    }
+
+    function getActionData(score) {
+        if (score <= 24) return { label: 'Miedo Extremo', emoji: '🔴', color: '#ff3b30' };
+        if (score <= 44) return { label: 'Miedo', emoji: '🟠', color: '#ff9500' };
+        if (score <= 54) return { label: 'Neutral', emoji: '🟡', color: '#ffcc02' };
+        if (score <= 74) return { label: 'Ganancia', emoji: '🟢', color: '#34c759' };
+        return { label: 'Euforia Extrema', emoji: '🟣', color: '#af52de' };
+    }
+
+    function drawGauge(score) {
+        ctx.clearRect(0, 0, W, H);
+
+        // Background arc track
+        ctx.beginPath();
+        ctx.arc(cx, cy, outerR, startAngle, endAngle);
+        ctx.strokeStyle = '#1a2332';
+        ctx.lineWidth = 22;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Colored arc
+        const progress = Math.max(0, Math.min(1, score / 100));
+        const angle = startAngle + progress * range;
+        const color = getScoreColor(score);
+
+        // Draw gradient arc in segments for multi-color
+        const segments = 100;
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const segScore = t * 100;
+            const segAngle = startAngle + t * range;
+            const segColor = getScoreColor(segScore);
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, outerR, segAngle - 0.01, segAngle);
+            ctx.strokeStyle = segColor;
+            ctx.lineWidth = 22;
+            ctx.lineCap = 'butt';
+            ctx.stroke();
+        }
+
+        // Inner fill (dark) to cover the center
+        ctx.beginPath();
+        ctx.arc(cx, cy, innerR, 0, 2 * Math.PI);
+        ctx.fillStyle = '#0e1520';
+        ctx.fill();
+
+        // Draw needle
+        const needleAngle = startAngle + progress * range;
+        const needleLen = outerR - 8;
+        const needleX = cx + Math.sin(needleAngle) * needleLen;
+        const needleY = cy - Math.cos(needleAngle) * needleLen;
+
+        // Needle shadow
+        ctx.beginPath();
+        ctx.moveTo(cx + 1, cy + 2);
+        ctx.lineTo(needleX + 1, needleY + 2);
+        ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Needle
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(needleX, needleY);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Center dot
+        ctx.beginPath();
+        ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
+
+    function animateScore() {
+        if (animFrame) {
+            cancelAnimationFrame(animFrame);
+            animFrame = null;
+        }
+
+        function step() {
+            const diff = targetScore - currentScore;
+            if (Math.abs(diff) < 0.3) {
+                currentScore = targetScore;
+                drawGauge(currentScore);
+                return;
+            }
+            currentScore += diff * 0.1;
+            drawGauge(currentScore);
+            animFrame = requestAnimationFrame(step);
+        }
+        step();
+    }
+
+    function updateUI(data) {
+        const score = data.score;
+        targetScore = score;
+        animateScore();
+
+        const action = getActionData(score);
+        const color = action.color;
+
+        document.getElementById('scoreNumber').textContent = score;
+        document.getElementById('scoreNumber').style.color = color;
+        document.getElementById('scoreLabel').textContent = action.label;
+        document.getElementById('scoreLabel').style.color = color;
+        document.getElementById('actionText').textContent = action.label;
+        document.getElementById('actionText').style.color = color;
+        document.getElementById('actionEmoji').textContent = action.emoji;
+
+        if (data.timestamp) {
+            const dt = new Date(data.timestamp);
+            document.getElementById('timestampDisplay').textContent =
+                dt.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        const badge = document.getElementById('cacheBadge');
+        badge.textContent = data.cacheado ? '📦 cache' : '🔄 fresh';
+
+        // Factor bars
+        const factores = data.factores;
+        if (factores) {
+            const barsContainer = document.getElementById('factorBars');
+            barsContainer.innerHTML = '';
+
+            const items = [
+                { name: 'VIX', score: factores.vix?.score ?? 50, weight: '40%', detail: factores.vix?.value != null ? `VIX: ${factores.vix.value.toFixed(1)}` : '' },
+                { name: 'Macro', score: factores.macro?.score ?? 50, weight: '35%', detail: '' },
+                { name: 'Sentimiento', score: factores.sentimiento?.score ?? 50, weight: '25%', detail: factores.sentimiento?.detalles?.total_articles ? `${factores.sentimiento.detalles.total_articles} artículos` : '' },
+            ];
+
+            // Add macro sub-details
+            if (factores.macro?.detalles) {
+                const md = factores.macro.detalles;
+                const parts = [];
+                if (md.unemployment?.value != null) parts.push(`Desempleo: ${md.unemployment.value}%`);
+                if (md.inflation?.value != null) parts.push(`IPC: ${md.inflation.value.toFixed(1)}%`);
+                items[1].detail = parts.join(' | ');
+            }
+
+            items.forEach(function(item) {
+                const row = document.createElement('div');
+                row.className = 'factor-row';
+
+                const header = document.createElement('div');
+                header.className = 'factor-header';
+                header.innerHTML = `
+                    <span class="factor-name">${item.name} <span style="color:#4a5a6e;font-size:11px">(${item.weight})</span></span>
+                    <span class="factor-score" style="color:${getScoreColor(item.score)}">${Math.round(item.score)}</span>
+                `;
+
+                const track = document.createElement('div');
+                track.className = 'bar-track';
+                const fill = document.createElement('div');
+                fill.className = 'bar-fill';
+                fill.style.width = item.score + '%';
+                fill.style.background = getScoreColor(item.score);
+                track.appendChild(fill);
+
+                const detail = document.createElement('div');
+                detail.className = 'bar-detail';
+                detail.textContent = item.detail;
+
+                row.appendChild(header);
+                row.appendChild(track);
+                if (item.detail) row.appendChild(detail);
+                barsContainer.appendChild(row);
+            });
+        }
+    }
+
+    let breakdownOpen = false;
+    window.toggleBreakdown = function() {
+        breakdownOpen = !breakdownOpen;
+        const panel = document.getElementById('breakdownPanel');
+        const hint = document.querySelector('.expand-hint');
+        panel.classList.toggle('open', breakdownOpen);
+        hint.textContent = breakdownOpen ? '▲ Ocultar desglose' : '▼ Ver desglose';
+    };
+
+    function fetchData() {
+        fetch('/api/v1/fear-greed')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                updateUI(data);
+            })
+            .catch(function(err) {
+                console.error('Fear&Greed fetch error:', err);
+                document.getElementById('scoreLabel').textContent = 'Error';
+                document.getElementById('actionText').textContent = 'Sin datos';
+            });
+    }
+
+    // Initial fetch
+    fetchData();
+
+    // Auto-refresh every 60 seconds
+    setInterval(fetchData, 60000);
+})();
+</script>
+</body></html>

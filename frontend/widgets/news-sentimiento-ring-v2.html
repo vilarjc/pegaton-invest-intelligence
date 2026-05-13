@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentimiento de Noticias</title>
+<style>
+*, *::before, *::after {
+   box-sizing: border-box;
+   margin: 0;
+   padding: 0;
+}
+body {
+   background: #0a0e17;
+   color: #e0e0e0;
+   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   min-height: 100vh;
+   margin: 0;
+}
+.widget-container {
+   background: #0e1520;
+   border-radius: 16px;
+   padding: 24px;
+   width: 340px;
+   max-width: 100%;
+   box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+   border: 1px solid #1a2332;
+}
+
+/* === HEADER === */
+.header {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   margin-bottom: 14px;
+}
+.header-left {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+.header-title {
+   font-size: 14px;
+   font-weight: 600;
+   color: #e2e8f0;
+   letter-spacing: 0.3px;
+}
+.header-subtitle {
+   font-size: 11px;
+   color: #64748b;
+   margin-top: 2px;
+}
+
+/* === STATUS INDICATOR === */
+.status-dot {
+   width: 8px;
+   height: 8px;
+   border-radius: 50%;
+   transition: background 0.3s ease;
+}
+.status-dot.live { background: #34c759; box-shadow: 0 0 6px #34c75988; }
+.status-dot.cache { background: #ff9500; box-shadow: 0 0 6px #ff950088; }
+.status-dot.error { background: #ff3b30; box-shadow: 0 0 6px #ff3b3088; }
+.status-dot.loading {
+   background: #64748b;
+   animation: statusPulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes statusPulse {
+   from { opacity: 0.5; }
+   to { opacity: 1; }
+}
+
+/* === GAUGE WRAPPER === */
+.gauge-wrapper {
+   position: relative;
+   width: 280px;
+   height: 160px;
+   margin: 0 auto 8px;
+   overflow: hidden;
+}
+canvas#gaugeCanvas {
+   display: block;
+   width: 280px;
+   height: 160px;
+}
+.score-display {
+   position: absolute;
+   top: 70px;
+   left: 0;
+   width: 100%;
+   text-align: center;
+   pointer-events: none;
+}
+.score-number {
+   font-size: 48px;
+   font-weight: 800;
+   line-height: 1;
+   letter-spacing: -1px;
+}
+.score-label {
+   font-size: 16px;
+   font-weight: 600;
+   margin-top: 4px;
+   opacity: 0.9;
+}
+
+/* === DELTA BADGE === */
+.delta-badge {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   gap: 4px;
+   margin: 6px auto 0;
+   padding: 3px 12px;
+   border-radius: 20px;
+   font-size: 13px;
+   font-weight: 700;
+   background: rgba(100, 116, 139, 0.15);
+   color: #94a3b8;
+}
+.delta-badge.positive { background: rgba(52, 199, 89, 0.12); color: #34c759; }
+.delta-badge.negative { background: rgba(255, 59, 48, 0.12); color: #ff453a; }
+.delta-badge.zero { background: rgba(100, 116, 139, 0.12); color: #64748b; }
+
+/* === ACTION BADGE === */
+.action-badge {
+   text-align: center;
+   padding: 8px 0 4px;
+   cursor: pointer;
+   user-select: none;
+   transition: opacity 0.2s;
+}
+.action-badge:hover { opacity: 0.8; }
+.action-text {
+   font-size: 18px;
+   font-weight: 700;
+}
+.action-emoji {
+   font-size: 24px;
+   margin-left: 6px;
+}
+.expand-hint {
+   font-size: 11px;
+   color: #4a5a6e;
+   margin-top: 2px;
+}
+
+/* === ALERT BANNER === */
+.alert-banner {
+   display: none;
+   align-items: center;
+   justify-content: center;
+   gap: 8px;
+   padding: 10px 16px;
+   border-radius: 8px;
+   font-size: 13px;
+   font-weight: 700;
+   letter-spacing: 0.5px;
+   margin-bottom: 12px;
+   animation: bannerPulse 2s ease-in-out infinite;
+}
+.alert-banner.fear {
+   display: flex;
+   background: rgba(255, 59, 48, 0.15);
+   border: 1px solid rgba(255, 59, 48, 0.3);
+   color: #ff6b6b;
+}
+.alert-banner.greed {
+   display: flex;
+   background: rgba(175, 82, 222, 0.15);
+   border: 1px solid rgba(175, 82, 222, 0.3);
+   color: #c084fc;
+}
+@keyframes bannerPulse {
+   0%, 100% { opacity: 1; }
+   50% { opacity: 0.7; }
+}
+
+/* === BREAKDOWN PANEL === */
+.breakdown-panel {
+   max-height: 0;
+   overflow: hidden;
+   transition: max-height 0.4s ease;
+   margin-top: 0;
+}
+.breakdown-panel.open {
+   max-height: 400px;
+   margin-top: 12px;
+}
+.breakdown-inner {
+   background: #111a28;
+   border-radius: 12px;
+   padding: 16px;
+   border: 1px solid #1a2332;
+}
+.breakdown-title {
+   font-size: 13px;
+   font-weight: 600;
+   color: #6a7a8e;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+   margin-bottom: 12px;
+}
+.factor-row {
+   margin-bottom: 12px;
+}
+.factor-row:last-child { margin-bottom: 0; }
+.factor-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 4px;
+}
+.factor-name {
+   font-size: 13px;
+   font-weight: 500;
+   color: #a0b0c0;
+}
+.factor-score {
+   font-size: 13px;
+   font-weight: 700;
+}
+.bar-track {
+   height: 6px;
+   background: #1a2332;
+   border-radius: 3px;
+   overflow: hidden;
+}
+.bar-fill {
+   height: 100%;
+   border-radius: 3px;
+   transition: width 0.6s ease;
+   width: 0%;
+}
+.bar-detail {
+   font-size: 11px;
+   color: #4a5a6e;
+   margin-top: 2px;
+}
+
+/* === METRICS ROW === */
+.metrics-row {
+   display: flex;
+   gap: 10px;
+   margin-bottom: 12px;
+   flex-wrap: wrap;
+}
+.metric-card {
+   flex: 1;
+   min-width: 70px;
+   background: rgba(255,255,255,0.03);
+   border: 1px solid #1a2332;
+   border-radius: 8px;
+   padding: 8px 10px;
+   text-align: center;
+}
+.metric-value {
+   font-size: 16px;
+   font-weight: 700;
+   color: #e2e8f0;
+}
+.metric-label {
+   font-size: 9px;
+   color: #64748b;
+   text-transform: uppercase;
+   letter-spacing: 0.5px;
+   margin-top: 2px;
+}
+
+/* === FOOTER === */
+.footer {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-top: 10px;
+   font-size: 11px;
+   color: #2a3a4e;
+}
+.timestamp-display { color: #4a5a6e; }
+.cache-badge { color: #2a3a4e; font-style: italic; }
+
+/* === SOURCE BARS (in breakdown) === */
+.source-bar-row {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   margin-bottom: 4px;
+}
+.source-name {
+   width: 72px;
+   font-size: 10px;
+   color: #94a3b8;
+   text-align: right;
+   flex-shrink: 0;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+}
+.source-bar-bg {
+   flex: 1;
+   height: 5px;
+   background: #1a2332;
+   border-radius: 3px;
+   overflow: hidden;
+}
+.source-bar-fill {
+   height: 100%;
+   border-radius: 3px;
+   background: linear-gradient(90deg, #34c759, #34c759aa);
+   transition: width 0.4s ease;
+}
+.source-count {
+   width: 26px;
+   font-size: 10px;
+   color: #64748b;
+   text-align: right;
+   flex-shrink: 0;
+}
+
+/* === KEYWORD CHIPS === */
+.keywords-row {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 5px;
+}
+.keyword-chip {
+   display: inline-flex;
+   align-items: center;
+   gap: 3px;
+   padding: 2px 8px;
+   border-radius: 10px;
+   font-size: 10px;
+   font-weight: 500;
+   background: rgba(255,255,255,0.05);
+   border: 1px solid #1a2332;
+   color: #e2e8f0;
+}
+.keyword-chip .kw-count {
+   color: #64748b;
+   font-size: 9px;
+}
+
+/* === DISTRIBUTION BARS === */
+.dist-row {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   margin-bottom: 4px;
+}
+.dist-label {
+   width: 52px;
+   font-size: 10px;
+   text-align: right;
+   flex-shrink: 0;
+}
+.dist-label.fear { color: #ff453a; }
+.dist-label.neutral { color: #ffd60a; }
+.dist-label.greed { color: #34c759; }
+.dist-bar-bg {
+   flex: 1;
+   height: 5px;
+   background: #1a2332;
+   border-radius: 3px;
+   overflow: hidden;
+}
+.dist-bar-fill {
+   height: 100%;
+   border-radius: 3px;
+   transition: width 0.4s ease;
+}
+.dist-bar-fill.fear { background: #ff453a; }
+.dist-bar-fill.neutral { background: #ffd60a; }
+.dist-bar-fill.greed { background: #34c759; }
+.dist-count {
+   width: 20px;
+   font-size: 10px;
+   color: #94a3b8;
+   flex-shrink: 0;
+}
+
+/* === RESPONSIVE iframe-safe === */
+@media (max-width: 500px) {
+   .metrics-row { flex-direction: column; align-items: stretch; }
+   .metric-card { min-width: unset; }
+   .source-name { width: 56px; font-size: 9px; }
+}
+</style>
+</head>
+<body>
+<div class="widget-container" id="widgetRoot">
+
+   <!-- Header -->
+   <div class="header">
+      <div class="header-left">
+         <div>
+            <div class="header-title">📰 Sentimiento de Noticias</div>
+            <div class="header-subtitle">Análisis de medios financieros</div>
+         </div>
+      </div>
+      <div class="status-dot" id="statusDot"></div>
+   </div>
+
+   <!-- Alert Banner (hidden by default) -->
+   <div class="alert-banner" id="alertBanner"></div>
+
+   <!-- Gauge -->
+   <div class="gauge-wrapper">
+      <canvas id="gaugeCanvas" width="280" height="160"></canvas>
+      <div class="score-display">
+         <div class="score-number" id="scoreNumber">--</div>
+         <div class="score-label" id="scoreLabel">Cargando...</div>
+      </div>
+   </div>
+
+   <!-- Delta Badge -->
+   <div class="delta-badge" id="deltaBadge">—</div>
+
+   <!-- Action Badge (click to expand) -->
+   <div class="action-badge" id="actionBadge" onclick="toggleBreakdown()">
+      <span class="action-text" id="actionText">Cargando</span>
+      <span class="action-emoji" id="actionEmoji">⏳</span>
+      <div class="expand-hint" id="expandHint">▼ Ver desglose</div>
+   </div>
+
+   <!-- Breakdown Panel -->
+   <div class="breakdown-panel" id="breakdownPanel">
+      <div class="breakdown-inner">
+
+         <!-- Metrics row: articles & sources -->
+         <div class="metrics-row" id="metricsRow">
+            <div class="metric-card">
+               <div class="metric-value" id="metricArticles">—</div>
+               <div class="metric-label">Artículos</div>
+            </div>
+            <div class="metric-card">
+               <div class="metric-value" id="metricSources">—</div>
+               <div class="metric-label">Fuentes</div>
+            </div>
+         </div>
+
+         <!-- Fuentes RSS -->
+         <div class="breakdown-section" id="sourcesSection">
+            <div class="breakdown-title">Fuentes RSS</div>
+            <div id="sourcesList"></div>
+         </div>
+
+         <!-- Top Keywords -->
+         <div class="breakdown-section" id="keywordsSection">
+            <div class="breakdown-title">Palabras clave principales</div>
+            <div class="keywords-row" id="keywordsList"></div>
+         </div>
+
+         <!-- Distribución -->
+         <div class="breakdown-section" id="distributionSection">
+            <div class="breakdown-title">Distribución</div>
+            <div id="distributionList"></div>
+         </div>
+
+      </div>
+   </div>
+
+   <!-- Footer -->
+   <div class="footer">
+      <span class="timestamp-display" id="timestampDisplay">—</span>
+      <span class="cache-badge" id="cacheBadge"></span>
+   </div>
+</div>
+
+<script>
+(function() {
+   'use strict';
+
+   // ============ CONFIG ============
+   var API_URL = '/api/v1/news-sentiment';
+   var REFRESH_MS = 60000;
+
+   // Gauge geometry (semicircle)
+   var W = 280, H = 160;
+   var cx = W / 2;
+   var cy = H - 10;
+   var outerR = 130;
+   var innerR = 112;
+   var startAngle = Math.PI + 0.15;
+   var endAngle = 2 * Math.PI - 0.15;
+   var range = endAngle - startAngle;
+
+   // ============ 5-BAND COLOR SCHEME ============
+   // 0-19: Pánico, 20-39: Miedo, 40-59: Neutral, 60-79: Optimista, 80-100: Euforia
+   var BANDS = [
+      { from: 0,   to: 20,  color: '#ff3b30', label: 'Pánico' },
+      { from: 20,  to: 40,  color: '#ff9500', label: 'Miedo' },
+      { from: 40,  to: 60,  color: '#ffcc02', label: 'Neutral' },
+      { from: 60,  to: 80,  color: '#34c759', label: 'Optimista' },
+      { from: 80,  to: 101, color: '#af52de', label: 'Euforia' }
+   ];
+
+   // ============ STATE ============
+   var currentScore = 50;
+   var targetScore = 50;
+   var previousScore = null;
+   var lastData = null;
+   var animFrame = null;
+
+   // ============ DOM REFS ============
+   var canvas = document.getElementById('gaugeCanvas');
+   var ctx = canvas.getContext('2d');
+   var elScore = document.getElementById('scoreNumber');
+   var elLabel = document.getElementById('scoreLabel');
+   var elDeltaBadge = document.getElementById('deltaBadge');
+   var elAlertBanner = document.getElementById('alertBanner');
+   var elStatusDot = document.getElementById('statusDot');
+   var elActionText = document.getElementById('actionText');
+   var elActionEmoji = document.getElementById('actionEmoji');
+   var elExpandHint = document.getElementById('expandHint');
+   var elPanel = document.getElementById('breakdownPanel');
+   var elSources = document.getElementById('sourcesList');
+   var elKeywords = document.getElementById('keywordsList');
+   var elDistribution = document.getElementById('distributionList');
+   var elMetricArticles = document.getElementById('metricArticles');
+   var elMetricSources = document.getElementById('metricSources');
+   var elTimestamp = document.getElementById('timestampDisplay');
+   var elCacheBadge = document.getElementById('cacheBadge');
+
+   // ============ HELPERS ============
+   function getBandColor(score) {
+      for (var i = 0; i < BANDS.length; i++) {
+         if (score < BANDS[i].to) return BANDS[i].color;
+      }
+      return '#af52de';
+   }
+
+   function getActionData(score) {
+      if (score < 20) return { label: 'Miedo Extremo', emoji: '🔴', color: '#ff3b30' };
+      if (score < 40) return { label: 'Miedo', emoji: '🟠', color: '#ff9500' };
+      if (score < 60) return { label: 'Neutral', emoji: '🟡', color: '#ffcc02' };
+      if (score < 80) return { label: 'Optimista', emoji: '🟢', color: '#34c759' };
+      return { label: 'Euforia', emoji: '🟣', color: '#af52de' };
+   }
+
+   // VADER retrocompat: score en [-1, 1] → [0, 100]
+   function normalizeScore(raw) {
+      if (typeof raw === 'number' && raw >= -1 && raw <= 1) {
+         return Math.round((raw + 1) * 50);
+      }
+      return raw;
+   }
+
+   // ============ CANVAS GAUGE ============
+   function drawGauge(score) {
+      ctx.clearRect(0, 0, W, H);
+
+      // Track background
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, startAngle, endAngle);
+      ctx.strokeStyle = '#1a2332';
+      ctx.lineWidth = 22;
+      ctx.lineCap = 'butt';
+      ctx.stroke();
+
+      // Draw colored segments (full background set)
+      var segments = 100;
+      for (var i = 0; i <= segments; i++) {
+         var t = i / segments;
+         var segScore = t * 100;
+         var segAngle = startAngle + t * range;
+         var segColor = getBandColor(segScore);
+         ctx.beginPath();
+         ctx.arc(cx, cy, outerR, segAngle - 0.01, segAngle);
+         ctx.strokeStyle = segColor;
+         ctx.lineWidth = 22;
+         ctx.lineCap = 'butt';
+         ctx.globalAlpha = 0.25;
+         ctx.stroke();
+         ctx.globalAlpha = 1.0;
+      }
+
+      // Active arc (filled portion up to score)
+      var progress = Math.max(0, Math.min(1, score / 100));
+      var activeEnd = startAngle + progress * range;
+      var activeColor = getBandColor(score);
+
+      if (score > 0) {
+         // Shadow
+         ctx.save();
+         ctx.beginPath();
+         ctx.arc(cx, cy + 2, outerR, startAngle, activeEnd);
+         ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+         ctx.lineWidth = 22;
+         ctx.lineCap = 'butt';
+         ctx.stroke();
+         ctx.restore();
+
+         // Active fill
+         ctx.beginPath();
+         ctx.arc(cx, cy, outerR, startAngle, activeEnd);
+         ctx.strokeStyle = activeColor;
+         ctx.lineWidth = 22;
+         ctx.lineCap = 'butt';
+         ctx.shadowColor = activeColor;
+         ctx.shadowBlur = 10;
+         ctx.stroke();
+         ctx.shadowBlur = 0;
+      }
+
+      // Inner dark fill
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR, 0, 2 * Math.PI);
+      ctx.fillStyle = '#0e1520';
+      ctx.fill();
+
+      // Needle
+      var needleAngle = startAngle + progress * range;
+      var needleLen = outerR - 8;
+      var needleX = cx + Math.sin(needleAngle) * needleLen;
+      var needleY = cy - Math.cos(needleAngle) * needleLen;
+
+      // Needle shadow
+      ctx.beginPath();
+      ctx.moveTo(cx + 1, cy + 2);
+      ctx.lineTo(needleX + 1, needleY + 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // White needle
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(needleX, needleY);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Center dot
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+      ctx.fillStyle = activeColor;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+   }
+
+   // ============ ANIMATION ============
+   function animateScore() {
+      if (animFrame) {
+         cancelAnimationFrame(animFrame);
+         animFrame = null;
+      }
+
+      var animationStartTime = performance.now();
+      var duration = 800;
+
+      function step(now) {
+         var elapsed = now - animationStartTime;
+         var progress = Math.min(elapsed / duration, 1);
+         var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+         currentScore = currentScore + (targetScore - currentScore) * eased;
+
+         drawGauge(currentScore);
+         elScore.textContent = Math.round(currentScore);
+
+         if (progress < 1) {
+            animFrame = requestAnimationFrame(step);
+         }
+      }
+      animFrame = requestAnimationFrame(step);
+   }
+
+   function renderGauge(score) {
+      drawGauge(score);
+      var color = getBandColor(score);
+      elScore.style.color = color;
+      elScore.textContent = Math.round(score);
+      var action = getActionData(score);
+      elLabel.textContent = action.label;
+      elLabel.style.color = color;
+      elActionText.textContent = action.label;
+      elActionText.style.color = color;
+      elActionEmoji.textContent = action.emoji;
+   }
+
+   // ============ DELTA BADGE ============
+   function updateDelta(score) {
+      var delta = 0;
+      var deltaPct = '';
+
+      if (lastData && typeof lastData.delta === 'number') {
+         delta = lastData.delta;
+         if (lastData.delta_pct) deltaPct = ' (' + lastData.delta_pct + ')';
+      } else {
+         if (previousScore !== null) {
+            delta = score - previousScore;
+         }
+      }
+
+      // Save previous
+      if (previousScore === null || (lastData && typeof lastData.delta === 'number')) {
+         previousScore = score;
+      }
+
+      var sign = delta > 0 ? '+' : '';
+      var text = sign + delta;
+      if (deltaPct) text += deltaPct;
+      elDeltaBadge.textContent = text;
+
+      elDeltaBadge.className = 'delta-badge';
+      if (delta > 0) elDeltaBadge.classList.add('positive');
+      else if (delta < 0) elDeltaBadge.classList.add('negative');
+      else elDeltaBadge.classList.add('zero');
+   }
+
+   // ============ ALERT BANNER ============
+   function updateAlert(alert, score) {
+      // Retrocompat
+      if (!alert) {
+         if (score < 20) alert = 'EXTREME_FEAR';
+         else if (score > 80) alert = 'EXTREME_GREED';
+      }
+
+      elAlertBanner.className = 'alert-banner';
+      if (alert === 'EXTREME_FEAR') {
+         elAlertBanner.classList.add('fear');
+         elAlertBanner.innerHTML = '⚠️ PÁNICO EXTREMO';
+         elAlertBanner.style.display = 'flex';
+      } else if (alert === 'EXTREME_GREED') {
+         elAlertBanner.classList.add('greed');
+         elAlertBanner.innerHTML = '🚀 EUFORIA EXTREMA';
+         elAlertBanner.style.display = 'flex';
+      } else {
+         elAlertBanner.style.display = 'none';
+      }
+   }
+
+   // ============ BREAKDOWN PANEL ============
+   var breakdownOpen = false;
+   window.toggleBreakdown = function() {
+      breakdownOpen = !breakdownOpen;
+      elPanel.classList.toggle('open', breakdownOpen);
+      elExpandHint.textContent = breakdownOpen ? '▲ Ocultar desglose' : '▼ Ver desglose';
+   };
+
+   function renderSources(sources) {
+      if (!sources || Object.keys(sources).length === 0) {
+         elSources.innerHTML = '<span style="color:#64748b;font-size:12px">No disponible</span>';
+         return;
+      }
+      var total = 0;
+      for (var k in sources) total += sources[k];
+      var sorted = Object.keys(sources).sort(function(a, b) { return sources[b] - sources[a]; });
+      var html = '';
+      for (var i = 0; i < sorted.length; i++) {
+         var name = sorted[i].replace(/_/g, ' ');
+         var count = sources[sorted[i]];
+         var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+         html += '<div class="source-bar-row">' +
+            '<span class="source-name">' + name + '</span>' +
+            '<div class="source-bar-bg"><div class="source-bar-fill" style="width:' + pct + '%"></div></div>' +
+            '<span class="source-count">' + count + '</span>' +
+            '</div>';
+      }
+      elSources.innerHTML = html;
+   }
+
+   function renderKeywords(keywords) {
+      if (!keywords || keywords.length === 0) {
+         elKeywords.innerHTML = '<span style="color:#64748b;font-size:11px">Sin datos</span>';
+         return;
+      }
+      var html = '';
+      for (var i = 0; i < keywords.length; i++) {
+         var kw = keywords[i];
+         html += '<span class="keyword-chip">' + kw.word + ' <span class="kw-count">(' + kw.count + ')</span></span>';
+      }
+      elKeywords.innerHTML = html;
+   }
+
+   function renderDistribution(dist) {
+      if (!dist) {
+         document.getElementById('distributionSection').style.display = 'none';
+         return;
+      }
+      document.getElementById('distributionSection').style.display = 'block';
+      var total = (dist.fear || 0) + (dist.neutral || 0) + (dist.greed || 0);
+
+      function miniRow(label, cls, count) {
+         var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+         return '<div class="dist-row">' +
+            '<span class="dist-label ' + cls + '">' + label + '</span>' +
+            '<div class="dist-bar-bg"><div class="dist-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>' +
+            '<span class="dist-count">' + count + '</span>' +
+            '</div>';
+      }
+
+      elDistribution.innerHTML =
+         miniRow('Miedo', 'fear', dist.fear || 0) +
+         miniRow('Neutral', 'neutral', dist.neutral || 0) +
+         miniRow('Euforia', 'greed', dist.greed || 0);
+   }
+
+   // ============ STATUS ============
+   function setStatus(cls) {
+      elStatusDot.className = 'status-dot ' + cls;
+   }
+
+   // ============ METRICS ============
+   function updateMetrics(data) {
+      elMetricArticles.textContent = data.total_articles || '—';
+      elMetricSources.textContent = data.sources ? Object.keys(data.sources).length : '—';
+
+      var ts = data.timestamp || new Date().toISOString();
+      try {
+         var d = new Date(ts);
+         elTimestamp.textContent =
+            d.getHours().toString().padStart(2, '0') + ':' +
+            d.getMinutes().toString().padStart(2, '0');
+      } catch (e) {
+         elTimestamp.textContent = '—';
+      }
+   }
+
+   // ============ FETCH ============
+   function fetchData() {
+      setStatus('loading');
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', API_URL, true);
+      xhr.timeout = 15000;
+
+      xhr.onload = function() {
+         if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+               var data = JSON.parse(xhr.responseText);
+               lastData = data;
+               setStatus('live');
+               handleData(data);
+            } catch (e) {
+               setStatus('error');
+               console.error('[News] Parse error:', e);
+            }
+         } else {
+            setStatus('error');
+            console.error('[News] HTTP', xhr.status);
+         }
+      };
+
+      xhr.onerror = function() {
+         if (lastData) {
+            setStatus('cache');
+         } else {
+            setStatus('error');
+         }
+         console.error('[News] Network error');
+      };
+
+      xhr.ontimeout = function() {
+         if (lastData) {
+            setStatus('cache');
+         } else {
+            setStatus('error');
+         }
+         console.error('[News] Request timeout');
+      };
+
+      xhr.send();
+   }
+
+   function handleData(data) {
+      var score = normalizeScore(data.score);
+      score = Math.max(0, Math.min(100, score));
+
+      var prevCurrent = currentScore;
+      targetScore = score;
+
+      // Start animation from current rendered position
+      if (animFrame) {
+         cancelAnimationFrame(animFrame);
+         animFrame = null;
+      }
+      currentScore = prevCurrent;
+      animateScore();
+
+      updateDelta(score);
+      updateAlert(data.alert, score);
+      updateMetrics(data);
+      renderSources(data.sources);
+      renderKeywords(data.top_keywords);
+      renderDistribution(data.distribution);
+
+      // Cache badge
+      elCacheBadge.textContent = data.cacheado ? '📦 cache' : '🔄 fresh';
+   }
+
+   // ============ INIT ============
+   fetchData();
+   setInterval(fetchData, REFRESH_MS);
+})();
+</script>
+</body>
+</html>

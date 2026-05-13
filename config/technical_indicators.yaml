@@ -1,0 +1,48 @@
+# =============================================================================
+# TECHNICAL INDICATORS CONFIGURATION
+# =============================================================================
+# Equivalente a TECHNICAL_WEIGHTS y parámetros de scoring en pegaton_config.py (Spec B)
+# Indicadores: RSI(14), MACD, SMA50, SMA200
+# =============================================================================
+
+# Pesos — deben sumar 1.0
+weights:
+  RSI(14): 0.30
+  MACD:     0.25
+  SMA50:    0.25
+  SMA200:   0.20
+
+# Parámetros de RSI
+rsi:
+  period: 14
+  oversold: 30        # RSI <= 30 → zona de sobreventa (score alto = alcista)
+  overbought: 70      # RSI >= 70 → zona de sobrecompra (score bajo = bajista)
+  # Mapeo de RSI a score (0-100), inversamente proporcional
+  # RSI <= oversold → score ≈ 100
+  # RSI >= overbought → score ≈ 0
+  # Entre medias: interpolación lineal invertida
+
+# Parámetros de MACD
+macd:
+  fast_period: 12
+  slow_period: 26
+  signal_period: 9
+  bullish_score: 65    # Score cuando MACD line > signal line
+  bearish_score: 35    # Score cuando MACD line < signal line
+
+# Parámetros de SMA (Simple Moving Average)
+sma:
+  sma50:
+    period: 50
+    above_score: 70    # Precio > SMA50 → alcista
+    below_score: 30    # Precio < SMA50 → bajista
+  sma200:
+    period: 200
+    above_score: 70
+    below_score: 30
+
+# Dirección de factores
+factor_direction:
+  alcista_threshold: 55    # score >= 55 → alcista
+  bajista_threshold: 45    # score <= 45 → bajista
+  # Entre 45 y 55 → neutral

@@ -1,0 +1,103 @@
+# =============================================================================
+# MACRO INDICATORS CONFIGURATION
+# =============================================================================
+# Equivalente al MACRO_SCORING definido en pegaton_config.py (Spec A)
+# Fuente de datos: FRED (Federal Reserve Economic Data)
+# Cada indicador tiene reglas de scoring condicional (primera coincidencia gana)
+# =============================================================================
+
+# Pesos globales — deben sumar 1.0
+weights:
+  FEDFUNDS:   0.20
+  CPIAUCSL:   0.10
+  PCEPI:      0.10
+  PAYEMS:     0.15
+  UNRATE:     0.15
+  UMCSENT:    0.10
+  INDPRO:     0.10
+  DGS10:      0.10
+
+# Reglas de scoring por indicador
+# Formato: {operator: <=|>=|<|>|default, threshold: number|null, score: 0-100}
+indicators:
+
+  FEDFUNDS:
+    name: "Fed Funds Rate"
+    description: "Higher rates = tighter policy = bearish. 0-2% accommodative → bullish, 4%+ restrictive → bearish."
+    source: "FRED/FEDFUNDS"
+    rules:
+      - { operator: "<=", threshold: 1.5, score: 80 }
+      - { operator: "<=", threshold: 2.5, score: 65 }
+      - { operator: "<=", threshold: 3.5, score: 50 }
+      - { operator: "<=", threshold: 5.0, score: 35 }
+      - { operator: "default", threshold: null, score: 20 }
+
+  CPIAUCSL:
+    name: "CPI (Consumer Price Index)"
+    description: "CPI Level. For MVP: neutral default (need YoY for proper context)."
+    source: "FRED/CPIAUCSL"
+    rules:
+      - { operator: "default", threshold: null, score: 50 }
+
+  PCEPI:
+    name: "PCE Price Index"
+    description: "PCE Price Index level. Similar to CPI. For MVP: neutral default."
+    source: "FRED/PCEPI"
+    rules:
+      - { operator: "default", threshold: null, score: 50 }
+
+  PAYEMS:
+    name: "Nonfarm Payrolls"
+    description: "Higher = strong economy = bullish. Over 150K monthly is typically strong."
+    source: "FRED/PAYEMS"
+    rules:
+      - { operator: ">", threshold: 160000, score: 70 }
+      - { operator: ">", threshold: 150000, score: 60 }
+      - { operator: ">", threshold: 130000, score: 50 }
+      - { operator: ">", threshold: 100000, score: 40 }
+      - { operator: "default", threshold: null, score: 30 }
+
+  UNRATE:
+    name: "Unemployment Rate"
+    description: "Lower = stronger = bullish. Under 4% = tight labor market = bullish. Over 5% = weakening."
+    source: "FRED/UNRATE"
+    rules:
+      - { operator: "<", threshold: 3.5, score: 80 }
+      - { operator: "<", threshold: 4.0, score: 70 }
+      - { operator: "<", threshold: 4.5, score: 60 }
+      - { operator: "<", threshold: 5.0, score: 50 }
+      - { operator: "<", threshold: 6.0, score: 35 }
+      - { operator: "default", threshold: null, score: 20 }
+
+  UMCSENT:
+    name: "Consumer Sentiment (UMICH)"
+    description: "Higher = more confident = bullish. Historical range ~50-110."
+    source: "FRED/UMCSENT"
+    rules:
+      - { operator: ">=", threshold: 100, score: 80 }
+      - { operator: ">=", threshold: 80, score: 65 }
+      - { operator: ">=", threshold: 65, score: 50 }
+      - { operator: ">=", threshold: 50, score: 35 }
+      - { operator: "default", threshold: null, score: 20 }
+
+  INDPRO:
+    name: "Industrial Production"
+    description: "Higher = stronger production = bullish. Index (100 = 2017 base)."
+    source: "FRED/INDPRO"
+    rules:
+      - { operator: ">=", threshold: 105, score: 70 }
+      - { operator: ">=", threshold: 100, score: 60 }
+      - { operator: ">=", threshold: 95, score: 50 }
+      - { operator: "default", threshold: null, score: 40 }
+
+  DGS10:
+    name: "10-Year Treasury Yield"
+    description: "Very low = flight to safety = bearish. Very high = inflation concerns = bearish. Moderate = normal."
+    source: "FRED/DGS10"
+    rules:
+      - { operator: "<", threshold: 2.0, score: 30 }
+      - { operator: "<", threshold: 3.0, score: 45 }
+      - { operator: "<", threshold: 4.0, score: 55 }
+      - { operator: "<", threshold: 5.0, score: 45 }
+      - { operator: "<", threshold: 6.0, score: 35 }
+      - { operator: "default", threshold: null, score: 25 }

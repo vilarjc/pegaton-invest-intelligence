@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Dashboard - Candlestick Chart</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #21262d;
+            --text: #c9d1d9;
+            --text-secondary: #8b949e;
+            --green: #26a69a;
+            --red: #ef5350;
+            --blue: #58a6ff;
+            --orange: #f0883e;
+            --grid: #1c2128;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #090c10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;
+            padding: 16px;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 1050px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .instrument-info {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .instrument-symbol {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.3px;
+        }
+
+        .instrument-name {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .price-display {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.2px;
+        }
+
+        .price-change {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 4px;
+            letter-spacing: 0.2px;
+        }
+        .price-change.up {
+            color: var(--green);
+            background: rgba(38, 166, 154, 0.12);
+        }
+        .price-change.down {
+            color: var(--red);
+            background: rgba(239, 83, 80, 0.12);
+        }
+
+        .legend-row {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+            position: relative;
+            top: -1px;
+        }
+        .legend-dot.sma7 {
+            background: var(--blue);
+        }
+        .legend-dot.sma21 {
+            background: var(--orange);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            min-height: 420px;
+            max-height: 620px;
+            cursor: crosshair;
+        }
+        .canvas-wrapper.grabbing {
+            cursor: grabbing;
+        }
+        .canvas-wrapper.panning {
+            cursor: grabbing;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: auto;
+        }
+
+        .instructions {
+            padding: 8px 20px 12px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            border-top: 1px solid var(--border);
+            letter-spacing: 0.2px;
+        }
+        .instructions span {
+            opacity: 0.7;
+        }
+        .instructions .key {
+            display: inline-block;
+            background: #21262d;
+            padding: 2px 7px;
+            border-radius: 3px;
+            font-weight: 600;
+            color: #c9d1d9;
+            margin: 0 2px;
+            font-size: 0.68rem;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 600px) {
+            .dashboard-header {
+                padding: 10px 14px;
+                gap: 6px;
+            }
+            .instrument-symbol {
+                font-size: 1rem;
+            }
+            .price-display {
+                font-size: 1.05rem;
+            }
+            .legend-row {
+                gap: 10px;
+                font-size: 0.68rem;
+            }
+            .instructions {
+                padding: 6px 14px 10px;
+                font-size: 0.65rem;
+                gap: 8px;
+            }
+            .canvas-wrapper {
+                min-height: 300px;
+                max-height: 420px;
+            }
+        }
+        @media (max-width: 380px) {
+            .canvas-wrapper {
+                min-height: 260px;
+                max-height: 340px;
+            }
+            .dashboard-header {
+                padding: 8px 10px;
+            }
+            .legend-row {
+                gap: 6px;
+                font-size: 0.62rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header with instrument info -->
+        <div class="dashboard-header">
+            <div class="instrument-info">
+                <span class="instrument-symbol">SMPL</span>
+                <span class="instrument-name">Sample Inc.</span>
+                <span class="price-display" id="lastPrice">—</span>
+                <span class="price-change" id="priceChange">—</span>
+            </div>
+            <div class="legend-row">
+                <span><span class="legend-dot sma7"></span> SMA-7</span>
+                <span><span class="legend-dot sma21"></span> SMA-21</span>
+            </div>
+        </div>
+
+        <!-- Canvas chart -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="chartCanvas"></canvas>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions">
+            <span><span class="key">Scroll</span> to zoom</span>
+            <span><span class="key">Drag</span> to pan</span>
+            <span><span class="key">Hover</span> for details</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ─────────────────────────────────────
+            // SEEDED PSEUDO-RANDOM NUMBER GENERATOR
+            // Using Mulberry32 algorithm for deterministic results
+            // ─────────────────────────────────────
+            function mulberry32(seed) {
+                return function() {
+                    seed |= 0;
+                    seed = seed + 0x6D2B79F5 | 0;
+                    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+                    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+                    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+                };
+            }
+
+            const random = mulberry32(42);
+
+            // ─────────────────────────────────────
+            // GENERATE SAMPLE OHLCV DATA (30 days)
+            // ─────────────────────────────────────
+            function generateOHLCVData(days, basePrice, volatility) {
+                const data = [];
+                let prevClose = basePrice;
+                const baseDate = new Date(2024, 0, 2); // Start Jan 2, 2024
+
+                for (let i = 0; i < days; i++) {
+                    // Calculate date (skip weekends for realism)
+                    const date = new Date(baseDate);
+                    date.setDate(baseDate.getDate() + i);
+
+                    // Random walk with mean-reversion tendency
+                    const dailyReturn = (random() - 0.48) * volatility * 2;
+                    const noise = random() * volatility;
+                    const close = prevClose * (1 + dailyReturn);
+
+                    // Generate intraday ranges
+                    const intradayRange = Math.abs(close - prevClose) + prevClose * volatility * random();
+                    const high = Math.max(prevClose, close) + intradayRange * random() * 0.7;
+                    const low = Math.min(prevClose, close) - intradayRange * random() * 0.7;
+
+                    // Ensure high >= max(open, close) and low <= min(open, close)
+                    const validHigh = Math.max(high, prevClose, close);
+                    const validLow = Math.min(low, prevClose, close);
+
+                    // Volume between 500k and 8M with some variation
+                    const volume = Math.floor(500000 + random() * 7500000 + (Math.abs(dailyReturn) * 50000000));
+
+                    data.push({
+                        date: date.toISOString().split('T')[0], // YYYY-MM-DD format
+                        open: parseFloat(prevClose.toFixed(2)),
+                        high: parseFloat(validHigh.toFixed(2)),
+                        low: parseFloat(validLow.toFixed(2)),
+                        close: parseFloat(close.toFixed(2)),
+                        volume: volume,
+                    });
+
+                    prevClose = close;
+                }
+                return data;
+            }
+
+            // ─────────────────────────────────────
+            // CALCULATE SIMPLE MOVING AVERAGE
+            // ─────────────────────────────────────
+            function calculateSMA(data, period) {
+                const sma = [];
+                for (let i = 0; i < data.length; i++) {
+                    if (i < period - 1) {
+                        sma.push(null); // Not enough data
+                    } else {
+                        let sum = 0;
+                        for (let j = i - period + 1; j <= i; j++) {
+                            sum += data[j].close;
+                        }
+                        sma.push(parseFloat((sum / period).toFixed(2)));
+                    }
+                }
+                return sma;
+            }
+
+            // ─────────────────────────────────────
+            // FORMAT HELPERS
+            // ─────────────────────────────────────
+            function formatPrice(price) {
+                return '$' + price.toFixed(2);
+            }
+
+            function formatVolume(vol) {
+                if (vol >= 1000000) return (vol / 1000000).toFixed(2) + 'M';
+                if (vol >= 1000) return (vol / 1000).toFixed(1) + 'K';
+                return vol.toString();
+            }
+
+            function formatVolumeCompact(vol) {
+                if (vol >= 1000000) return (vol / 1000000).toFixed(1) + 'M';
+                if (vol >= 1000) return (vol / 1000).toFixed(0) + 'K';
+                return vol.toString();
+            }
+
+            function formatDate(dateStr) {
+                const d = new Date(dateStr + 'T00:00:00');
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                ];
+                return months[d.getMonth()] + ' ' + d.getDate();
+            }
+
+            // ─────────────────────────────────────
+            // GENERATE ALL DATA
+            // ─────────────────────────────────────
+            const allData = generateOHLCVData(30, 100, 0.025);
+            const sma7 = calculateSMA(allData, 7);
+            const sma21 = calculateSMA(allData, 21);
+
+            // Update header with latest data
+            const lastData = allData[allData.length - 1];
+            const firstData = allData[0];
+            const totalChange = lastData.close - firstData.close;
+            const totalChangePercent = ((totalChange / firstData.close) * 100);
+
+            document.getElementById('lastPrice').textContent = formatPrice(lastData.close);
+            const priceChangeEl = document.getElementById('priceChange');
+            if (totalChange >= 0) {
+                priceChangeEl.textContent = '+' + formatPrice(totalChange) + ' (+' + totalChangePercent.toFixed(2) +
+                    '%)';
+                priceChangeEl.className = 'price-change up';
+            } else {
+                priceChangeEl.textContent = formatPrice(totalChange) + ' (' + totalChangePercent.toFixed(2) + '%)';
+                priceChangeEl.className = 'price-change down';
+            }
+
+            // ─────────────────────────────────────
+            // CANVAS SETUP
+            // ─────────────────────────────────────
+            const canvasWrapper = document.getElementById('canvasWrapper');
+            const canvas = document.getElementById('chartCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // ─────────────────────────────────────
+            // STATE MANAGEMENT
+            // ─────────────────────────────────────
+            let viewStart = -1; // Float: first visible candle index (allow partial)
+            let viewEnd = 30; // Float: last visible candle index + 1 (allow partial)
+            let hoveredIndex = -1;
+            let mouseX = -1;
+            let mouseY = -1;
+            let isDragging = false;
+            let dragStartX = 0;
+            let dragStartViewStart = 0;
+            let dragStartViewEnd = 0;
+            let canvasWidth = 0;
+            let canvasHeight = 0;
+            let dpr = 1;
+            let needsRedraw = true;
+
+            // Debounce resize
+            let resizeTimeout = null;
+
+            // ─────────────────────────────────────
+            // RESIZE HANDLER
+            // ─────────────────────────────────────
+            function resizeCanvas() {
+                const rect = canvasWrapper.getBoundingClientRect();
+                const newWidth = rect.width;
+                const newHeight = rect.height;
+
+                if (newWidth <= 0 || newHeight <= 0) return;
+
+                dpr = Math.min(window.devicePixelRatio || 1, 2); // Cap at 2x for performance
+
+                const widthChanged = Math.abs(canvasWidth - newWidth) > 1;
+                const heightChanged = Math.abs(canvasHeight - newHeight) > 1;
+
+                if (widthChanged || heightChanged) {
+                    canvasWidth = newWidth;
+                    canvasHeight = newHeight;
+
+                    canvas.style.width = canvasWidth + 'px';
+                    canvas.style.height = canvasHeight + 'px';
+                    canvas.width = Math.floor(canvasWidth * dpr);
+                    canvas.height = Math.floor(canvasHeight * dpr);
+
+                    needsRedraw = true;
+                }
+            }
+
+            // ─────────────────────────────────────
+            // COORDINATE HELPERS
+            // ─────────────────────────────────────
+            function getCanvasCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top,
+                };
+            }
+
+            // ─────────────────────────────────────
+            // LAYOUT CALCULATIONS
+            // ─────────────────────────────────────
+            function getLayout() {
+                const w = canvasWidth;
+                const h = canvasHeight;
+
+                // Responsive margins based on canvas width
+                const isSmall = w < 500;
+                const isTiny = w < 350;
+
+                const leftMargin = isTiny ? 42 : isSmall ? 52 : 68;
+                const rightMargin = isTiny ? 8 : isSmall ? 12 : 18;
+                const topMargin = isTiny ? 22 : isSmall ? 28 : 36;
+                const bottomMargin = isTiny ? 28 : isSmall ? 34 : 44;
+                const volumeRatio = 0.28; // Volume chart takes 28% of usable height
+                const gapBetweenCharts = isTiny ? 3 : 5;
+
+                const usableHeight = h - topMargin - bottomMargin;
+                const volumeHeight = Math.floor(usableHeight * volumeRatio);
+                const chartHeight = usableHeight - volumeHeight - gapBetweenCharts;
+                const chartTop = topMargin;
+                const chartBottom = chartTop + chartHeight;
+                const volumeTop = chartBottom + gapBetweenCharts;
+                const volumeBottom = volumeTop + volumeHeight;
+                const chartLeft = leftMargin;
+                const chartRight = w - rightMargin;
+                const chartWidth = chartRight - chartLeft;
+
+                return {
+                    w,
+                    h,
+                    leftMargin,
+                    rightMargin,
+                    topMargin,
+                    bottomMargin,
+                    chartTop,
+                    chartBottom,
+                    chartHeight,
+                    chartLeft,
+                    chartRight,
+                    chartWidth,
+                    volumeTop,
+                    volumeBottom,
+                    volumeHeight,
+                    gapBetweenCharts,
+                    isSmall,
+                    isTiny,
+                };
+            }
+
+            // ─────────────────────────────────────
+            // DATA RANGE FOR VISIBLE AREA
+            // ─────────────────────────────────────
+            function getVisibleDataRange(layout) {
+                const visibleCount = viewEnd - viewStart;
+                const slotWidth = layout.chartWidth / visibleCount;
+
+                const startIdx = Math.max(0, Math.floor(viewStart) - 1);
+                const endIdx = Math.min(allData.length - 1, Math.ceil(viewEnd) + 1);
+
+                // Find min/max prices in visible range (including SMA values)
+                let minPrice = Infinity;
+                let maxPrice = -Infinity;
+                let maxVolume = 0;
+
+                for (let i = startIdx; i <= endIdx; i++) {
+                    const d = allData[i];
+                    if (d.low < minPrice) minPrice = d.low;
+                    if (d.high > maxPrice) maxPrice = d.high;
+                    if (d.volume > maxVolume) maxVolume = d.volume;
+
+                    // Also check SMA values
+                    if (sma7[i] !== null) {
+                        if (sma7[i] < minPrice) minPrice = sma7[i];
+                        if (sma7[i] > maxPrice) maxPrice = sma7[i];
+                    }
+                    if (sma21[i] !== null) {
+                        if (sma21[i] < minPrice) minPrice = sma21[i];
+                        if (sma21[i] > maxPrice) maxPrice = sma21[i];
+                    }
+                }
+
+                // Add 5% padding to price range
+                const priceRange = maxPrice - minPrice;
+                const pricePadding = priceRange * 0.06 || maxPrice * 0.02 || 1;
+                minPrice -= pricePadding;
+                maxPrice += pricePadding;
+
+                // Ensure volume has some minimum range
+                if (maxVolume <= 0) maxVolume = 1000000;
+
+                return {
+                    startIdx,
+                    endIdx,
+                    minPrice,
+                    maxPrice,
+                    maxVolume,
+                    visibleCount,
+                    slotWidth,
+                };
+            }
+
+            // ─────────────────────────────────────
+            // CONVERT DATA INDEX TO X POSITION
+            // ─────────────────────────────────────
+            function candleIndexToX(index, layout, visibleCount) {
+                const slotWidth = layout.chartWidth / visibleCount;
+                return layout.chartLeft + (index - viewStart) * slotWidth;
+            }
+
+            // ─────────────────────────────────────
+            // CONVERT X POSITION TO DATA INDEX
+            // ─────────────────────────────────────
+            function xToCandleIndex(x, layout) {
+                const visibleCount = viewEnd - viewStart;
+                const slotWidth = layout.chartWidth / visibleCount;
+                const rawIndex = viewStart + (x - layout.chartLeft) / slotWidth;
+                return Math.round(rawIndex);
+            }
+
+            // ─────────────────────────────────────
+            // MAIN RENDER FUNCTION
+            // ─────────────────────────────────────
+            function render() {
+                if (canvasWidth <= 0 || canvasHeight <= 0) return;
+
+                const layout = getLayout();
+                const vis = getVisibleDataRange(layout);
+
+                ctx.save();
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // Scale for DPR
+
+                // Clear entire canvas
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+                // ── BACKGROUND ────────────────────
+                ctx.fillStyle = '#0d1117';
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                // ── DRAW GRID LINES (chart area) ──
+                const gridLineCount = layout.isTiny ? 4 : layout.isSmall ? 5 : 6;
+                ctx.strokeStyle = '#1c2128';
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([4, 6]);
+                ctx.beginPath();
+                for (let i = 0; i <= gridLineCount; i++) {
+                    const y = layout.chartTop + (layout.chartHeight / gridLineCount) * i;
+                    ctx.moveTo(layout.chartLeft, y);
+                    ctx.lineTo(layout.chartRight, y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // ── DRAW PRICE LABELS (Y-AXIS) ────
+                ctx.fillStyle = '#8b949e';
+                const labelFontSize = layout.isTiny ? 9 : layout.isSmall ? 10 : 11;

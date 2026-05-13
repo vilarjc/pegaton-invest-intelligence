@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON - Agentes</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  .section-title { font-size:13px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin:20px 0 10px; }
+
+  .agent-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:8px; }
+  .agent-card { background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative; }
+  .agent-card .tag-role { position:absolute;top:10px;right:10px;font-size:9px;padding:2px 8px;border-radius:8px; }
+  .agent-card .a-name { font-size:15px;font-weight:600;margin-bottom:2px; }
+  .agent-card .a-desc { font-size:11px;color:var(--text-dim);margin-bottom:6px; }
+  .agent-card .a-model { display:flex;align-items:center;gap:6px;font-size:12px;padding:4px 8px;background:var(--bg);border-radius:6px;margin:4px 0; }
+  .agent-card .a-stats { font-size:11px;color:var(--text-dim);display:flex;gap:10px;margin-top:6px; }
+  .tag-pm { background:rgba(123,47,247,0.15);color:#7b2ff7; }
+  .tag-exp { background:rgba(0,212,255,0.15);color:#00d4ff; }
+  .tag-prog { background:rgba(0,230,118,0.15);color:#00e676; }
+  .tag-base { background:rgba(255,193,7,0.15);color:#ffc107; }
+
+  .round-table { background:var(--card);border:2px solid #7b2ff7;border-radius:14px;padding:18px;margin:12px 0;position:relative; }
+  .round-table .rt-title { font-size:14px;font-weight:600;color:#7b2ff7;margin-bottom:8px; }
+  .round-table .rt-desc { font-size:12px;color:var(--text-dim);line-height:1.5; }
+  .rt-models { display:flex;gap:8px;flex-wrap:wrap;margin:8px 0; }
+  .rt-model { padding:6px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);background:var(--bg); }
+  .rt-model.active { border-color:#7b2ff7;background:rgba(123,47,247,0.08); }
+
+  .consensus-flow { display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px 0;padding:10px;background:var(--bg);border-radius:10px; }
+  .consensus-step { text-align:center;padding:8px;font-size:11px;min-width:100px; }
+  .consensus-step .num { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:11px;font-weight:700; }
+  .consensus-arrow { color:var(--text-dim);font-size:18px; }
+
+  .future-badge { display:inline-block;padding:2px 8px;border-radius:6px;font-size:10px;background:rgba(123,47,247,0.12);color:#7b2ff7;margin-left:6px; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Hub</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval">🏆 Eval</a>
+  <a href="/processes">⚙️ Procesos</a>
+  <a href="/health">🩺 Salud</a>
+  <a href="/agents" class="active">🤖 Agentes</a>
+  <a href="/projects">📁 Proyectos</a>
+</nav>
+<div class="container">
+
+  <div class="section-title">🤖 ARQUITECTURA DE AGENTES</div>
+  <p style="font-size:13px;color:var(--text-dim);margin-bottom:8px;">Cada proyecto tiene su propio ecosistema de agentes. Los agentes se agrupan por proyecto y pueden tener homólogos multi-modelo para análisis comparativos.</p>
+
+  <!-- MESA REDONDA SECTION -->
+  <div class="round-table">
+    <div class="rt-title">🧠 MESA REDONDA MULTI-MODELO <span class="future-badge">PRÓXIMAMENTE</span></div>
+    <div class="rt-desc">
+      <strong>¿Cómo funciona?</strong> Un mismo análisis es ejecutado por varios modelos simultáneamente. Luego confrontan resultados, identifican discrepancias y toman una decisión consensuada. Si hay dudas, pueden consultar a un agente experto de otra área.
+    </div>
+
+    <div class="consensus-flow">
+      <div class="consensus-step">
+        <div class="num" style="background:#00d4ff;color:#000;">1</div>
+        <div><strong>Análisis Individual</strong></div>
+        <div style="color:var(--text-dim)">Cada modelo ejecuta el mismo estudio</div>
+      </div>
+      <div class="consensus-arrow">→</div>
+      <div class="consensus-step">
+        <div class="num" style="background:#ffc107;color:#000;">2</div>
+        <div><strong>Confrontación</strong></div>
+        <div style="color:var(--text-dim)">Comparan resultados y señalan diferencias</div>
+      </div>
+      <div class="consensus-arrow">→</div>
+      <div class="consensus-step">
+        <div class="num" style="background:#7b2ff7;color:#fff;">3</div>
+        <div><strong>Consenso</strong></div>
+        <div style="color:var(--text-dim)">Debaten y toman decisión final</div>
+      </div>
+      <div class="consensus-arrow">→</div>
+      <div class="consensus-step">
+        <div class="num" style="background:#00e676;color:#000;">4</div>
+        <div><strong>Acción</strong></div>
+        <div style="color:var(--text-dim)">Ejecutan la señal acordada</div>
+      </div>
+    </div>
+
+    <div class="rt-models">
+      <span class="rt-model active">🔵 DeepSeek V4 Flash</span>
+      <span class="rt-model active">🟣 DeepSeek Reasoner (R1)</span>
+      <span class="rt-model">🟢 Gemini Flash (futuro)</span>
+      <span class="rt-model">🟠 Claude Haiku (futuro)</span>
+      <span class="rt-model">🔴 GPT-4o Mini (futuro)</span>
+    </div>
+    <div style="font-size:11px;color:#3a4a5f;">
+      ⚡ Al conectar más proveedores (OpenRouter, Anthropic, Google), los agentes homólogos podrán ejecutarse con modelos externos sin coste adicional de DeepSeek.
+    </div>
+  </div>
+
+  <!-- PROYECTO: INVERSOR -->
+  <div class="section-title">📊 Proyecto: Agente Inversor</div>
+  <div class="agent-grid">
+    <div class="agent-card">
+      <span class="tag-role tag-pm">PM / Orquestador</span>
+      <div class="a-name">🧑‍💼 Project Manager</div>
+      <div class="a-desc">Orquesta el flujo de trabajo: recibe petición, la desglosa, asigna a agentes especializados, consolida resultados</div>
+      <div class="a-model">⚡ DeepSeek V4 Flash</div>
+      <div class="a-stats">
+        <span>💰 $0.14/M IN</span>
+        <span>🔄 Alta frecuencia</span>
+      </div>
+    </div>
+
+    <div class="agent-card" style="border-color:#00d4ff40;">
+      <span class="tag-role tag-exp">Analista Macro</span>
+      <div class="a-name">🏛️ Macro Score</div>
+      <div class="a-desc">Analiza indicadores FRED (Fed Funds, CPI, PCE, PAYEMS, UNRATE, UMCSENT, INDPRO, DGS10), genera score macro 0-100</div>
+      <div class="a-model">⚡ DeepSeek Chat ($0.28/M IN)</div>
+      <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(123,47,247,0.08);color:#7b2ff7;border:1px dashed rgba(123,47,247,0.3);">➕ Homólogo Reasoner (futuro)</span>
+      </div>
+      <div class="a-stats">
+        <span>🔗 FRED API</span>
+        <span>📅 Ingreso diario</span>
+      </div>
+    </div>
+
+    <div class="agent-card" style="border-color:#00d4ff40;">
+      <span class="tag-role tag-exp">Analista Técnico</span>
+      <div class="a-name">📈 Technical Score</div>
+      <div class="a-desc">Calcula RSI, MACD, SMA50/200, volumen y genera score técnico 0-100 por activo</div>
+      <div class="a-model">⚡ DeepSeek Chat ($0.28/M IN)</div>
+      <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+        <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(123,47,247,0.08);color:#7b2ff7;border:1px dashed rgba(123,47,247,0.3);">➕ Homólogo Reasoner (futuro)</span>
+        <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(0,212,255,0.08);color:#00d4ff;border:1px dashed rgba(0,212,255,0.3);">➕ Homólogo Gemini Flash (futuro)</span>
+      </div>
+      <div class="a-stats">
+        <span>🔗 Twelve Data</span>
+        <span>🔄 Cada 30s</span>
+      </div>
+    </div>
+
+    <div class="agent-card">
+      <span class="tag-role tag-prog">Programador</span>
+      <div class="a-name">💻 Programador</div>
+      <div class="a-desc">Implementa features, corrige bugs, mantiene el código base — común a todos los proyectos</div>
+      <div class="a-model">⚡ DeepSeek V4 Flash</div>
+      <div class="a-stats">
+        <span>🐍 Python/FastAPI</span>
+        <span>📝 On-demand</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FUTURE AGENTS -->
+  <div class="section-title">🚀 Próximos Agentes Expertos <span class="future-badge">EN CARTERA</span></div>
+  <div class="agent-grid">
+    <div class="agent-card" style="border-style:dashed;opacity:0.8;">
+      <span class="tag-role tag-exp">Geoeconomía</span>
+      <div class="a-name">🌍 Geopolítica</div>
+      <div class="a-desc">Analiza impacto de aranceles, guerras, elecciones, sanciones y tensiones geopolíticas en mercados</div>
+      <div class="a-stats"><span>💡 Idea — pendiente de implementar</span></div>
+    </div>
+    <div class="agent-card" style="border-style:dashed;opacity:0.8;">
+      <span class="tag-role tag-exp">Sentimiento</span>
+      <div class="a-name">📰 News Sentiment</div>
+      <div class="a-desc">Scraping de titulares + análisis de sentimiento en tiempo real para detectar impacto mediático</div>
+      <div class="a-stats"><span>💡 Idea — pendiente de implementar</span></div>
+    </div>
+    <div class="agent-card" style="border-style:dashed;opacity:0.8;">
+      <span class="tag-role tag-exp">Crypto</span>
+      <div class="a-name">₿ Crypto Specialist</div>
+      <div class="a-desc">Análisis específico para criptomonedas: on-chain data, correlación BTC, dominancia, funding rates</div>
+      <div class="a-stats"><span>💡 Idea — pendiente de implementar</span></div>
+    </div>
+    <div class="agent-card" style="border-style:dashed;opacity:0.8;">
+      <span class="tag-role tag-exp">Riesgo</span>
+      <div class="a-name">⚠️ Risk Manager</div>
+      <div class="a-desc">Evalúa riesgo global de portfolio, sugiere stops, rebalanceo y sizing de posiciones</div>
+      <div class="a-stats"><span>💡 Idea — pendiente de implementar</span></div>
+    </div>
+  </div>
+
+  <!-- MODEL COMPARISON TABLE -->
+  <div class="card" style="margin-top:16px;">
+    <div class="section-title">📊 COMPARATIVA DE MODELOS DISPONIBLES</div>
+    <table>
+      <tr><th>Modelo</th><th>Coste IN/M</th><th>Coste OUT/M</th><th>Velocidad</th><th>Calidad</th><th>Mejor para</th></tr>
+      <tr>
+        <td><strong>V4 Flash</strong></td>
+        <td>$0.14</td><td>$0.28</td>
+        <td>🚀 Rápido</td><td>⭐⭐⭐</td>
+        <td>Tareas rutinarias, PM, programador, enrutador</td>
+      </tr>
+      <tr>
+        <td><strong>Chat</strong></td>
+        <td>$0.28</td><td>$0.42</td>
+        <td>⚡ Medio</td><td>⭐⭐⭐⭐</td>
+        <td>Análisis macro/técnico estándar</td>
+      </tr>
+      <tr>
+        <td><strong>V4 Pro</strong></td>
+        <td>$0.435</td><td>$0.87</td>
+        <td>⚡ Medio</td><td>⭐⭐⭐⭐⭐</td>
+        <td>Señales de inversión, decisiones críticas</td>
+      </tr>
+      <tr>
+        <td><strong>Reasoner (R1)</strong></td>
+        <td>$0.55</td><td>$2.19</td>
+        <td>🐢 Lento</td><td>⭐⭐⭐⭐⭐+</td>
+        <td>Análisis profundo, backtesting, razonamiento complejo</td>
+      </tr>
+    </table>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:8px;">💡 En la mesa redonda, cada agente homólogo usa un modelo diferente y los resultados se comparan para tomar la mejor decisión.</p>
+  </div>
+
+  <div class="footer">PEGATON · Multi-Agent System · Model Router · Cost Intelligence</div>
+</div>
+</body>
+</html>

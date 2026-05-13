@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>BTC/USDT Chart</title>
+    <style>
+        /* ----- RESET & GLOBAL ----- */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #060b15;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 12px;
+        }
+
+        /* ----- CHART CONTAINER ----- */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            background: #0d1117;
+            border-radius: 14px;
+            border: 1px solid #1e2a3a;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
+            padding: 18px 18px 14px 18px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        /* ----- HEADER / TITLE BAR ----- */
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px 12px 4px;
+            border-bottom: 1px solid #1c2533;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chart-pair {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-pair h1 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #e6edf3;
+            letter-spacing: -0.3px;
+        }
+
+        .chart-pair .badge {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8b949e;
+            background: #161e2b;
+            padding: 2px 10px;
+            border-radius: 6px;
+            border: 1px solid #1e2a3a;
+        }
+
+        .chart-last-price {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .chart-last-price .price {
+            font-size: 26px;
+            font-weight: 700;
+            color: #00c853;
+            letter-spacing: -0.5px;
+        }
+
+        .chart-last-price .change {
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b949e;
+        }
+
+        .chart-last-price .change.pos {
+            color: #00c853;
+        }
+        .chart-last-price .change.neg {
+            color: #ff1744;
+        }
+
+        /* ----- CANVAS WRAPPER ----- */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            margin-top: 8px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        #chartCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #0d1117;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        /* ----- TOOLTIP ----- */
+        .chart-tooltip {
+            position: absolute;
+            pointer-events: none;
+            background: #121a26;
+            border: 1px solid #2a3a4e;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #c9d1d9;
+            font-size: 13px;
+            line-height: 1.6;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            transition: opacity 0.12s ease;
+            z-index: 50;
+            min-width: 170px;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+        }
+
+        .chart-tooltip.visible {
+            opacity: 1;
+        }
+
+        .chart-tooltip .tt-date {
+            font-size: 12px;
+            color: #8b949e;
+            margin-bottom: 4px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+
+        .chart-tooltip .tt-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .chart-tooltip .tt-label {
+            color: #8b949e;
+        }
+
+        .chart-tooltip .tt-value {
+            color: #e6edf3;
+            font-weight: 600;
+        }
+
+        .chart-tooltip .tt-value.up {
+            color: #00c853;
+        }
+        .chart-tooltip .tt-value.down {
+            color: #ff1744;
+        }
+
+        .chart-tooltip .tt-divider {
+            height: 1px;
+            background: #1e2a3a;
+            margin: 5px 0;
+        }
+
+        .chart-tooltip .tt-volume {
+            font-size: 12px;
+            color: #8b949e;
+        }
+        .chart-tooltip .tt-volume span {
+            color: #e6edf3;
+            font-weight: 600;
+        }
+
+        /* ----- RESPONSIVE ----- */
+        @media (max-width: 640px) {
+            body {
+                padding: 6px;
+            }
+            .chart-container {
+                padding: 12px 10px 10px 10px;
+                border-radius: 10px;
+            }
+            .chart-pair h1 {
+                font-size: 17px;
+            }
+            .chart-pair .badge {
+                font-size: 10px;
+                padding: 1px 8px;
+            }
+            .chart-last-price .price {
+                font-size: 20px;
+            }
+            .chart-last-price .change {
+                font-size: 12px;
+            }
+            .chart-header {
+                padding-bottom: 8px;
+            }
+            .chart-tooltip {
+                font-size: 11px;
+                padding: 8px 12px;
+                min-width: 140px;
+            }
+            .chart-tooltip .tt-date {
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .chart-last-price .price {
+                font-size: 16px;
+            }
+            .chart-pair h1 {
+                font-size: 14px;
+            }
+            .chart-container {
+                padding: 8px 6px 6px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chart-container" id="chartContainer">
+        <!-- HEADER -->
+        <div class="chart-header">
+            <div class="chart-pair">
+                <h1>BTC/USDT</h1>
+                <span class="badge">BINANCE</span>
+            </div>
+            <div class="chart-last-price">
+                <span class="price" id="lastPrice">$78,664.66</span>
+                <span class="change pos" id="priceChange">+0.55%</span>
+            </div>
+        </div>
+
+        <!-- CANVAS -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <canvas id="chartCanvas"></canvas>
+            <!-- TOOLTIP (HTML overlay) -->
+            <div class="chart-tooltip" id="chartTooltip">
+                <div class="tt-date" id="ttDate">—</div>
+                <div class="tt-divider"></div>
+                <div class="tt-row"><span class="tt-label">O</span><span class="tt-value" id="ttOpen">—</span></div>
+                <div class="tt-row"><span class="tt-label">H</span><span class="tt-value" id="ttHigh">—</span></div>
+                <div class="tt-row"><span class="tt-label">L</span><span class="tt-value" id="ttLow">—</span></div>
+                <div class="tt-row"><span class="tt-label">C</span><span class="tt-value" id="ttClose">—</span></div>
+                <div class="tt-divider"></div>
+                <div class="tt-volume">Volume: <span id="ttVolume">—</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        //  1. DATA
+        // ============================================================
+        const BTC_DATA = [{
+            "date": "2026-04-03",
+            "open": 66901.99,
+            "high": 67370.42,
+            "low": 66282.0,
+            "close": 66964.3,
+            "volume": 11429.13131
+        }, {
+            "date": "2026-04-04",
+            "open": 66964.29,
+            "high": 67562.93,
+            "low": 66775.91,
+            "close": 67300.42,
+            "volume": 7373.51613
+        }, {
+            "date": "2026-04-05",
+            "open": 67300.42,
+            "high": 69136.2,
+            "low": 66611.66,
+            "close": 69034.18,
+            "volume": 11733.46752
+        }, {
+            "date": "2026-04-06",
+            "open": 69034.18,
+            "high": 70351.46,
+            "low": 68300.0,
+            "close": 68853.66,
+            "volume": 20281.61044
+        }, {
+            "date": "2026-04-07",
+            "open": 68853.66,
+            "high": 72761.0,
+            "low": 67732.01,
+            "close": 71924.22,
+            "volume": 23750.49661
+        }, {
+            "date": "2026-04-08",
+            "open": 71924.22,
+            "high": 72857.0,
+            "low": 70707.23,
+            "close": 71069.93,
+            "volume": 19802.68627
+        }, {
+            "date": "2026-04-09",
+            "open": 71069.93,
+            "high": 73145.0,
+            "low": 70466.0,
+            "close": 71787.97,
+            "volume": 18158.42159
+        }, {
+            "date": "2026-04-10",
+            "open": 71787.98,
+            "high": 73434.0,
+            "low": 71426.15,
+            "close": 72962.7,
+            "volume": 17372.63288
+        }, {
+            "date": "2026-04-11",
+            "open": 72962.71,
+            "high": 73790.0,
+            "low": 72513.09,
+            "close": 73043.16,
+            "volume": 9070.94374
+        }, {
+            "date": "2026-04-12",
+            "open": 73043.16,
+            "high": 73137.24,
+            "low": 70505.88,
+            "close": 70740.98,
+            "volume": 13472.46801
+        }, {
+            "date": "2026-04-13",
+            "open": 70741.56,
+            "high": 74900.0,
+            "low": 70566.99,
+            "close": 74417.99,
+            "volume": 24230.21625
+        }, {
+            "date": "2026-04-14",
+            "open": 74418.0,
+            "high": 76038.0,
+            "low": 73795.47,
+            "close": 74131.55,
+            "volume": 26532.94456
+        }, {
+            "date": "2026-04-15",
+            "open": 74131.55,
+            "high": 75425.0,
+            "low": 73514.0,
+            "close": 74809.99,
+            "volume": 14425.04167
+        }, {
+            "date": "2026-04-16",
+            "open": 74809.99,
+            "high": 75534.76,
+            "low": 73309.85,
+            "close": 75154.29,
+            "volume": 17088.68777
+        }, {
+            "date": "2026-04-17",
+            "open": 75154.28,
+            "high": 78333.0,
+            "low": 74529.4,
+            "close": 77072.0,
+            "volume": 25941.36694
+        }, {
+            "date": "2026-04-18",
+            "open": 77072.01,
+            "high": 77420.08,
+            "low": 75445.16,
+            "close": 75691.76,
+            "volume": 9141.84456
+        }, {
+            "date": "2026-04-19",
+            "open": 75691.76,
+            "high": 76240.66,
+            "low": 73762.9,
+            "close": 73801.79,
+            "volume": 11369.82232
+        }, {
+            "date": "2026-04-20",
+            "open": 73801.8,
+            "high": 76558.62,
+            "low": 73724.31,
+            "close": 75840.97,
+            "volume": 16993.41034
+        }, {
+            "date": "2026-04-21",
+            "open": 75840.97,
+            "high": 76927.57,
+            "low": 74821.57,
+            "close": 76336.15,
+            "volume": 14912.57132
+        }, {
+            "date": "2026-04-22",
+            "open": 76336.14,
+            "high": 79472.82,
+            "low": 76132.95,
+            "close": 78178.23,
+            "volume": 19737.51225
+        }, {
+            "date": "2026-04-23",
+            "open": 78178.22,
+            "high": 78662.5,
+            "low": 76960.0,
+            "close": 78257.48,
+            "volume": 16970.79501
+        }, {
+            "date": "2026-04-24",
+            "open": 78257.48,
+            "high": 78581.93,
+            "low": 77264.08,
+            "close": 77437.13,
+            "volume": 12675.14315
+        }, {
+            "date": "2026-04-25",
+            "open": 77437.13,
+            "high": 77885.35,
+            "low": 77140.23,
+            "close": 77625.0,
+            "volume": 5685.1142
+        }, {
+            "date": "2026-04-26",
+            "open": 77625.0,
+            "high": 78961.0,
+            "low": 77326.51,
+            "close": 78657.55,
+            "volume": 7963.56162
+        }, {
+            "date": "2026-04-27",
+            "open": 78657.55,
+            "high": 79485.66,
+            "low": 76459.64,
+            "close": 77371.32,
+            "volume": 16046.92418
+        }, {
+            "date": "2026-04-28",
+            "open": 77371.32,
+            "high": 77478.0,
+            "low": 75666.6,
+            "close": 76342.77,
+            "volume": 13210.72383
+        }, {
+            "date": "2026-04-29",
+            "open": 76342.78,
+            "high": 77904.93,
+            "low": 74937.52,
+            "close": 75780.0,
+            "volume": 18279.93022
+        }, {
+            "date": "2026-04-30",
+            "open": 75780.0,
+            "high": 76669.14,
+            "low": 75323.65,
+            "close": 76346.57,
+            "volume": 10381.81607
+        }, {
+            "date": "2026-05-01",
+            "open": 76346.58,
+            "high": 78914.12,
+            "low": 76320.42,
+            "close": 78231.13,
+            "volume": 17315.46502
+        }, {
+            "date": "2026-05-02",
+            "open": 78231.13,
+            "high": 79199.48,
+            "low": 78040.0,
+            "close": 78664.66,
+            "volume": 6123.6215
+        }];
+
+        // ============================================================
+        //  2. DATA PREPARATION
+        // ============================================================
+
+        /** Parse dates, compute SMAs, store in a clean array. */
+        const parsed = BTC_DATA.map(d => ({
+            ...d,
+            parsedDate: new Date(d.date + 'T00:00:00')
+        }));
+
+        // Compute SMA-7 and SMA-21 from close prices
+        function computeSMA(data, period) {
+            const result = new Array(data.length).fill(null);
+            for (let i = period - 1; i < data.length; i++) {
+                let sum = 0;
+                for (let j = i - period + 1; j <= i; j++) {
+                    sum += data[j].close;
+                }
+                result[i] = sum / period;
+            }
+            return result;
+        }
+
+        const sma7 = computeSMA(parsed, 7);
+        const sma21 = computeSMA(parsed, 21);
+
+        // Attach to parsed for convenience
+        parsed.forEach((d, i) => {
+            d.sma7 = sma7[i];
+            d.sma21 = sma21[i];
+        });
+
+        // ============================================================
+        //  3. CONFIGURATION
+        // ============================================================
+
+        const COLORS = {
+            bg: '#0d1117',
+            grid: '#1c2333',
+            text: '#8b949e',
+            textStrong: '#e6edf3',
+            up: '#00c853',
+            down: '#ff1744',
+            volumeUp: 'rgba(0,200,83,0.25)',
+            volumeDown: 'rgba(255,23,68,0.25)',
+            sma7: '#ffd600',
+            sma21: '#2979ff',
+            crosshair: 'rgba(255,255,255,0.13)',
+            border: '#1e2a3a',
+        };
+
+        // Layout margins (in canvas pixels, will be scaled)
+        const MARGIN = { top: 28, right: 12, bottom: 32, left: 68 };
+        const VOLUME_RATIO = 0.22; // fraction of lower portion for volume
+
+        // ============================================================
+        //  4. CANVAS SETUP & STATE
+        // ============================================================
+
+        const canvas = document.getElementById('chartCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('canvasWrapper');
+        const tooltipEl = document.getElementById('chartTooltip');
+
+        // State
+        let W = 0,
+            H = 0;
+        let dpr = 1;
+
+        // Visible range (indices into `parsed`)
+        let startIdx = 0;
+        let endIdx = parsed.length - 1;
+
+        // Interaction
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartIdx = 0;
+        let mouseX = -1,
+            mouseY = -1;
+        let hoveredIdx = -1;
+        let isHovering = false;
+
+        // ============================================================
+        //  5. LAYOUT COMPUTATION
+        // ============================================================
+
+        function getLayout() {
+            const chartTop = MARGIN.top;
+            const chartBottom = H - MARGIN.bottom;
+            const totalHeight = chartBottom - chartTop;
+            const volumeHeight = totalHeight * VOLUME_RATIO;
+            const candleHeight = totalHeight - volumeHeight;
+
+            return {
+                chartTop,
+                chartBottom,
+                candleBottom: chartTop + candleHeight,
+                volumeTop: chartTop + candleHeight,
+                volumeBottom: chartBottom,
+                left: MARGIN.left,
+                right: W - MARGIN.right,
+                width: W - MARGIN.left - MARGIN.right,
+                candleHeight,
+                volumeHeight,
+            };
+        }
+
+        // ============================================================
+        //  6. SCALING HELPERS
+        // ============================================================
+
+        /** Get the visible data slice. */
+        function getVisibleData() {
+            const s = Math.max(0, Math.round(startIdx));
+            const e = Math.min(parsed.length - 1, Math.round(endIdx));
+            return { start: s, end: e, count: e - s + 1 };
+        }
+
+        /** Compute y-scale for prices within the visible window. */
+        function getPriceScale(layout, visible) {
+            const slice = parsed.slice(visible.start, visible.end + 1);
+            let min = Infinity,
+                max = -Infinity;
+            for (const d of slice) {
+                if (d.low < min) min = d.low;
+                if (d.high > max) max = d.high;
+            }
+            // Also consider SMAs
+            for (let i = visible.start; i <= visible.end; i++) {
+                if (parsed[i].sma7 !== null && parsed[i].sma7 < min) min = parsed[i].sma7;
+                if (parsed[i].sma7 !== null && parsed[i].sma7 > max) max = parsed[i].sma7;
+                if (parsed[i].sma21 !== null && parsed[i].sma21 < min) min = parsed[i].sma21;
+                if (parsed[i].sma21 !== null && parsed[i].sma21 > max) max = parsed[i].sma21;
+            }
+            const padding = (max - min) * 0.08 || 200;
+            min -= padding;
+            max += padding;
+            return { min, max, range: max - min };
+        }
+
+        /** Map price to y coordinate (inverted). */
+        function priceToY(price, scale, layout) {
+            return layout.chartTop + layout.candleHeight * (1 - (price - scale.min) / scale.range);
+        }
+
+        /** Map data index to x coordinate. */
+        function idxToX(idx, layout, visible) {
+            const count = visible.count;
+            if (count <= 1) return layout.left + layout.width / 2;
+            const spacing = layout.width / (count - 1);
+            return layout.left + (idx - visible.start) * spacing;
+        }
+
+        /** Map x coordinate back to data index (float). */
+        function xToIdx(x, layout, visible) {
+            if (visible.count <= 1) return visible.start;
+            const spacing = layout.width / (visible.count - 1);
+            return visible.start + (x - layout.left) / spacing;
+        }
+
+        /** Get volume scale. */
+        function getVolumeScale(layout, visible) {
+            let maxVol = 0;
+            for (let i = visible.start; i <= visible.end; i++) {
+                if (parsed[i].volume > maxVol) maxVol = parsed[i].volume;
+            }
+            return { max: maxVol || 1 };
+        }
+
+        // ============================================================
+        //  7. RENDERING
+        // ============================================================
+
+        function render() {
+            if (W === 0 || H === 0) return;
+
+            const layout = getLayout();
+            const visible = getVisibleData();
+            const priceScale = getPriceScale(layout, visible);
+            const volScale = getVolumeScale(layout, visible);
+
+            // ---- Clear ----
+            ctx.clearRect(0, 0, W, H);
+
+            // ---- Background ----
+            ctx.fillStyle = COLORS.bg;
+            ctx.fillRect(0, 0, W, H);
+
+            // ---- Grid lines (horizontal) ----
+            ctx.strokeStyle = COLORS.grid;
+            ctx.lineWidth = 0.5;
+            const gridSteps = 5;
+            for (let i = 0; i <= gridSteps; i++) {
+                const y = layout.chartTop + (layout.candleHeight / gridSteps) * i;
+                ctx.beginPath();
+                ctx.moveTo(layout.left, y);
+                ctx.lineTo(layout.right, y);
+                ctx.stroke();
+            }
+            // Vertical grid lines (sparse)
+            const vSteps = Math.min(visible.count - 1, 10);
+            if (vSteps > 0) {
+                const step = Math.max(1, Math.floor((visible.count - 1) / vSteps));
+                for (let i = visible.start; i <= visible.end; i += step) {
+                    const x = idxToX(i, layout, visible);
+                    ctx.beginPath();
+                    ctx.moveTo(x, layout.chartTop);
+                    ctx.lineTo(x, layout.volumeBottom);
+                    ctx.stroke();
+                }
+            }
+
+            // ---- Volume bars ----
+            for (let i = visible.start; i <= visible.end; i++) {
+                const d = parsed[i];
+                const x = idxToX(i, layout, visible);
+                const barWidth = Math.max(1, layout.width / visible.count * 0.6);
+                const isUp = d.close >= d.open;
+                const color = isUp ? COLORS.volumeUp : COLORS.volumeDown;
+                const volHeight = (d.volume / volScale.max) * layout.volumeHeight * 0.85;
+                const yBase = layout.volumeBottom;
+                const yTop = yBase - volHeight;
+
+                ctx.fillStyle = color;
+                ctx.fillRect(x - barWidth / 2, yTop, barWidth, volHeight);
+            }
+
+            // ---- Candlesticks ----
+            for (let i = visible.start; i <= visible.end; i++) {
+                const d = parsed[i];
+                const x = idxToX(i, layout, visible);
+                const barWidth = Math.max(1, layout.width / visible.count * 0.55);
+                const half = barWidth / 2;
+
+                const isUp = d.close >= d.open;
+                const color = isUp ? COLORS.up : COLORS.down;
+
+                const yHigh = priceToY(d.high, priceScale, layout);
+                const yLow = priceToY(d.low, priceScale, layout);
+                const yOpen = priceToY(d.open, priceScale, layout);
+                const yClose = priceToY(d.close, priceScale, layout);
+
+                // Wick
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.2;
+                ctx.beginPath();
+                ctx.moveTo(x, yHigh);
+                ctx.lineTo(x, yLow);
+                ctx.stroke();
+
+                // Body
+                const bodyTop = Math.min(yOpen, yClose);
+                const bodyBottom = Math.max(yOpen, yClose);
+                const bodyHeight = Math.max(1, bodyBottom - bodyTop);
+
+                ctx.fillStyle = color;
+                ctx.fillRect(x - half, bodyTop, barWidth, bodyHeight);
+
+                // Border for visibility
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(x - half, bodyTop, barWidth, bodyHeight);
+            }
+
+            // ---- Moving Averages ----
+            // SMA-7
+            ctx.strokeStyle = COLORS.sma7;
+            ctx.lineWidth = 1.8;
+            ctx.shadowColor = COLORS.sma7 + '44';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            let started7 = false;
+            for (let i = visible.start; i <= visible.end; i++) {
+                if (parsed[i].sma7 === null) continue;
+                const x = idxToX(i, layout, visible);
+                const y = priceToY(parsed[i].sma7, priceScale, layout);
+                if (!started7) { ctx.moveTo(x, y);
+                    started7 = true; } else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // SMA-21
+            ctx.strokeStyle = COLORS.sma21;
+            ctx.lineWidth = 1.8;
+            ctx.shadowColor = COLORS.sma21 + '44';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            let started21 = false;
+            for (let i = visible.start; i <= visible.end; i++) {
+                if (parsed[i].sma21 === null) continue;
+                const x = idxToX(i, layout, visible);
+                const y = priceToY(parsed[i].sma21, priceScale, layout);
+                if (!started21) { ctx.moveTo(x, y);
+                    started21 = true; } else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // ---- SMA Labels ----
+            ctx.font = '11px "Segoe UI", sans-serif';
+            ctx.fillStyle = COLORS.sma7;
+            ctx.fillText('SMA-7', layout.right - 70, layout.chartTop + 16);
+            ctx.fillStyle = COLORS.sma21;
+            ctx.fillText('SMA-21', layout.right - 70, layout.chartTop + 32);
+
+            // ---- Y-axis labels (price) ----
+            ctx.font = '11px "Segoe UI", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = COLORS.text;
+            for (let i = 0; i <= gridSteps; i++) {
+                const pct = i / gridSteps;
+                const price = priceScale.min + pct * priceScale.range;
+                const y = layout.chartTop + layout.candleHeight * (1 - pct);
+                const label = '$' + price.toFixed(0);
+                ctx.fillText(label, layout.left - 8, y);
+            }
+
+            // ---- X-axis labels (dates) ----
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = COLORS.text;
+            const maxLabels = Math.max(2, Math.floor(visible.count / 3));
+            const step = Math.max(1, Math.floor(visible.count / maxLabels));
+            for (let i = visible.start; i <= visible.end; i += step) {
+                const x = idxToX(i, layout, visible);
+                const d = parsed[i];
+                const parts = d.date.split('-');
+                const label = parts[1] + '/' + parts[2];
+                ctx.fillText(label, x, layout.volumeBottom + 8);
+            }
+
+            // ---- Crosshair (if hovering) ----
+            if (isHovering && hoveredIdx >= 0 && hoveredIdx < parsed.length) {
+                const idx = hoveredIdx;
+                const x = idxToX(idx, layout, visible);
+                const d = parsed[idx];
+                const yClose = priceToY(d.close, priceScale, layout);
+
+                // Vertical line
+                ctx.strokeStyle = COLORS.crosshair;
+                ctx.lineWidth = 0.8;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x, layout.chartTop);
+                ctx.lineTo(x, layout.volumeBottom);
+                ctx.stroke();
+
+                // Horizontal line at close
+                ctx.beginPath();
+                ctx.moveTo(layout.left, yClose);
+                ctx.lineTo(layout.right, yClose);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Highlight candle
+                const barWidth = Math.max(3, layout.width / visible.count * 0.55);
+                ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                ctx.lineWidth = 1.2;
+                ctx.strokeRect(x - barWidth / 2 - 1, priceToY(d.high, priceScale, layout) - 2,
+                    barWidth + 2, priceToY(d.low, priceScale, layout) - priceToY(d.high, priceScale,
+                    layout) + 4);
+            }
+
+            // ---- Border around chart area ----
+            ctx.strokeStyle = COLORS.border;
+            ctx.lineWidth = 0.6;
+            ctx.strokeRect(layout.left, layout.chartTop, layout.width, layout.candleHeight);
+            ctx.strokeRect(layout.left, layout.volumeTop, layout.width, layout.volumeHeight);
+        }
+
+        // ============================================================
+        //  8. TOOLTIP UPDATE
+        // ============================================================
+
+        function updateTooltip(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = W / rect.width;
+            const scaleY = H / rect.height;
+            const mx = (clientX - rect.left) * scaleX;
+            const my = (clientY - rect.top) * scaleY;
+
+            mouseX = mx;
+            mouseY = my;
+
+            const layout = getLayout();
+            const visible = getVisibleData();
+
+            // Check if mouse is within chart area
+            if (mx < layout.left || mx > layout.right || my < layout.chartTop || my > layout.volumeBottom) {
+                isHovering = false;
+                hoveredIdx = -1;
+                tooltipEl.classList.remove('visible');
+                render();
+                return;
+            }
+
+            isHovering = true;
+
+            // Find nearest candle
+            const idxFloat = xToIdx(mx, layout, visible);
+            const idx = Math.round(idxFloat);
+            const clamped = Math.max(visible.start, Math.min(visible.end, idx));
+            hoveredIdx = clamped;
+
+            const d = parsed[clamped];
+
+            // Update tooltip content
+            const isUp = d.close >= d.open;
+            document.getElementById('ttDate').textContent = d.date;
+            document.getElementById('ttOpen').textContent = '$' + d.open.toFixed(2);
+            document.getElementById('ttHigh').textContent = '$' + d.high.toFixed(2);
+            document.getElementById('ttLow').textContent = '$' + d.low.toFixed(2);
+            const closeEl = document.getElementById('ttClose');
+            closeEl.textContent = '$' + d.close.toFixed(2);
+            closeEl.className = 'tt-value ' + (isUp ? 'up' : 'down');
+            document.getElementById('ttVolume').textContent = d.volume.toFixed(1);
+
+            // Position tooltip near cursor, but keep it inside the container
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const tooltipW = tooltipEl.offsetWidth || 170;
+            const tooltipH = tooltipEl.offsetHeight || 140;
+
+            let tx = clientX - wrapperRect.left + 16;
+            let ty = clientY - wrapperRect.top - tooltipH - 10;
+
+            // Flip below if too high
+            if (ty < 4) {
+                ty = clientY - wrapperRect.top + 16;
+            }
+            // Keep horizontal in bounds
+            if (tx + tooltipW > wrapperRect.width - 8) {
+                tx = clientX - wrapperRect.left - tooltipW - 16;
+            }
+            if (tx < 4) tx = 4;
+
+            tooltipEl.style.left = tx + 'px';
+            tooltipEl.style.top = ty + 'px';
+            tooltipEl.classList.add('visible');
+
+            render();
+        }
+
+        // ============================================================
+        //  9. INTERACTION HANDLERS
+        // ============================================================
+
+        // ---- Mouse wheel (zoom) ----
+        function onWheel(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.06 : -0.06;
+            const visible = getVisibleData();
+            const count = visible.count;
+            const center = (visible.start + visible.end) / 2;
+
+            let newCount = count * (1 + delta);
+            newCount = Math.max(5, Math.min(parsed.length, newCount));
+
+            const half = (newCount - 1) / 2;
+            let newStart = center - half;
+            let newEnd = center + half;
+
+            if (newStart < 0) { newStart = 0;
+                newEnd = newCount - 1; }
+            if (newEnd > parsed.length - 1) { newEnd = parsed.length - 1;
+                newStart = newEnd - newCount + 1; }
+
+            startIdx = Math.max(0, newStart);
+            endIdx = Math.min(parsed.length - 1, newEnd);
+            render();
+        }
+
+        // ---- Mouse down (start drag) ----
+        function onPointerDown(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+            const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+            const scaleX = W / rect.width;
+            const mx = (clientX - rect.left) * scaleX;
+
+            isDragging = true;
+            dragStartX = mx;
+            dragStartIdx = startIdx;
+            canvas.style.cursor = 'grabbing';
+        }
+
+        // ---- Mouse move (drag + tooltip) ----
+        function onPointerMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || e.touches?.[0]?.clientX || 0;
+            const clientY = e.clientY || e.touches?.[0]?.clientY || 0;
+
+            if (isDragging) {
+                const scaleX = W / rect.width;
+                const mx = (clientX - rect.left) * scaleX;
+                const dx = mx - dragStartX;
+                const layout = getLayout();
+                const visible = getVisibleData();
+                const spacing = visible.count > 1 ? layout.width / (visible.count - 1) : layout.width;
+                if (spacing > 0) {
+                    const idxDelta = -dx / spacing;
+                    const range = endIdx - startIdx;
+                    let newStart = dragStartIdx + idxDelta;
+                    let newEnd = newStart + range;
+                    if (newStart < 0) { newStart = 0;
+                        newEnd = range; }
+                    if (newEnd > parsed.length - 1) { newEnd = parsed.length - 1;
+                        newStart = newEnd - range; }
+                    startIdx = newStart;
+                    endIdx = newEnd;
+                    render();
+                }
+                return;
+            }
+
+            // Update tooltip
+            updateTooltip(clientX, clientY);
+        }
+
+        // ---- Mouse up / end drag ----
+        function onPointerUp() {
+            if (isDragging) {
+                isDragging = false;
+                canvas.style.cursor = 'crosshair';
+                render();
+            }
+        }
+
+        // ---- Mouse leave ----
+        function onPointerLeave() {
+            isHovering = false;
+            hoveredIdx = -1;
+            tooltipEl.classList.remove('visible');
+            isDragging = false;
+            canvas.style.cursor = 'crosshair';
+            render();
+        }
+
+        // ---- Touch events ----
+        function onTouchStart(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const me = new MouseEvent('pointerdown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                });
+                onPointerDown(me);
+            }
+        }
+
+        function onTouchMove(e) {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const me = new MouseEvent('pointermove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                });
+                onPointerMove(me);
+            }
+        }
+
+        function onTouchEnd(e) {
+            onPointerUp();
+            // After a short delay, allow tooltip again
+            setTimeout(() => {
+                // Re-enable hover if needed
+            }, 100);
+        }
+
+        // ---- Resize ----
+        function resizeCanvas() {
+            const rect = wrapper.getBoundingClientRect();
+            const width = rect.width;
+            const height = Math.max(380, Math.min(600, width * 0.55));
+
+            dpr = window.devicePixelRatio || 1;
+            W = width * dpr;
+            H = height * dpr;
+
+            canvas.width = W;
+            canvas.height = H;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+
+            // Scale context for crisp rendering
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            // Recompute layout in CSS pixels (we'll use dpr later for drawing)
+            // Actually, let's keep working in CSS pixels and use the scaled context.
+            // We already set the transform, so all drawing is in CSS pixels.
+            W = width;
+            H = height;
+
+            render();
+        }
+
+        // ============================================================
+        //  10. INITIALIZATION
+        // ============================================================
+
+        function init() {
+            // Set last price
+            const last = parsed[parsed.length - 1];
+            const first = parsed[0];
+            const change = ((last.close - first.close) / first.close) * 100;
+            document.getElementById('lastPrice').textContent = '$' + last.close.toFixed(2);
+            const changeEl = document.getElementById('priceChange');
+            changeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+            changeEl.className = 'change ' + (change >= 0 ? 'pos' : 'neg');
+
+            // Set visible range to all data
+            startIdx = 0;
+            endIdx = parsed.length - 1;
+
+            // Canvas sizing
+            resizeCanvas();
+
+            // Attach event listeners
+            canvas.addEventListener('wheel', onWheel, { passive: false });
+            canvas.addEventListener('pointerdown', onPointerDown);
+            canvas.addEventListener('pointermove', onPointerMove);
+            canvas.addEventListener('pointerup', onPointerUp);
+            canvas.addEventListener('pointerleave', onPointerLeave);
+
+            // Touch
+            canvas.addEventListener('touchstart', onTouchStart, { passive: true });
+            canvas.addEventListener('touchmove', onTouchMove, { passive: true });
+            canvas.addEventListener('touchend', onTouchEnd, { passive: true });
+
+            // Resize observer
+            const ro = new ResizeObserver(() => resizeCanvas());
+            ro.observe(wrapper);
+
+            // Also handle window resize as fallback
+            window.addEventListener('resize', resizeCanvas);
+
+            // Initial render
+            render();
+        }
+
+        // ---- Start ----
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

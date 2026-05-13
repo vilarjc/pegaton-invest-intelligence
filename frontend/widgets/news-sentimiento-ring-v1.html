@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sentimiento de Noticias</title>
+  <style>
+    /* === RESET & BASE === */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      background: #0a0e17;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: contain;
+    }
+
+    /* === WIDGET CONTAINER === */
+    .widget {
+      width: 100%;
+      max-height: 400px;
+      background: #0e1520;
+      border: 1px solid #1a2332;
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* === HEADER === */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+      letter-spacing: 0.3px;
+    }
+    .header-subtitle {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* === STATUS INDICATOR === */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      transition: background 0.3s ease;
+    }
+    .status-dot.live { background: #34c759; box-shadow: 0 0 6px #34c75988; }
+    .status-dot.cache { background: #ff9500; box-shadow: 0 0 6px #ff950088; }
+    .status-dot.error { background: #ff3b30; box-shadow: 0 0 6px #ff3b3088; }
+    .status-dot.loading {
+      background: #64748b;
+      animation: statusPulse 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes statusPulse {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
+    /* === ALERT BANNER === */
+    .alert-banner {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 14px;
+      animation: bannerPulse 2s ease-in-out infinite;
+    }
+    .alert-banner.fear {
+      display: flex;
+      background: rgba(255, 59, 48, 0.15);
+      border: 1px solid rgba(255, 59, 48, 0.3);
+      color: #ff6b6b;
+    }
+    .alert-banner.greed {
+      display: flex;
+      background: rgba(175, 82, 222, 0.15);
+      border: 1px solid rgba(175, 82, 222, 0.3);
+      color: #c084fc;
+    }
+    @keyframes bannerPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    /* === MAIN LAYOUT === */
+    .main-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    /* === GAUGE SECTION === */
+    .gauge-section {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .gauge-canvas-wrap {
+      position: relative;
+      width: 180px;
+      height: 110px;
+    }
+    .gauge-canvas-wrap canvas {
+      display: block;
+    }
+    .gauge-center {
+      position: absolute;
+      top: 58px;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+    }
+    .gauge-score {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+      color: #e2e8f0;
+      transition: color 0.5s ease;
+    }
+    .gauge-label {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+      transition: color 0.5s ease;
+    }
+
+    /* === DELTA BADGE === */
+    .delta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(100, 116, 139, 0.15);
+      color: #94a3b8;
+    }
+    .delta-badge.positive { background: rgba(52, 199, 89, 0.12); color: #34c759; }
+    .delta-badge.negative { background: rgba(255, 59, 48, 0.12); color: #ff453a; }
+    .delta-badge.zero { background: rgba(100, 116, 139, 0.12); color: #64748b; }
+
+    /* === GAUGE LEGEND === */
+    .gauge-legend {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9px;
+      color: #64748b;
+    }
+    .legend-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* === CONTENT AREA === */
+    .content-area {
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* === METRICS ROW === */
+    .metrics-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .metric-card {
+      flex: 1;
+      min-width: 80px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #1a2332;
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .metric-label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    /* === BREAKDOWN TOGGLE === */
+    .breakdown-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      padding: 6px 14px;
+      border: 1px solid #1a2332;
+      border-radius: 6px;
+      background: transparent;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .breakdown-toggle:hover {
+      border-color: #34c759;
+      color: #e2e8f0;
+    }
+    .breakdown-toggle .arrow {
+      transition: transform 0.3s ease;
+      font-size: 10px;
+    }
+    .breakdown-toggle.open .arrow { transform: rotate(180deg); }
+
+    /* === BREAKDOWN PANEL === */
+    .breakdown-panel {
+      display: none;
+      border-top: 1px solid #1a2332;
+      padding-top: 14px;
+    }
+    .breakdown-panel.open { display: block; }
+    .breakdown-section { margin-bottom: 14px; }
+    .breakdown-section:last-child { margin-bottom: 0; }
+    .breakdown-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    /* Source bars */
+    .source-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .source-name {
+      width: 80px;
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .source-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: #1a2332;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .source-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #34c759, #34c759aa);
+      transition: width 0.4s ease;
+    }
+    .source-count {
+      width: 30px;
+      font-size: 11px;
+      color: #64748b;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* Keyword chips */
+    .keywords-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .keyword-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #1a2332;
+      color: #e2e8f0;
+    }
+    .keyword-chip .kw-count {
+      color: #64748b;
+      font-size: 10px;
+    }
+
+    /* Distribution bars */
+    .dist-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .dist-label {
+      width: 60px;
+      font-size: 11px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .dist-label.fear { color: #ff453a; }
+    .dist-label.neutral { color: #ffd60a; }
+    .dist-label.greed { color: #34c759; }
+    .dist-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: #1a2332;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .dist-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .dist-bar-fill.fear { background: #ff453a; }
+    .dist-bar-fill.neutral { background: #ffd60a; }
+    .dist-bar-fill.greed { background: #34c759; }
+    .dist-count {
+      width: 24px;
+      font-size: 11px;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+
+    /* === TIMESTAMP === */
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #1a2332;
+    }
+    .timestamp {
+      font-size: 10px;
+      color: #64748b;
+    }
+
+    /* === RESPONSIVE iframe-safe === */
+    @media (max-width: 500px) {
+      .main-row { flex-direction: column; align-items: center; }
+      .content-area { width: 100%; }
+      .source-name { width: 60px; font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+<div class="widget" id="widget">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div>
+        <div class="header-title">📰 Sentimiento de Noticias</div>
+        <div class="header-subtitle">Análisis de medios financieros</div>
+      </div>
+    </div>
+    <div class="status-dot" id="statusDot"></div>
+  </div>
+
+  <!-- Alert Banner -->
+  <div class="alert-banner" id="alertBanner"></div>
+
+  <!-- Main -->
+  <div class="main-row">
+
+    <!-- Gauge -->
+    <div class="gauge-section">
+      <div class="gauge-canvas-wrap">
+        <canvas id="gaugeCanvas" width="180" height="110"></canvas>
+        <div class="gauge-center">
+          <div class="gauge-score" id="gaugeScore">--</div>
+          <div class="gauge-label" id="gaugeLabel">Cargando...</div>
+        </div>
+      </div>
+      <div class="delta-badge" id="deltaBadge">—</div>
+      <div class="gauge-legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#ff3b30"></span>Pánico</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ff9500"></span>Miedo</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#ffcc02"></span>Neutral</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#34c759"></span>Optimista</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#af52de"></span>Euforia</span>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content-area">
+      <div class="metrics-row" id="metricsRow">
+        <div class="metric-card">
+          <div class="metric-value" id="metricArticles">—</div>
+          <div class="metric-label">Artículos</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="metricSources">—</div>
+          <div class="metric-label">Fuentes</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value" id="metricTimestamp">—</div>
+          <div class="metric-label">Última actualización</div>
+        </div>
+      </div>
+
+      <button class="breakdown-toggle" id="breakdownToggle">
+        <span>Ver desglose</span>
+        <span class="arrow">▼</span>
+      </button>
+
+      <div class="breakdown-panel" id="breakdownPanel">
+        <!-- Fuentes RSS -->
+        <div class="breakdown-section" id="sourcesSection">
+          <div class="breakdown-title">Fuentes RSS</div>
+          <div id="sourcesList"></div>
+        </div>
+        <!-- Top Keywords -->
+        <div class="breakdown-section" id="keywordsSection">
+          <div class="breakdown-title">Palabras clave principales</div>
+          <div class="keywords-row" id="keywordsList"></div>
+        </div>
+        <!-- Distribución -->
+        <div class="breakdown-section" id="distributionSection">
+          <div class="breakdown-title">Distribución</div>
+          <div id="distributionList"></div>
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <span class="timestamp" id="footerTimestamp"></span>
+        <span class="timestamp" id="refreshCountdown"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ========== CONFIG ==========
+  var API_URL = '/api/v1/news-sentiment';
+  var REFRESH_MS = 60000; // 60 segundos
+  var GAUGE_SIZE = 180;
+  var GAUGE_HEIGHT = 110;
+  var CENTER_X = GAUGE_SIZE / 2;
+  var CENTER_Y = GAUGE_HEIGHT - 10;
+  var RADIUS = 72;
+  var LINE_WIDTH = 14;
+  var START_ANGLE = Math.PI;
+  var END_ANGLE = 2 * Math.PI;
+
+  // ========== BANDAS DE COLOR DEL GAUGE ==========
+  // [inicio, fin, color]
+  var BANDS = [
+    { from: 0,   to: 20,  color: '#ff3b30', label: 'Pánico' },
+    { from: 20,  to: 40,  color: '#ff9500', label: 'Miedo' },
+    { from: 40,  to: 60,  color: '#ffcc02', label: 'Neutral' },
+    { from: 60,  to: 80,  color: '#34c759', label: 'Optimista' },
+    { from: 80,  to: 101, color: '#af52de', label: 'Euforia' }
+  ];
+
+  // ========== ESTADO ==========
+  var currentScore = null;     // score animado actual (para lerp)
+  var targetScore = null;      // score objetivo del API
+  var previousScore = null;    // para calcular delta retrocompatible
+  var lastData = null;         // último response del API
+  var refreshTimer = null;
+  var animFrame = null;
+
+  // ========== ELEMENTOS DOM ==========
+  var canvas = document.getElementById('gaugeCanvas');
+  var ctx = canvas.getContext('2d');
+  var elScore = document.getElementById('gaugeScore');
+  var elLabel = document.getElementById('gaugeLabel');
+  var elDeltaBadge = document.getElementById('deltaBadge');
+  var elAlertBanner = document.getElementById('alertBanner');
+  var elStatusDot = document.getElementById('statusDot');
+  var elToggle = document.getElementById('breakdownToggle');
+  var elPanel = document.getElementById('breakdownPanel');
+  var elSources = document.getElementById('sourcesList');
+  var elKeywords = document.getElementById('keywordsList');
+  var elDistribution = document.getElementById('distributionList');
+  var elMetricArticles = document.getElementById('metricArticles');
+  var elMetricSources = document.getElementById('metricSources');
+  var elMetricTimestamp = document.getElementById('metricTimestamp');
+  var elFooterTimestamp = document.getElementById('footerTimestamp');
+  var elCountdown = document.getElementById('refreshCountdown');
+
+  // ========== DETECCIÓN DE MODO VADER (score entre -1 y +1) ==========
+  function normalizeScore(raw) {
+    // Si el score está entre -1 y 1, asumimos que es VADER raw
+    if (typeof raw === 'number' && raw >= -1 && raw <= 1) {
+      return Math.round((raw + 1) * 50);
+    }
+    return raw;
+  }
+
+  // ========== LERP (animación suave) ==========
+  function lerp(current, target, t) {
+    return current + (target - current) * t;
+  }
+
+  // ========== DIBUJAR GAUGE ==========
+  function drawGauge(score) {
+    ctx.clearRect(0, 0, GAUGE_SIZE, GAUGE_HEIGHT);
+
+    // Fondo del gauge (gris oscuro)
+    ctx.beginPath();
+    ctx.arc(CENTER_X, CENTER_Y, RADIUS, START_ANGLE, END_ANGLE, false);
+    ctx.lineWidth = LINE_WIDTH + 4;
+    ctx.strokeStyle = '#1a2332';
+    ctx.lineCap = 'butt';
+    ctx.stroke();
+
+    // Dibujar cada banda
+    var totalRange = END_ANGLE - START_ANGLE; // Math.PI
+    for (var i = 0; i < BANDS.length; i++) {
+      var band = BANDS[i];
+      var bandStart = START_ANGLE + (band.from / 100) * totalRange;
+      var bandEnd = START_ANGLE + (band.to / 100) * totalRange;
+
+      ctx.beginPath();
+      ctx.arc(CENTER_X, CENTER_Y, RADIUS, bandStart, bandEnd, false);
+      ctx.lineWidth = LINE_WIDTH;
+      ctx.strokeStyle = band.color;
+      ctx.lineCap = 'butt';
+      ctx.globalAlpha = 0.35; // bandas inactivas más tenues
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+    }
+
+    // Dibujar la porción activa (0 → score)
+    if (score > 0) {
+      var activeEnd = START_ANGLE + (Math.min(score, 100) / 100) * totalRange;
+
+      // Sombra de la porción activa
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(CENTER_X, CENTER_Y + 2, RADIUS, START_ANGLE, activeEnd, false);
+      ctx.lineWidth = LINE_WIDTH;
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+      ctx.lineCap = 'butt';
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.beginPath();
+      ctx.arc(CENTER_X, CENTER_Y, RADIUS, START_ANGLE, activeEnd, false);
+      ctx.lineWidth = LINE_WIDTH;
+
+      // Gradiente según el color de la banda actual
+      var activeColor = getBandColor(score);
+      ctx.strokeStyle = activeColor;
+      ctx.lineCap = 'butt';
+      ctx.shadowColor = activeColor;
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+
+    // Aguja (triángulo blanco)
+    var needleAngle = START_ANGLE + (score / 100) * totalRange;
+    var needleLen = RADIUS - 8;
+    var nx = CENTER_X + Math.cos(needleAngle) * needleLen;
+    var ny = CENTER_Y + Math.sin(needleAngle) * needleLen;
+
+    // Sombra de la aguja
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(CENTER_X + 2, CENTER_Y + 3);
+    ctx.lineTo(CENTER_X + Math.cos(needleAngle - 0.08) * (needleLen + 5) + 2,
+               CENTER_Y + Math.sin(needleAngle - 0.08) * (needleLen + 5) + 3);
+    ctx.lineTo(CENTER_X + Math.cos(needleAngle + 0.08) * (needleLen + 5) + 2,
+               CENTER_Y + Math.sin(needleAngle + 0.08) * (needleLen + 5) + 3);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fill();
+    ctx.restore();
+
+    // Aguja blanca
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(CENTER_X, CENTER_Y);
+    ctx.lineTo(CENTER_X + Math.cos(needleAngle - 0.07) * (needleLen + 5),
+               CENTER_Y + Math.sin(needleAngle - 0.07) * (needleLen + 5));
+    ctx.lineTo(CENTER_X + Math.cos(needleAngle + 0.07) * (needleLen + 5),
+               CENTER_Y + Math.sin(needleAngle + 0.07) * (needleLen + 5));
+    ctx.closePath();
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(255,255,255,0.3)';
+    ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Pivote central
+    ctx.beginPath();
+    ctx.arc(CENTER_X, CENTER_Y, 5, 0, 2 * Math.PI);
+    ctx.fillStyle = '#1a2332';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(CENTER_X, CENTER_Y, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fill();
+  }
+
+  // ========== OBTENER COLOR DE BANDA ==========
+  function getBandColor(score) {
+    for (var i = 0; i < BANDS.length; i++) {
+      if (score < BANDS[i].to) return BANDS[i].color;
+    }
+    return '#af52de';
+  }
+
+  // ========== OBTENER LABEL DE ACCIÓN ==========
+  function getActionLabel(score) {
+    if (score < 20) return 'EXTREMO CAUTELA';
+    if (score < 40) return 'CAUTELA';
+    if (score < 60) return 'NEUTRAL';
+    if (score < 80) return 'OPTIMISTA';
+    return 'EUFORIA';
+  }
+
+  // ========== ANIMACIÓN LERP ==========
+  var animationStartTime = 0;
+  var animationDuration = 800; // ms
+
+  function startAnimation(target) {
+    targetScore = target;
+    if (currentScore === null) {
+      currentScore = target;
+      renderGauge(target);
+      return;
+    }
+    animationStartTime = performance.now();
+    animFrame = requestAnimationFrame(animateFrame);
+  }
+
+  function animateFrame(now) {
+    var elapsed = now - animationStartTime;
+    var progress = Math.min(elapsed / animationDuration, 1);
+    // Easing ease-out cubic
+    var eased = 1 - Math.pow(1 - progress, 3);
+    currentScore = lerp(currentScore, targetScore, eased);
+
+    renderGauge(currentScore);
+    elScore.textContent = Math.round(currentScore);
+
+    if (progress < 1) {
+      animFrame = requestAnimationFrame(animateFrame);
+    }
+  }
+
+  function renderGauge(score) {
+    drawGauge(score);
+    var color = getBandColor(score);
+    elScore.style.color = color;
+    elLabel.textContent = getActionLabel(Math.round(score));
+    elLabel.style.color = color;
+  }
+
+  // ========== DELTA BADGE ==========
+  function updateDelta(score) {
+    var delta = 0;
+    var deltaPct = '';
+
+    // Usar delta del API si existe
+    if (lastData && typeof lastData.delta === 'number') {
+      delta = lastData.delta;
+      if (lastData.delta_pct) deltaPct = ' (' + lastData.delta_pct + ')';
+    } else {
+      // Retrocompatibilidad: calcular diferencia
+      if (previousScore !== null) {
+        delta = score - previousScore;
+      }
+    }
+
+    // Guardar score anterior
+    if (previousScore === null || (lastData && typeof lastData.delta === 'number')) {
+      previousScore = score;
+    }
+
+    // Renderizar badge
+    var sign = delta > 0 ? '+' : '';
+    var text = sign + delta;
+    if (deltaPct) text += deltaPct;
+    elDeltaBadge.textContent = text;
+
+    elDeltaBadge.className = 'delta-badge';
+    if (delta > 0) elDeltaBadge.classList.add('positive');
+    else if (delta < 0) elDeltaBadge.classList.add('negative');
+    else elDeltaBadge.classList.add('zero');
+  }
+
+  // ========== ALERT BANNER ==========
+  function updateAlert(alert, score) {
+    // Retrocompatibilidad
+    if (!alert) {
+      if (score < 20) alert = 'EXTREME_FEAR';
+      else if (score > 80) alert = 'EXTREME_GREED';
+    }
+
+    elAlertBanner.className = 'alert-banner';
+    if (alert === 'EXTREME_FEAR') {
+      elAlertBanner.classList.add('fear');
+      elAlertBanner.innerHTML = '⚠️ PÁNICO EXTREMO';
+    } else if (alert === 'EXTREME_GREED') {
+      elAlertBanner.classList.add('greed');
+      elAlertBanner.innerHTML = '🚀 EUFORIA EXTREMA';
+    } else {
+      elAlertBanner.style.display = 'none';
+      return;
+    }
+    elAlertBanner.style.display = 'flex';
+  }
+
+  // ========== BREAKDOWN PANEL ==========
+  elToggle.addEventListener('click', function () {
+    elPanel.classList.toggle('open');
+    elToggle.classList.toggle('open');
+    elToggle.querySelector('span:first-child').textContent =
+      elPanel.classList.contains('open') ? 'Ocultar desglose' : 'Ver desglose';
+  });
+
+  function renderSources(sources) {
+    if (!sources || Object.keys(sources).length === 0) {
+      elSources.innerHTML = '<span style="color:#64748b;font-size:12px">No disponible</span>';
+      return;
+    }
+    var total = 0;
+    for (var k in sources) total += sources[k];
+    var html = '';
+    // Ordenar por count descendente
+    var sorted = Object.keys(sources).sort(function (a, b) { return sources[b] - sources[a]; });
+    for (var i = 0; i < sorted.length; i++) {
+      var name = sorted[i].replace(/_/g, ' ');
+      var count = sources[sorted[i]];
+      var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      html += '<div class="source-bar-row">' +
+        '<span class="source-name">' + name + '</span>' +
+        '<div class="source-bar-bg"><div class="source-bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<span class="source-count">' + count + '</span>' +
+        '</div>';
+    }
+    elSources.innerHTML = html;
+  }
+
+  function renderKeywords(keywords) {
+    if (!keywords || keywords.length === 0) {
+      elKeywords.innerHTML = '<span style="color:#64748b;font-size:11px">Sin datos</span>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < keywords.length; i++) {
+      var kw = keywords[i];
+      html += '<span class="keyword-chip">' + kw.word + ' <span class="kw-count">(' + kw.count + ')</span></span>';
+    }
+    elKeywords.innerHTML = html;
+  }
+
+  function renderDistribution(dist) {
+    if (!dist) {
+      document.getElementById('distributionSection').style.display = 'none';
+      return;
+    }
+    document.getElementById('distributionSection').style.display = 'block';
+    var total = (dist.fear || 0) + (dist.neutral || 0) + (dist.greed || 0);
+
+    function miniRow(label, cls, count) {
+      var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      return '<div class="dist-row">' +
+        '<span class="dist-label ' + cls + '">' + label + '</span>' +
+        '<div class="dist-bar-bg"><div class="dist-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>' +
+        '<span class="dist-count">' + count + '</span>' +
+        '</div>';
+    }
+
+    elDistribution.innerHTML =
+      miniRow('Miedo', 'fear', dist.fear || 0) +
+      miniRow('Neutral', 'neutral', dist.neutral || 0) +
+      miniRow('Euforia', 'greed', dist.greed || 0);
+  }
+
+  // ========== STATUS INDICATOR ==========
+  function setStatus(cls) {
+    elStatusDot.className = 'status-dot ' + cls;
+  }
+
+  // ========== MÉTRICAS RÁPIDAS ==========
+  function updateMetrics(data) {
+    elMetricArticles.textContent = data.total_articles || '—';
+    elMetricSources.textContent = data.sources ? Object.keys(data.sources).length : '—';
+
+    var ts = data.timestamp || new Date().toISOString();
+    try {
+      var d = new Date(ts);
+      elMetricTimestamp.textContent = d.getHours().toString().padStart(2, '0') + ':' +
+        d.getMinutes().toString().padStart(2, '0');
+    } catch (e) {
+      elMetricTimestamp.textContent = '—';
+    }
+    elFooterTimestamp.textContent = 'Actualizado: ' + ts.slice(0, 16).replace('T', ' ') + ' UTC';
+  }
+
+  // ========== COUNTDOWN ==========
+  var countdownInterval = null;
+  function startCountdown() {
+    clearInterval(countdownInterval);
+    var remaining = REFRESH_MS / 1000;
+    elCountdown.textContent = 'Próx. refresco: ' + remaining + 's';
+    countdownInterval = setInterval(function () {
+      remaining--;
+      if (remaining <= 0) {
+        elCountdown.textContent = 'Actualizando...';
+      } else {
+        elCountdown.textContent = 'Próx. refresco: ' + remaining + 's';
+      }
+    }, 1000);
+  }
+
+  // ========== FETCH DATA ==========
+  function fetchData() {
+    setStatus('loading');
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', API_URL, true);
+    xhr.timeout = 15000;
+
+    xhr.onload = function () {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          lastData = data;
+          setStatus('live');
+          handleData(data);
+        } catch (e) {
+          setStatus('error');
+          console.error('[News] Parse error:', e);
+        }
+      } else {
+        setStatus('error');
+        console.error('[News] HTTP', xhr.status);
+      }
+    };
+
+    xhr.onerror = function () {
+      // Si hay caché, mostrar como cache
+      if (lastData) {
+        setStatus('cache');
+      } else {
+        setStatus('error');
+      }
+      console.error('[News] Network error');
+    };
+
+    xhr.ontimeout = function () {
+      if (lastData) {
+        setStatus('cache');
+      } else {
+        setStatus('error');
+      }
+      console.error('[News] Request timeout');
+    };
+
+    xhr.send();
+  }
+
+  function handleData(data) {
+    var score = normalizeScore(data.score);
+
+    // Clamp
+    score = Math.max(0, Math.min(100, score));
+
+    startAnimation(score);
+    updateDelta(score);
+    updateAlert(data.alert, score);
+    updateMetrics(data);
+    renderSources(data.sources);
+    renderKeywords(data.top_keywords);
+    renderDistribution(data.distribution);
+    startCountdown();
+  }
+
+  // ========== INIT ==========
+  // Primer fetch inmediato
+  fetchData();
+
+  // Auto-refresh periódico
+  refreshTimer = setInterval(fetchData, REFRESH_MS);
+
+})();
+</script>
+</body>
+</html>

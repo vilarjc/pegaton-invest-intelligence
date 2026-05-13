@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🧪 Auditoría de Widgets</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0e17; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; padding: 16px; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 2px; }
+  .subtitle { color: #64748b; font-size: 12px; margin-bottom: 14px; }
+
+  .tabs { display: flex; gap: 3px; background: #0f172a; border-radius: 10px; padding: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab { padding: 8px 14px; border: none; border-radius: 8px; cursor: pointer; background: transparent; color: #64748b; font-weight: 600; font-size: 12px; transition: .15s; }
+  .tab:hover { color: #e2e8f0; background: #1a2332; }
+  .tab.active { background: #1e293b; color: #e2e8f0; }
+  .tab .badge { font-size: 9px; background: #334155; padding: 1px 6px; border-radius: 8px; margin-left: 5px; }
+  .tab .int-badge { font-size: 9px; background: #063; color: #3fb950; padding: 1px 6px; border-radius: 8px; margin-left: 4px; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media(max-width:1024px){.grid-3{grid-template-columns:1fr 1fr}}
+  @media(max-width:640px){.grid-3{grid-template-columns:1fr}}
+  @media(max-width:480px){
+    body{padding:8px}
+    nav.navbar{gap:2px;padding:4px 6px}
+    nav.navbar a{padding:4px 6px;font-size:10px}
+    .tabs{gap:2px;padding:3px;overflow-x:auto;flex-wrap:nowrap}
+    .tab{padding:5px 8px;font-size:10px;white-space:nowrap}
+    iframe.widget-frame{height:200px}
+    .code-box{max-height:180px;font-size:9px}
+    .spec-box{max-height:180px;font-size:10px}
+    .stats{gap:6px;font-size:8px}
+  }
+  .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; }
+  .card-title { padding: 8px 12px; background: #1a2332; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 6px; }
+  .card-title .right { margin-left: auto; font-size: 9px; color: #475569; }
+
+  iframe.widget-frame { width: 100%; height: 300px; border: none; display: block; background: #000; }
+
+  .code-box { overflow: auto; max-height: 300px; padding: 8px 10px; font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: 10px; line-height: 1.4; color: #c9d1d9; white-space: pre; tab-size: 2; background: #0d1117; }
+  .code-box::-webkit-scrollbar { width: 5px; }
+  .code-box::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+  .code-box.full, .spec-box.full { max-height: none !important; overflow: visible; }
+
+  .spec-box { max-height: 300px; overflow: auto; padding: 10px 12px; font-size: 11px; line-height: 1.5; color: #c9d1d9; background: #0d1117; }
+
+  .stats { display: flex; gap: 12px; padding: 6px 12px; background: #161b22; border-top: 1px solid #1e293b; font-size: 9px; color: #8b949e; flex-wrap: wrap; align-items: center; }
+  .stats span { display: flex; align-items: center; gap: 4px; }
+  .copy-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 9px; margin-left: auto; }
+  .copy-btn:hover { background: #334155; color: #e2e8f0; }
+
+  .rating-area { display: flex; align-items: center; gap: 6px; }
+  .star { font-size: 18px; cursor: pointer; color: #334155; transition: .15s; }
+  .star:hover { transform: scale(1.2); }
+  .star.active { color: #fbbf24 !important; }
+
+  .integrate-btn { padding: 4px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 10px; font-weight: 600; }
+  .integrate-btn.on { background: #063; color: #3fb950; }
+  .integrate-btn.off { background: #3d0014; color: #f85149; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
+  .empty-state h2 { font-size: 18px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav class="navbar" style="margin-bottom:12px">
+    <span class="logo">⚡ PEGATON</span>
+    <a href="/">🏠 Hub</a>
+    <a href="/inversor">📊 Inversor</a>
+    <a href="/widget-auditoria">🧪 Auditoría</a>
+    <a href="/widget-evaluator">⭐ Evaluador</a>
+  </nav>
+
+  <h1>🧪 Auditoría de Widgets</h1>
+  <div class="subtitle">
+    Revisa cada widget en detalle: previsualización, código fuente y especificación. Puntúa y decide cuál integrar.
+  </div>
+
+  <div class="tabs" id="mainTabs"></div>
+  <div id="panels"></div>
+</div>
+
+<script>
+let allSections = [];
+
+async function init() {
+  const r = await fetch('/api/widgets/sections');
+  allSections = await r.json();
+
+  if (!allSections.length) {
+    document.getElementById('mainTabs').innerHTML = '<div class="empty-state"><h2>No hay secciones</h2></div>';
+    return;
+  }
+
+  // Build section tabs
+  const tabsHtml = allSections.map((sec, i) => {
+    const integrated = sec.teams.filter(t => t.integrated).length;
+    return `<button class="tab ${i===0?'active':''}" onclick="switchSection('${sec.section}')">
+      ${sec.name} <span class="badge">${sec.teams.length} equipos</span>
+      ${integrated > 0 ? `<span class="int-badge">${integrated}✓</span>` : ''}
+    </button>`;
+  }).join('');
+  document.getElementById('mainTabs').innerHTML = tabsHtml;
+
+  // Build section panels
+  const panelsHtml = allSections.map((sec, i) =>
+    `<div id="panel-${sec.section}" class="panel ${i===0?'active':''}">
+      <div id="subTabs-${sec.section}" class="tabs"></div>
+      <div id="teamPanels-${sec.section}"></div>
+    </div>`
+  ).join('');
+  document.getElementById('panels').innerHTML = panelsHtml;
+
+  // Load first section
+  if (allSections.length) loadSection(allSections[0].section);
+}
+
+async function loadSection(section) {
+  const sec = allSections.find(s => s.section === section);
+  if (!sec || !sec.teams.length) return;
+
+  // Build sub-tabs for each team
+  const subTabs = document.getElementById(`subTabs-${section}`);
+  const teamPanels = document.getElementById(`teamPanels-${section}`);
+  subTabs.innerHTML = sec.teams.map((t, i) =>
+    `<button class="tab ${i===0?'active':''}" onclick="switchTeam('${section}','${t.id}')">
+      ${t.team_label || t.id}
+      ${t.integrated ? '<span class="int-badge">⭐</span>' : ''}
+      <span class="badge">${t.pm||'?'} → ${t.programmer||'?'}</span>
+    </button>`
+  ).join('');
+
+  // Build team panels
+  teamPanels.innerHTML = sec.teams.map((t, i) =>
+    `<div id="tp-${t.id}" class="panel ${i===0?'active':''}"><div class="loading" style="text-align:center;padding:40px;color:#64748b">Cargando ${t.team_label}...</div></div>`
+  ).join('');
+
+  // Load first team
+  if (sec.teams.length) loadTeam(sec.teams[0].id);
+}
+
+async function loadTeam(wid) {
+  const panel = document.getElementById('tp-' + wid);
+  panel.innerHTML = '<div class="loading" style="text-align:center;padding:40px;color:#64748b">Cargando...</div>';
+
+  const w = allSections.flatMap(s => s.teams).find(t => t.id === wid);
+  if (!w) return;
+
+  // Fetch widget data (HTML preview)
+  let widgetHtml = '', codeContent = '// Sin implementar', codeLines = 0, codeChars = 0;
+  const dataUrl = w.endpoint || `/api/widgets/${wid}/data`;
+  try {
+    const r = await fetch(dataUrl);
+    if (r.ok) {
+      const d = await r.json();
+      widgetHtml = d.html || d.code_preview || '';
+      if (d.code_preview) codeContent = d.code_preview;
+      else codeContent = d.html || '// Sin código';
+      codeLines = codeContent.split('\n').length;
+      codeChars = codeContent.length;
+    } else {
+      // Try direct HTML file
+      const r2 = await fetch(`/widgets/${w.html_file}`);
+      if (r2.ok) { codeContent = await r2.text(); codeLines = codeContent.split('\n').length; codeChars = codeContent.length; }
+    }
+  } catch(e) { codeContent = '// Error: ' + e.message; }
+
+  // Fallback: load widget HTML from file if endpoint didn't provide it
+  if (!widgetHtml && w.html_file) {
+    try {
+      const r2 = await fetch(`/widgets/${w.html_file}`);
+      if (r2.ok) {
+        widgetHtml = await r2.text();
+        if (codeContent === '// Sin implementar' || codeContent === '// Sin código') {
+          codeContent = widgetHtml;
+          codeLines = widgetHtml.split('\n').length;
+          codeChars = widgetHtml.length;
+        }
+      }
+    } catch(e) {}
+  }
+
+  // Try to load spec
+  let specContent = '<p style="color:#475569;font-size:11px">Spec no disponible</p>';
+  try {
+    const specPath = `harness/specs/widget-${wid}-spec.md`;
+    const r = await fetch(`/${specPath}`);
+    if (r.ok) specContent = formatSpec(await r.text());
+  } catch(e) {}
+
+  // Try to load coding olympiad code for fear-greed teams
+  if (wid.startsWith('fear-greed-')) {
+    const modelMap = {'fear-greed-a':'equipo-a','fear-greed-b':'equipo-b','fear-greed-c':'equipo-c'};
+    try {
+      const r2 = await fetch(`/api/fullcode/${modelMap[wid]}`);
+      if (r2.ok) { const d2 = await r2.json(); codeContent = d2.code || codeContent; codeLines = d2.lines || 0; codeChars = d2.chars || 0; }
+    } catch(e) {}
+  }
+
+  // Highlight code
+  const highlightedCode = highlightCode(codeContent);
+
+  panel.innerHTML = `
+    <div class="grid-3">
+      <!-- Widget Preview -->
+      <div class="card">
+        <div class="card-title">🖥️ Widget <span class="right">${wid}.html</span></div>
+        <iframe class="widget-frame" id="frame-${wid}" srcdoc="${escapeAttr(widgetHtml)}"></iframe>
+        <div class="stats">
+          <span>🧠 ${w.expert || '?'}</span>
+          <span style="cursor:pointer;color:#58a6ff" onclick="document.getElementById('frame-${wid}').srcdoc=document.getElementById('code-${wid}').textContent">⟳ recargar</span>
+        </div>
+      </div>
+
+      <!-- Code -->
+      <div class="card">
+        <div class="card-title">📝 Código Fuente <span class="right">${codeLines} líneas · ${codeChars.toLocaleString()} chars</span></div>
+        <div class="code-box" id="code-${wid}"><pre>${highlightedCode}</pre></div>
+        <div class="stats">
+          <span>👨‍💻 ${w.programmer || 'Pendiente'}</span>
+          <span style="cursor:pointer;color:#58a6ff;font-size:10px" onclick="toggleFull('code-${wid}', this, ${codeChars})">📐 Ver completo</span>
+          <button class="copy-btn" onclick="copyCode('code-${wid}')">📋 Copiar</button>
+        </div>
+      </div>
+
+      <!-- PM Analysis -->
+      <div class="card">
+        <div class="card-title">📋 Análisis del PM — ${w.pm || 'Pendiente'}</div>
+        ${specContent}
+        <div class="stats">
+          <span>🧑‍💼 ${w.pm || 'Sin PM asignado'}</span>
+          <span style="cursor:pointer;color:#58a6ff;font-size:10px" onclick="toggleFull('spec-${wid}', this)">📐 Ver completo</span>
+          <button class="copy-btn" onclick="copyCode('spec-${wid}')">📋 Copiar</button>
+        </div>
+      </div>
+    </div>
+
+      <!-- Rating + Integration + Detail link -->
+    <div class="card" style="margin-top:10px">
+      <div class="card-title">⭐ Evaluación — ${w.name}</div>
+      <div style="padding:10px 14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div class="rating-area">
+          <span style="font-size:11px;color:#94a3b8">Puntuación:</span>
+          ${[1,2,3,4,5,6,7,8,9,10].map(s => 
+            `<span class="star ${s <= w.rating ? 'active' : ''}" data-w="${wid}" data-s="${s}" onclick="rate('${wid}',${s})">★</span>`
+          ).join('')}
+          <span style="font-size:11px;color:#64748b">${w.rating > 0 ? w.rating+'/10' : 'Sin puntuar'}</span>
+        </div>
+        <button class="integrate-btn ${w.integrated ? 'on' : 'off'}" id="int-${wid}" onclick="toggleInt('${wid}')">
+          ${w.integrated ? '✅ Integrado en dashboard' : '➕ Integrar en dashboard'}
+        </button>
+        <a href="/widget-evaluator?widget=${wid}" style="padding:6px 14px;border-radius:8px;background:#7b2ff7;color:#fff;text-decoration:none;font-size:12px;font-weight:600">🔍 Ver detalle completo</a>
+        <span style="font-size:10px;color:#475569">Estado: ${w.status}</span>
+      </div>
+    </div>
+  `;
+}
+
+function escapeAttr(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatSpec(text) {
+  if (!text) return '<p style="color:#475569">Spec vacía</p>';
+  let h = escapeAttr(text);
+  h = h.replace(/### (.+)/g, '<span class="section-title">$1</span>');
+  h = h.replace(/\n/g, '<br>');
+  return '<p>' + h + '</p>';
+}
+
+function highlightCode(code) {
+  if (!code) return '<span style="color:#475569">// Sin código</span>';
+  let h = escapeAttr(code);
+  h = h.replace(/\/\/(.*)/g, '<span style="color:#8b949e">//$1</span>');
+  h = h.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g, '<span style="color:#a5d6ff">$1</span>');
+  h = h.replace(/(`(?:[^`\\]|\\.)*`)/g, '<span style="color:#a5d6ff">$1</span>');
+  const keywords = ['function','const','let','var','if','else','return','for','while','class','new','this','async','await','import','export','from','try','catch','throw','null','undefined','true','false'];
+  const kwPatt = new RegExp('\\b(' + keywords.join('|') + ')\\b','g');
+  h = h.replace(kwPatt, '<span style="color:#ff7b72;font-weight:600">$1</span>');
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g, '<span style="color:#79c0ff">$1</span>');
+  return h;
+}
+
+function switchSection(section) {
+  document.querySelectorAll('#mainTabs .tab').forEach((t,i) => {
+    t.classList.toggle('active', allSections[i]?.section === section);
+  });
+  document.querySelectorAll('#panels > .panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel-' + section);
+  if (panel) { panel.classList.add('active'); loadSection(section); }
+}
+
+function switchTeam(section, wid) {
+  const sec = allSections.find(s => s.section === section);
+  if (!sec) return;
+  document.querySelectorAll(`#subTabs-${section} .tab`).forEach((t,i) => {
+    t.classList.toggle('active', sec.teams[i]?.id === wid);
+  });
+  document.querySelectorAll(`#teamPanels-${section} > .panel`).forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('tp-' + wid);
+  if (panel) { panel.classList.add('active'); loadTeam(wid); }
+}
+
+function toggleFull(id, btn, chars) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isFull = el.style.maxHeight === 'none' || el.classList.contains('full');
+  if (isFull) {
+    el.style.maxHeight = '300px'; el.classList.remove('full');
+    btn.textContent = chars > 100000 ? '📐 Ver completo (' + Math.round(chars/1000) + 'k)' : '📐 Ver completo';
+  } else {
+    el.style.maxHeight = 'none'; el.classList.add('full');
+    btn.textContent = '📐 ▼ Mostrar menos';
+  }
+}
+
+async function copyCode(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.textContent;
+  try { await navigator.clipboard.writeText(text); } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+async function rate(wid, stars) {
+  await fetch('/api/widgets/rate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({widget_id:wid, stars})});
+  loadTeam(wid);
+}
+
+async function toggleInt(wid) {
+  await fetch('/api/widgets/integrate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({widget_id:wid})});
+  loadTeam(wid);
+  init(); // refresh tabs
+}
+
+init();
+</script>
+</body>
+</html>

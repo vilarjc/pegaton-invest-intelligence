@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Test Olympiad</title>
+<style>
+body { background: #0a0e17; color: #e2e8f0; font-family: sans-serif; padding: 20px; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #1e293b; }
+th { background: #1a2332; color: #94a3b8; }
+</style>
+</head><body>
+<h1>🏆 Coding Olympiad — Test</h1>
+<div id="status" style="color:#eab308">Cargando...</div>
+<table><thead><tr><th>#</th><th>Modelo</th><th>Score</th><th>Líneas</th></tr></thead>
+<tbody id="tb"></tbody></table>
+
+<script>
+const CODING = [
+  {
+    "id": "llama-groq",
+    "label": "Llama 3.3 70B (Groq)",
+    "icon": "🦙",
+    "color": "#22c55e",
+    "provider": "groq",
+    "score": 82,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 100
+    },
+    "time_s": 4.97,
+    "tokens": {
+      "prompt": 261,
+      "completion": 2372,
+      "total": 2633
+    },
+    "lines": 267,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        /* Dark theme */\n        body {\n            background-color: #2f2f2f;\n            color: #fff;\n            font-family: Arial, sans-serif;\n        }\n        #chart-container {\n            width: 100%;\n            height: 600px;\n            border: 1px solid #444;\n            padding: 10px;\n        }\n        #chart {\n            width: 100%;\n            height: 100%;\n        }\n        #volume-chart {\n            width: 100%;\n            height: 100px;\n            border-top: 1px solid #444;\n        }\n    </style>\n</head>\n<body>\n    <div id=\"chart-container\">\n        <canvas id=\"chart\"></canvas>\n        <canvas id=\"volume-chart\"></canvas>\n    </div>\n    <script>\n        // Set seed for Math.random()\n        function srand(seed) {\n            Math.seed = seed;\n        }\n        function rand() {\n            var x = Math.sin(Math.seed++) * 10000;\n            return x - Math.floor(x);\n        }\n        srand(12345);\n\n        // Generate sample price data\n        function generateData(days) {\n            var data = [];\n            var open = 100;\n            var high = 100;\n            var low = 100;\n            var close = 100;\n            var volume = 1000;\n            for (var i = 0; i < days; i++) {\n                open = close + (rand() * 2 - 1) * 5;\n                high = open + (rand() * 2 - 1) * 5;\n                low = open - (rand() * 2 - 1) * 5;\n                close = open + (rand() * 2 - 1) * 2;\n                volume = volume + (rand() * 2 - 1) * 100;\n                data.push({\n                    date: new Date(new Date().getTime() - i * 24 * 60 * 60 * 1000),\n                    open: open,\n                    high: high,\n                    low: low,\n                    close: close,\n                    volume: volume\n                });\n            }\n            return data;\n        }\n\n        // Calculate moving averages\n        function calculateMA(data, days) {\n            var ma = [];\n            for (var i = 0; i < data.length; i++) {\n                if (i < days - 1) {\n                    ma.push(null);\n                } else {\n                    var sum = 0;\n                    for (var j = i - days + 1; j <= i; j++) {\n                        sum += data[j].close;\n                    }\n                    ma.push(sum / days);\n                }\n            }\n            return ma;\n        }\n\n        // Draw chart\n        function drawChart(ctx, data, ma7, ma21, width, height) {\n            ctx.clearRect(0, 0, width, height);\n            ctx.fillStyle = '#fff';\n            ctx.font = '12px Arial';\n            ctx.textAlign = 'left';\n            ctx.textBaseline = 'top';\n\n            // Draw grid\n            ctx.strokeStyle = '#444';\n            ctx.lineWidth = 1;\n            for (var i = 0; i < 5; i++) {\n                ctx.beginP",
+    "code_full_len": 10092,
+    "widget_html": "llama-groq.html"
+  },
+  {
+    "id": "nemotron-super",
+    "label": "Nemotron 3 Super 120B",
+    "icon": "💎",
+    "color": "#6366f1",
+    "provider": "openrouter",
+    "score": 79,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 77
+    },
+    "time_s": 202.36,
+    "tokens": {
+      "prompt": 234,
+      "completion": 3176,
+      "total": 3410
+    },
+    "lines": 332,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Financial Dashboard Widget</title>\n<style>\n  html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#0d0d0d;color:#eee;}\n  .container{position:relative;width:100%;max-width:960px;margin:0 auto;padding:10px;box-sizing:border-box;}\n  canvas{display:block;width:100%;height:auto;background:#111;}\n  #tooltip{\n    position:absolute;pointer-events:none;background:rgba(0,0,0,0.7);color:#fff;\n    padding:6px 10px;border-radius:4px;font-size:13px;white-space:nowrap;\n    border:1px solid #333;transform:translate(-50%,-100%);z-index:10;\n  }\n</style>\n</head>\n<body>\n<div class=\"container\">\n  <canvas id=\"priceCanvas\"></canvas>\n  <canvas id=\"volumeCanvas\"></canvas>\n  <div id=\"tooltip\" class=\"tooltip\"></div>\n</div>\n\n<script>\n/* ==== Seeded Random (Mulberry32) ==== */\nfunction mulberry32(seed) {\n  return function() {\n    var t = (seed += 0x6D2B79F5) >>> 0;\n    t = Math.imul(t ^ t >>> 15, t | 1);\n    t ^= t + Math.imul(t ^ t >>> 7, t | 61);\n    return ((t ^ t >>> 14) >>> 0) / 4294967296;\n  };\n}\n\n/* ==== Data Generation ==== */\nconst rand = mulberry32(12345); // fixed seed\nconst totalDays = 30;\nconst data = [];\nlet price = 100; // starting price\nconst startDate = new Date(Date.now() - totalDays * 24 * 60 * 60 * 1000);\n\nfor (let i = 0; i < totalDays; i++) {\n  const change = (rand() * 2 - 1) * 0.02; // +/-2%\n  price = Math.max(1, price + price * change);\n\n  const open = price;\n  const close = price * (1 + (rand() * 2 - 1) * 0.01);\n  const high = Math.max(open, close) * (1 + rand() * 0.005);\n  const low = Math.min(open, close) * (1 - rand() * 0.005);\n  const volume = rand() * 1_000_000 + 500_000;\n\n  const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);\n  data.push({\n    time: date,\n    dateString: date.toISOString().split('T')[0],\n    open, high, low, close, volume\n  });\n}\n\n/* ==== Moving Averages ==== */\nfunction computeSMA(arr, period) {\n  const sma = new Array(arr.length).fill(null);\n  let sum = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sum += arr[i];\n    if (i >= period) sum -= arr[i - period];\n    if (i >= period - 1) sma[i] = sum / period;\n  }\n  return sma;\n}\nconst closes = data.map(d => d.close);\nconst sma7 = computeSMA(closes, 7);\nconst sma21 = computeSMA(closes, 21);\n\n/* ==== Canvas Setup ==== */\nconst priceCanvas = document.getElementById('priceCanvas');\nconst volumeCanvas = document.getElementById('volumeCanvas');\nconst ctxPrice = priceCanvas.getContext('2d');\nconst ctxVol = volumeCanvas.getContext('2d');\nconst tooltip = document.getElementById('tooltip');\n\nlet priceDirty = true;\nlet volDirty = true;\nlet isDragging = false;\nlet startMouseX = 0;\nlet startOffsetX = 0;\nconst zoomSpeed = 0.001;\n\n// view parameters (pixel space)\nlet xScale = 1;   // pixels per bar\nlet xOffset = 0;  // pixel offset where index 0 maps\nconst padding = 40; // left/right space for axis\n\nfunction resizeCanvases() {\n  const dpr = window.devicePixelRatio || 1;\n ",
+    "code_full_len": 11002,
+    "widget_html": "nemotron-super.html"
+  },
+  {
+    "id": "owl-alpha",
+    "label": "Owl Alpha",
+    "icon": "🦉",
+    "color": "#f43f5e",
+    "provider": "openrouter",
+    "score": 78,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 75
+    },
+    "time_s": 179.56,
+    "tokens": {
+      "prompt": 328,
+      "completion": 6073,
+      "total": 6401
+    },
+    "lines": 699,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        /* Reset and base styles */\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background: linear-gradient(135deg, #0f1923 0%, #1a2634 100%);\n            color: #e0e6ed;\n            min-height: 100vh;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            padding: 20px;\n        }\n\n        .dashboard {\n            width: 100%;\n            max-width: 1200px;\n            background: #131e29;\n            border-radius: 12px;\n            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);\n            overflow: hidden;\n        }\n\n        .header {\n            padding: 20px 25px;\n            background: #1a2634;\n            border-bottom: 1px solid #2a3a4a;\n        }\n\n        .header h1 {\n            font-size: 1.5rem;\n            font-weight: 600;\n            color: #e0e6ed;\n            margin-bottom: 5px;\n        }\n\n        .header .subtitle {\n            font-size: 0.9rem;\n            color: #8a9bb0;\n        }\n\n        .chart-container {\n            position: relative;\n            width: 100%;\n            height: 500px;\n            background: #131e29;\n        }\n\n        #mainCanvas {\n            display: block;\n            width: 100%;\n            height: 100%;\n        }\n\n        .tooltip {\n            position: absolute;\n            background: rgba(20, 30, 40, 0.95);\n            border: 1px solid #3a4a5a;\n            border-radius: 6px;\n            padding: 12px;\n            font-size: 0.85rem;\n            pointer-events: none;\n            opacity: 0;\n            transition: opacity 0.15s ease;\n            z-index: 10;\n            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);\n        }\n\n        .tooltip.visible {\n            opacity: 1;\n        }\n\n        .tooltip-row {\n            display: flex;\n            justify-content: space-between;\n            margin-bottom: 4px;\n        }\n\n        .tooltip-label {\n            color: #8a9bb0;\n            margin-right: 15px;\n        }\n\n        .tooltip-value {\n            font-weight: 600;\n            color: #e0e6ed;\n        }\n\n        .positive {\n            color: #26a69a;\n        }\n\n        .negative {\n            color: #ef5350;\n        }\n\n        .legend {\n            display: flex;\n            justify-content: center;\n            gap: 20px;\n            padding: 15px;\n            background: #1a2634;\n            border-top: 1px solid #2a3a44;\n        }\n\n        .legend-item {\n            display: flex;\n            align-items: center;\n            gap: 8px;\n            font-size: 0.85rem;\n            color: #8a9bb0;\n        }\n\n        .legend-color {\n            width: 16px;\n            height: 3px;\n           ",
+    "code_full_len": 28727,
+    "widget_html": "owl-alpha.html"
+  },
+  {
+    "id": "qwen3-coder",
+    "label": "Qwen3 Coder",
+    "icon": "🐉",
+    "color": "#0ea5e9",
+    "provider": "openrouter",
+    "score": 78,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 76
+    },
+    "time_s": 71.27,
+    "tokens": {
+      "prompt": 236,
+      "completion": 4950,
+      "total": 5186
+    },
+    "lines": 606,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            background-color: #0c0c14;\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            color: #e0e0e0;\n            padding: 20px;\n            min-height: 100vh;\n        }\n\n        .dashboard-container {\n            max-width: 1200px;\n            margin: 0 auto;\n            background-color: #12121e;\n            border-radius: 8px;\n            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);\n            overflow: hidden;\n        }\n\n        .dashboard-header {\n            padding: 20px;\n            border-bottom: 1px solid #2a2a3a;\n        }\n\n        .dashboard-header h1 {\n            font-size: 1.5rem;\n            font-weight: 600;\n            color: #64b5f6;\n        }\n\n        .chart-container {\n            position: relative;\n            height: 500px;\n            padding: 20px;\n        }\n\n        canvas {\n            display: block;\n            width: 100%;\n            height: 100%;\n        }\n\n        .tooltip {\n            position: absolute;\n            background-color: rgba(15, 15, 25, 0.9);\n            border: 1px solid #2a2a3a;\n            border-radius: 4px;\n            padding: 10px;\n            pointer-events: none;\n            font-size: 12px;\n            z-index: 10;\n            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);\n            backdrop-filter: blur(4px);\n        }\n\n        .tooltip-row {\n            display: flex;\n            justify-content: space-between;\n            margin-bottom: 4px;\n        }\n\n        .tooltip-label {\n            color: #90a4ae;\n        }\n\n        .tooltip-value {\n            color: #e0e0e0;\n            font-weight: 500;\n        }\n\n        .positive {\n            color: #4caf50;\n        }\n\n        .negative {\n            color: #f44336;\n        }\n\n        @media (max-width: 768px) {\n            .chart-container {\n                height: 400px;\n                padding: 10px;\n            }\n            \n            .dashboard-header {\n                padding: 15px;\n            }\n            \n            .dashboard-header h1 {\n                font-size: 1.2rem;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"dashboard-container\">\n        <div class=\"dashboard-header\">\n            <h1>Financial Dashboard</h1>\n        </div>\n        <div class=\"chart-container\">\n            <canvas id=\"chartCanvas\"></canvas>\n            <div class=\"tooltip\" id=\"chartTooltip\" style=\"display: none;\"></div>\n        </div>\n    </div>\n\n    <script>\n        // Seeded random number generator\n        function seededRandom(seed) {\n            let state = seed;\n            return function() {\n                state = (state * 1664525 + 1013904223) % Math.pow(2, 32);\n             ",
+    "code_full_len": 25109,
+    "widget_html": "qwen3-coder.html"
+  },
+  {
+    "id": "gemini-flash",
+    "label": "Gemini 2.5 Flash",
+    "icon": "✨",
+    "color": "#10b981",
+    "provider": "google",
+    "score": 77,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 90
+    },
+    "time_s": 70.92,
+    "tokens": {
+      "prompt": 3228,
+      "completion": 10759,
+      "total": 23030
+    },
+    "lines": 954,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>BTC/USDT Candlestick Chart</title>\n    <style>\n        /* Basic CSS Reset & Dark Theme */\n        body {\n            margin: 0;\n            padding: 0;\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background-color: #1a1a1a; /* Dark background */\n            color: #e0e0e0; /* Light text */\n            overflow: hidden; /* Prevent body scroll */\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            min-height: 100vh; /* Ensure body takes full viewport height */\n        }\n\n        #chart-container {\n            width: 100vw;\n            height: 100vh;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n        }\n\n        canvas {\n            display: block;\n            background-color: #0d0d0d; /* Even darker for chart background */\n            border: 1px solid #333;\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);\n            /* Max width/height for responsiveness, actual size set by JS */\n            max-width: 98%;\n            max-height: 98%;\n            cursor: grab; /* Default cursor for panning */\n        }\n    </style>\n</head>\n<body>\n    <div id=\"chart-container\">\n        <canvas id=\"candlestickChart\"></canvas>\n    </div>\n\n    <script>\n        // Provided BTC/USDT data (last 30 days as of 2026-05-02)\n        const BTC_DATA = [\n          {\n            \"date\": \"2026-04-03\",\n            \"open\": 66901.99,\n            \"high\": 67370.42,\n            \"low\": 66282.0,\n            \"close\": 66964.3,\n            \"volume\": 11429.13131\n          },\n          {\n            \"date\": \"2026-04-04\",\n            \"open\": 66964.29,\n            \"high\": 67562.93,\n            \"low\": 66775.91,\n            \"close\": 67300.42,\n            \"volume\": 7373.51613\n          },\n          {\n            \"date\": \"2026-04-05\",\n            \"open\": 67300.42,\n            \"high\": 69136.2,\n            \"low\": 66611.66,\n            \"close\": 69034.18,\n            \"volume\": 11733.46752\n          },\n          {\n            \"date\": \"2026-04-06\",\n            \"open\": 69034.18,\n            \"high\": 70351.46,\n            \"low\": 68300.0,\n            \"close\": 68853.66,\n            \"volume\": 20281.61044\n          },\n          {\n            \"date\": \"2026-04-07\",\n            \"open\": 68853.66,\n            \"high\": 72761.0,\n            \"low\": 67732.01,\n            \"close\": 71924.22,\n            \"volume\": 23750.49661\n          },\n          {\n            \"date\": \"2026-04-08\",\n            \"open\": 71924.22,\n            \"high\": 72857.0,\n            \"low\": 70707.23,\n            \"close\": 71069.93,\n            \"volume\": 19802.68627\n          },\n          {\n            \"date\": \"2026-04-09\",\n            \"open\": 71069.93,\n            \"high\": 73145.0,\n            \"low\": 70466.0,\n            \"close\": 71787.97,\n            ",
+    "code_full_len": 36767,
+    "widget_html": "gemini-flash.html"
+  },
+  {
+    "id": "deepseek-flash",
+    "label": "DeepSeek V4 Flash",
+    "icon": "🔮",
+    "color": "#ef4444",
+    "provider": "deepseek",
+    "score": 76,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 85
+    },
+    "time_s": 138.54,
+    "tokens": {
+      "prompt": 2260,
+      "completion": 12884,
+      "total": 15144
+    },
+    "lines": 1056,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>BTC/USDT Candlestick Chart</title>\n    <style>\n        /* ── reset & base ── */\n        *,\n        *::before,\n        *::after {\n            box-sizing: border-box;\n            margin: 0;\n            padding: 0;\n        }\n\n        body {\n            background: #0b0b1a;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            min-height: 100vh;\n            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n            padding: 16px;\n            margin: 0;\n        }\n\n        /* ── main container ── */\n        .container {\n            width: 100%;\n            max-width: 1280px;\n            background: #111128;\n            border-radius: 16px;\n            border: 1px solid #2a2a50;\n            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);\n            overflow: hidden;\n            padding: 20px 20px 12px 20px;\n        }\n\n        /* ── header bar ── */\n        .header {\n            display: flex;\n            align-items: baseline;\n            gap: 16px;\n            padding: 0 4px 16px 4px;\n            flex-wrap: wrap;\n        }\n\n        .symbol {\n            font-size: 22px;\n            font-weight: 700;\n            color: #e8e8f0;\n            letter-spacing: -0.3px;\n        }\n        .symbol small {\n            font-size: 14px;\n            font-weight: 400;\n            color: #8888aa;\n            margin-left: 6px;\n        }\n\n        .price {\n            font-size: 28px;\n            font-weight: 700;\n            color: #26c6aa;\n            letter-spacing: -0.5px;\n        }\n\n        .change {\n            font-size: 16px;\n            font-weight: 500;\n            color: #26c6aa;\n            background: rgba(38, 198, 170, 0.12);\n            padding: 2px 12px;\n            border-radius: 6px;\n        }\n\n        .header .meta {\n            margin-left: auto;\n            font-size: 13px;\n            color: #6666aa;\n        }\n\n        /* ── chart wrapper ── */\n        .chart-wrapper {\n            position: relative;\n            width: 100%;\n            border-radius: 10px;\n            overflow: hidden;\n            background: #0d0d22;\n            border: 1px solid #1e1e42;\n        }\n\n        #chartCanvas {\n            display: block;\n            width: 100%;\n            height: auto;\n            cursor: crosshair;\n            touch-action: none;\n            background: #0d0d22;\n        }\n\n        /* ── tooltip ── */\n        .tooltip {\n            position: absolute;\n            pointer-events: none;\n            background: rgba(10, 10, 30, 0.94);\n            border: 1px solid #3a3a6a;\n            border-radius: 10px;\n            padding: 14px 18px;\n            color: #d0d0e8;\n            font-size: 13px;\n            line-height: 1.6;\n            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);\n            backdrop-filter: b",
+    "code_full_len": 36142,
+    "widget_html": "deepseek-flash.html"
+  },
+  {
+    "id": "deepseek-v4-flash",
+    "label": "DeepSeek V4 Flash (Flash)",
+    "icon": "🧠",
+    "color": "#a855f7",
+    "provider": "deepseek",
+    "score": 76,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 85
+    },
+    "time_s": 138.98,
+    "tokens": {
+      "prompt": 2260,
+      "completion": 13005,
+      "total": 15265
+    },
+    "lines": 1131,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\" />\n    <title>BTC/USDT Chart</title>\n    <style>\n        /* ----- RESET & GLOBAL ----- */\n        *,\n        *::before,\n        *::after {\n            box-sizing: border-box;\n            margin: 0;\n            padding: 0;\n        }\n\n        body {\n            background: #060b15;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            min-height: 100vh;\n            font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;\n            padding: 12px;\n        }\n\n        /* ----- CHART CONTAINER ----- */\n        .chart-container {\n            position: relative;\n            width: 100%;\n            max-width: 1200px;\n            background: #0d1117;\n            border-radius: 14px;\n            border: 1px solid #1e2a3a;\n            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);\n            padding: 18px 18px 14px 18px;\n            user-select: none;\n            -webkit-user-select: none;\n            touch-action: none;\n        }\n\n        /* ----- HEADER / TITLE BAR ----- */\n        .chart-header {\n            display: flex;\n            align-items: center;\n            justify-content: space-between;\n            padding: 0 4px 12px 4px;\n            border-bottom: 1px solid #1c2533;\n            flex-wrap: wrap;\n            gap: 8px;\n        }\n\n        .chart-pair {\n            display: flex;\n            align-items: center;\n            gap: 10px;\n        }\n\n        .chart-pair h1 {\n            font-size: 22px;\n            font-weight: 700;\n            color: #e6edf3;\n            letter-spacing: -0.3px;\n        }\n\n        .chart-pair .badge {\n            font-size: 11px;\n            font-weight: 600;\n            color: #8b949e;\n            background: #161e2b;\n            padding: 2px 10px;\n            border-radius: 6px;\n            border: 1px solid #1e2a3a;\n        }\n\n        .chart-last-price {\n            display: flex;\n            align-items: baseline;\n            gap: 12px;\n        }\n\n        .chart-last-price .price {\n            font-size: 26px;\n            font-weight: 700;\n            color: #00c853;\n            letter-spacing: -0.5px;\n        }\n\n        .chart-last-price .change {\n            font-size: 14px;\n            font-weight: 600;\n            color: #8b949e;\n        }\n\n        .chart-last-price .change.pos {\n            color: #00c853;\n        }\n        .chart-last-price .change.neg {\n            color: #ff1744;\n        }\n\n        /* ----- CANVAS WRAPPER ----- */\n        .canvas-wrapper {\n            position: relative;\n            width: 100%;\n            margin-top: 8px;\n            border-radius: 6px;\n            overflow: hidden;\n        }\n\n        #chartCanvas {\n            display: block;\n            width: 100%;\n            height: auto;\n            background: #0d1117;\n        ",
+    "code_full_len": 38875,
+    "widget_html": "deepseek-v4-flash.html"
+  },
+  {
+    "id": "tencent-hy3",
+    "label": "Tencent HY3 Preview",
+    "icon": "🐧",
+    "color": "#ec4899",
+    "provider": "openrouter",
+    "score": 74,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 72
+    },
+    "time_s": 125.58,
+    "tokens": {
+      "prompt": 2270,
+      "completion": 8798,
+      "total": 11068
+    },
+    "lines": 838,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>BTC/USDT Candlestick Chart</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background-color: #0a0e17;\n            color: #e1e5eb;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            min-height: 100vh;\n            padding: 20px;\n        }\n\n        .chart-container {\n            width: 100%;\n            max-width: 1200px;\n            background-color: #141922;\n            border-radius: 8px;\n            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);\n            overflow: hidden;\n            border: 1px solid #2a2e39;\n        }\n\n        .chart-header {\n            padding: 20px;\n            border-bottom: 1px solid #2a2e39;\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            flex-wrap: wrap;\n            gap: 15px;\n        }\n\n        .chart-title {\n            font-size: 1.5rem;\n            font-weight: 600;\n            color: #f0b90b;\n        }\n\n        .price-info {\n            display: flex;\n            align-items: center;\n            gap: 15px;\n            flex-wrap: wrap;\n        }\n\n        .current-price {\n            font-size: 1.8rem;\n            font-weight: 700;\n            color: #e1e5eb;\n        }\n\n        .price-change {\n            font-size: 1rem;\n            padding: 4px 10px;\n            border-radius: 4px;\n            font-weight: 600;\n        }\n\n        .positive {\n            background-color: rgba(0, 200, 83, 0.15);\n            color: #00c853;\n        }\n\n        .negative {\n            background-color: rgba(255, 82, 82, 0.15);\n            color: #ff5252;\n        }\n\n        .chart-wrapper {\n            position: relative;\n            width: 100%;\n            height: 70vh;\n            min-height: 500px;\n        }\n\n        canvas {\n            display: block;\n            width: 100%;\n            height: 100%;\n            cursor: crosshair;\n        }\n\n        .tooltip {\n            position: absolute;\n            background-color: rgba(20, 25, 34, 0.95);\n            border: 1px solid #2a2e39;\n            border-radius: 4px;\n            padding: 12px;\n            pointer-events: none;\n            opacity: 0;\n            transition: opacity 0.2s;\n            font-size: 0.85rem;\n            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n            z-index: 10;\n            min-width: 180px;\n        }\n\n        .tooltip-header {\n            font-weight: 600;\n            margin-bottom: 8px;\n            color: #f0b90b;\n            border-bottom: 1px solid #2a2e39;\n            padding-bottom: 5px;\n        }\n\n        .tooltip-row {\n            display: flex;\n            justify-content: space-between;\n  ",
+    "code_full_len": 34522,
+    "widget_html": "tencent-hy3.html"
+  },
+  {
+    "id": "groq-qwen3",
+    "label": "Qwen3 32B (Groq)",
+    "icon": "⚡",
+    "color": "#eab308",
+    "provider": "groq",
+    "score": 73,
+    "components": {
+      "features": 90,
+      "completeness": 65,
+      "speed": 30,
+      "cost": 100
+    },
+    "time_s": 8.22,
+    "tokens": {
+      "prompt": 111,
+      "completion": 3591,
+      "total": 3702
+    },
+    "lines": 251,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <style>\n    html, body {\n      margin: 0;\n      padding: 0;\n      background: #1e1e1e;\n      color: #00ff00;\n      font-family: monospace;\n      overflow: hidden;\n    }\n    canvas {\n      display: block;\n      width: 100vw;\n      height: 100vh;\n      image-rendering: pixelated;\n    }\n    #tooltip {\n      position: absolute;\n      background: rgba(0, 255, 0, 0.2);\n      padding: 4px 8px;\n      border: 1px solid #00ff00;\n      border-radius: 4px;\n      pointer-events: none;\n      font-size: 12px;\n    }\n  </style>\n  <title>Financial Chart</title>\n</head>\n<body>\n<canvas id=\"chart\"></canvas>\n<div id=\"tooltip\"></div>\n<script>\n  const canvas = document.getElementById('chart');\n  const ctx = canvas.getContext('2d');\n  const tooltip = document.getElementById('tooltip');\n\n  let data = [];\n  let sma7 = [];\n  let sma21 = [];\n  let seed = 123;\n  let zoom = 1;\n  let pan = 0;\n  let dragging = false;\n  let dragStart = {x:0,y:0};\n\n  // Seeded random\n  function seededRandom() {\n    seed = (seed * 9301 + 49297) % 233280;\n    return seed / 233280;\n  }\n\n  // Generate OHLCV data\n  function generateData() {\n    const prices = [100];\n    for (let i = 1; i < 30; i++) {\n      const change = (seededRandom() - 0.5) * 0.02;\n      prices.push(prices[i-1] * (1 + change));\n    }\n    data = [];\n    for (let i = 0; i < 30; i++) {\n      const open = prices[i];\n      const range = (seededRandom() - 0.5) * 0.01 * open;\n      const high = open + Math.abs(range) + (seededRandom() * 0.005 * open);\n      const low = open - Math.abs(range) - (seededRandom() * 0.005 * open);\n      const close = high - (high - low) * seededRandom();\n      data.push({ \n        open, high, low, close, \n        volume: 10000 + seededRandom() * 20000 \n      });\n    }\n  }\n\n  // Calculate SMA\n  function calculateSMA(period) {\n    const sma = [];\n    for (let i = 0; i < data.length; i++) {\n      if (i < period - 1) continue;\n      let sum = 0;\n      for (let j = i - period + 1; j <= i; j++) sum += data[j].close;\n      sma.push({x: i, y: sum / period});\n    }\n    return sma;\n  }\n\n  // Resize canvas\n  function resizeCanvas() {\n    canvas.width = window.innerWidth;\n    canvas.height = window.innerHeight;\n  }\n  window.addEventListener('resize', resizeCanvas);\n  resizeCanvas();\n\n  // Chart drawing\n  function drawChart() {\n    ctx.clearRect(0, 0, canvas.width, canvas.height);\n    const width = canvas.width;\n    const height = canvas.height;\n    const chartHeight = height * 0.7;\n    const volumeHeight = height * 0.3;\n    const padding = 40;\n    const innerWidth = width - 2 * padding;\n    const innerHeight = chartHeight - 2 * padding;\n\n    // Calculate visible range\n    const visibleWidth = innerWidth / zoom;\n    const startX = Math.max(0, Math.floor(pan - visibleWidth/2));\n    const endX = Math.min(data.length, Math.floor(startX + visibleWidth));\n    const visibleData = data.slic",
+    "code_full_len": 7207,
+    "widget_html": "groq-qwen3.html"
+  },
+  {
+    "id": "groq-llama4",
+    "label": "Llama 4 Scout 17B (Groq)",
+    "icon": "🦍",
+    "color": "#06b6d4",
+    "provider": "groq",
+    "score": 70,
+    "components": {
+      "features": 60,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 100
+    },
+    "time_s": 4.21,
+    "tokens": {
+      "prompt": 198,
+      "completion": 1736,
+      "total": 1934
+    },
+    "lines": 186,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": false,
+      "pan": false,
+      "responsive": true,
+      "dark": false,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 6,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #2b2b2b;\n            color: #fff;\n            margin: 0;\n            padding: 0;\n        }\n        #dashboard {\n            width: 800px;\n            margin: 20px auto;\n            display: flex;\n            flex-direction: column;\n            align-items: center;\n        }\n        #chart-container {\n            width: 100%;\n            height: 600px;\n            border: 1px solid #444;\n            background-color: #333;\n        }\n        #volume-chart-container {\n            width: 100%;\n            height: 200px;\n            border: 1px solid #444;\n            background-color: #333;\n        }\n    </style>\n</head>\n<body>\n    <div id=\"dashboard\">\n        <div id=\"chart-container\"></div>\n        <div id=\"volume-chart-container\"></div>\n    </div>\n\n    <script>\n        // Generate sample data\n        const seed = 123;\n        Math.random = function() {\n            const x = Math.sin(seed++) * 10000;\n            return x - Math.floor(x);\n        };\n        const data = [];\n        for (let i = 0; i < 30; i++) {\n            const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);\n            const open = Math.random() * 100 + 50;\n            const high = open + Math.random() * 10;\n            const low = open - Math.random() * 10;\n            const close = open + Math.random() * 5 - 2.5;\n            const volume = Math.random() * 100000 + 50000;\n            data.push({ date, open, high, low, close, volume });\n        }\n\n        // Calculate moving averages\n        const sma7 = [];\n        const sma21 = [];\n        for (let i = 0; i < data.length; i++) {\n            if (i >= 6) {\n                const sum7 = data.slice(i - 6, i + 1).reduce((acc, curr) => acc + curr.close, 0);\n                sma7.push(sum7 / 7);\n            } else {\n                sma7.push(null);\n            }\n            if (i >= 20) {\n                const sum21 = data.slice(i - 20, i + 1).reduce((acc, curr) => acc + curr.close, 0);\n                sma21.push(sum21 / 21);\n            } else {\n                sma21.push(null);\n            }\n        }\n\n        // Get canvas elements\n        const chartContainer = document.getElementById('chart-container');\n        const volumeChartContainer = document.getElementById('volume-chart-container');\n        const chartCanvas = document.createElement('canvas');\n        chartCanvas.width = chartContainer.offsetWidth;\n        chartCanvas.height = chartContainer.offsetHeight;\n        chartContainer.appendChild(chartCanvas);\n        const volumeChartCanvas = document.createElement('canvas');\n        volumeChartCanvas.width = volumeChartContainer.offsetWidth;\n        volumeChartCanvas.height = volumeChartContainer.offsetHeight;\n        volumeChartContainer.appendC",
+    "code_full_len": 7357,
+    "widget_html": "groq-llama4.html"
+  }
+];
+
+try {
+  document.getElementById('status').textContent = 'CODING loaded: ' + CODING.length + ' models';
+  const tb = document.getElementById('tb');
+  CODING.forEach((m, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (i+1) + '</td><td>' + m.label + '</td><td>' + m.score + '</td><td>' + (m.lines||0) + '</td>';
+    tb.appendChild(tr);
+  });
+  document.getElementById('status').textContent = '✅ Rendered ' + CODING.length + ' models';
+} catch(e) {
+  document.getElementById('status').textContent = '❌ Error: ' + e.message;
+  console.error(e);
+}
+</script>
+</body></html>

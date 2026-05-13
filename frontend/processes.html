@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON - Procesos Automáticos</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  .job-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:10px; }
+  .job-card .top { display:flex; justify-content:space-between; align-items:center; }
+  .job-card .name { font-weight:600; font-size:14px; }
+  .job-card .schedule { font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .job-card .meta { font-size:11px; color:var(--text-dim); margin-top:8px; display:flex; gap:12px; }
+  .log-line { font-size:11px; font-family:monospace; padding:2px 0; color:var(--text-dim); }
+  .log-line .ts { color:#8b9bb5; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Panel</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval">🏆 Eval</a>
+  <a href="/processes" class="active">⚙️ Procesos</a>
+  <a href="/health">🩺 Salud</a>
+  <a href="/agents">🤖 Agentes</a>
+  <a href="/projects">📁 Proyectos</a>
+</nav>
+<div class="container">
+  <div class="section-title">⚙️ PROCESOS AUTOMÁTICOS</div>
+  <div class="grid-2" id="jobList">
+    <div class="loading">Cargando jobs...</div>
+  </div>
+  
+  <div class="card" style="margin-top:16px;">
+    <div class="section-title">📊 Estado del Sistema</div>
+    <div id="serviceStatus"></div>
+  </div>
+  <div class="footer">Jobs gestionados por Hermes Agent · Todos los jobs activos 24/7</div>
+</div>
+<script>
+async function load(){
+  try{
+    const r=await fetch('/api/v1/system/services');
+    const d=await r.json();
+    let h='';
+    if(d.cron_jobs?.jobs){
+      for(const j of d.cron_jobs.jobs){
+        const status=j.enabled?'🟢 Activo':'🔴 Inactivo';
+        h+=`<div class="job-card"><div class="top"><div><div class="name">${j.name||'Sin nombre'}</div><div class="schedule">⏰ ${j.schedule||'No programado'}</div></div><div>${status}</div></div><div class="meta"><span>ID: ${j.id||'--'}</span></div></div>`;
+      }
+    }else{
+      h='<div class="card"><p style="color:var(--text-dim);">No hay jobs registrados</p></div>';
+    }
+    document.getElementById('jobList').innerHTML=h||'<div class="card"><p style="color:var(--text-dim);">No hay jobs registrados</p></div>';
+
+    let s=`<table><tr><th>Servicio</th><th>Estado</th><th>Detalle</th></tr>`;
+    if(d.api_server) s+=`<tr><td>🌐 API Server</td><td><span class="badge badge-green">Activo</span></td><td>Puerto ${d.api_server.port}</td></tr>`;
+    if(d.database) s+=`<tr><td>🗄️ Base de Datos</td><td><span class="badge ${d.database.exists?'badge-green':'badge-red'}">${d.database.exists?'OK':'No encontrada'}</span></td><td>${d.database.path}</td></tr>`;
+    if(d.cron_jobs) s+=`<tr><td>⏰ Cron Jobs</td><td><span class="badge badge-blue">${d.cron_jobs.count} activos</span></td><td>Gestión de datos y monitoreo</td></tr>`;
+    s+=`</table>`;
+    document.getElementById('serviceStatus').innerHTML=s;
+  }catch(e){document.getElementById('jobList').innerHTML='<div class="loading">Error de conexión</div>';}
+}
+load();
+</script>
+</body>
+</html>

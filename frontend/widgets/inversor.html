@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inversor — PEGATON Invest Intelligence</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #060a12;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top bar */
+    .topbar {
+      background: #0a0e17;
+      border-bottom: 1px solid #1a2332;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .topbar-title span { color: #34c759; }
+    .topbar-stats {
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .topbar-stats .val { color: #e2e8f0; font-weight: 600; }
+
+    /* Dashboard grid */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 16px;
+      padding: 16px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Panel card */
+    .panel {
+      background: #0e1520;
+      border: 1px solid #1a2332;
+      border-radius: 12px;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    /* Widget iframe */
+    .widget-frame {
+      width: 100%;
+      border: none;
+      background: transparent;
+    }
+
+    /* Full-width bottom panel */
+    .bottom-full {
+      grid-column: 1 / -1;
+    }
+
+    /* KPI row */
+    .kpi-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .kpi {
+      flex: 1;
+      min-width: 120px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid #1a2332;
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .kpi-value {
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .kpi-label {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .kpi-value.bullish { color: #34c759; }
+    .kpi-value.bearish { color: #ff453a; }
+    .kpi-value.neutral-k { color: #ffcc02; }
+
+    /* Allocation bar */
+    .alloc-section { margin-top: 8px; }
+    .alloc-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .alloc-label {
+      width: 70px;
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: right;
+    }
+    .alloc-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: #1a2332;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .alloc-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s ease;
+    }
+    .alloc-pct {
+      width: 36px;
+      font-size: 11px;
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .dashboard { grid-template-columns: 1fr; }
+      .topbar { flex-direction: column; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="topbar-title">📊 <span>PEGATON</span> Invest Intelligence</div>
+  <div class="topbar-stats">
+    <span>Último refresh: <span class="val" id="lastRefresh">—</span></span>
+    <span>Score: <span class="val" id="topScore">—</span></span>
+    <span>Artículos: <span class="val" id="topArticles">—</span></span>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard">
+
+  <!-- ROW 1: Sentimiento + Fear & Greed -->
+  <div class="panel">
+    <div class="panel-title">📰 Sentimiento de Noticias</div>
+    <iframe class="widget-frame" id="newsFrame" src="/widget/news-sentimiento.html" style="height:380px;"></iframe>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">😱📈 Fear & Greed — Equipo A</div>
+    <iframe class="widget-frame" src="/api/v1/fear-greed/widget?type=a" style="height:380px;"></iframe>
+  </div>
+
+  <!-- ROW 2: KPIs de mercado -->
+  <div class="panel bottom-full">
+    <div class="panel-title">⚡ KPIs del Mercado</div>
+    <div class="kpi-row" id="kpiRow">
+      <div class="kpi">
+        <div class="kpi-value neutral-k" id="kpiSentiment">—</div>
+        <div class="kpi-label">Sentimiento</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpiArticles">—</div>
+        <div class="kpi-label">Artículos</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpiSources">—</div>
+        <div class="kpi-label">Fuentes</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value" id="kpiDelta">—</div>
+        <div class="kpi-label">Delta</div>
+      </div>
+    </div>
+    <div class="alloc-section">
+      <div class="panel-title" style="margin-bottom:6px;">Distribución</div>
+      <div id="allocBars"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Pull data every 60s from news-sentiment API
+  var API = '/api/v1/news-sentiment';
+
+  function fetchData() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', API + '?t=' + Date.now(), true);
+    xhr.timeout = 15000;
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        try {
+          var d = JSON.parse(xhr.responseText);
+          updateTopbar(d);
+          updateKPIs(d);
+          updateAlloc(d);
+        } catch (e) { console.error('[Inversor] Parse error', e); }
+      }
+    };
+    xhr.onerror = function () { console.error('[Inversor] Network error'); };
+    xhr.ontimeout = function () { console.error('[Inversor] Timeout'); };
+    xhr.send();
+  }
+
+  function updateTopbar(d) {
+    document.getElementById('topScore').textContent = d.score;
+    document.getElementById('topArticles').textContent = d.total_articles || 0;
+    document.getElementById('lastRefresh').textContent =
+      (d.timestamp || '').replace('T', ' ').slice(0, 19) || new Date().toISOString().slice(0, 19);
+  }
+
+  function updateKPIs(d) {
+    var sent = document.getElementById('kpiSentiment');
+    sent.textContent = d.score;
+    sent.className = 'kpi-value ' + (d.score < 40 ? 'bearish' : d.score > 60 ? 'bullish' : 'neutral-k');
+
+    document.getElementById('kpiArticles').textContent = d.total_articles || 0;
+    document.getElementById('kpiSources').textContent = d.sources ? Object.keys(d.sources).length : 0;
+
+    var deltaEl = document.getElementById('kpiDelta');
+    var sign = d.delta > 0 ? '+' : '';
+    deltaEl.textContent = sign + d.delta;
+    deltaEl.className = 'kpi-value ' + (d.delta > 0 ? 'bullish' : d.delta < 0 ? 'bearish' : 'neutral-k');
+  }
+
+  function updateAlloc(d) {
+    var container = document.getElementById('allocBars');
+    var dist = d.distribution;
+    if (!dist) return;
+    var total = (dist.fear || 0) + (dist.neutral || 0) + (dist.greed || 0);
+    if (total === 0) return;
+
+    var colors = { fear: '#ff453a', neutral: '#ffd60a', greed: '#34c759' };
+    var labels = { fear: 'Miedo', neutral: 'Neutral', greed: 'Euforia' };
+
+    var html = '';
+    ['fear', 'neutral', 'greed'].forEach(function (k) {
+      var pct = Math.round((dist[k] || 0) / total * 100);
+      html +=
+        '<div class="alloc-row">' +
+        '<span class="alloc-label">' + labels[k] + '</span>' +
+        '<div class="alloc-bar-bg"><div class="alloc-bar-fill" style="width:' + pct + '%;background:' + colors[k] + '"></div></div>' +
+        '<span class="alloc-pct">' + pct + '%</span>' +
+        '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  fetchData();
+  setInterval(fetchData, 60000);
+})();
+</script>
+</body>
+</html>

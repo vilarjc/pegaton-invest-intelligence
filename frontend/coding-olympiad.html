@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏆 Coding Olympiad — PEGATON</title>
+  <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0e17; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 20px; }
+.container { max-width: 1240px; margin: 0 auto; animation: fadeIn .3s ease; }
+h1 { font-size: 28px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.subtitle { color: #64748b; font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin: 0 2px; }
+.badge-free { background: rgba(34,197,94,.15); color: #22c55e; }
+.badge-paid { background: rgba(239,68,68,.15); color: #ef4444; }
+.badge-warn { background: rgba(234,179,8,.15); color: #eab308; }
+.barchart { display: flex; align-items: flex-end; gap: 12px; background: #0f172a; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #1e293b; justify-content: center; min-height: 200px; flex-wrap: wrap; }
+.bar-group { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 70px; max-width: 100px; cursor: pointer; transition: transform .2s; }
+.bar-group:hover { transform: translateY(-4px); }
+.bar-score { font-size: 18px; font-weight: 700; }
+.bar-rect { width: 48px; border-radius: 6px 6px 0 0; min-height: 8px; transition: height .5s ease; }
+.bar-rect.user-rated { background-image: linear-gradient(45deg, rgba(255,255,255,.12) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.12) 50%, rgba(255,255,255,.12) 75%, transparent 75%, transparent); background-size: 8px 8px; }
+.bar-label { font-size: 11px; color: #94a3b8; text-align: center; line-height: 1.3; }
+.bar-time { font-size: 9px; color: #475569; }
+.table-wrap { background: #0f172a; border-radius: 12px; border: 1px solid #1e293b; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 750px; }
+th { text-align: left; padding: 10px 12px; background: #1a2332; color: #94a3b8; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid #1e293b; }
+td { padding: 10px 12px; border-bottom: 1px solid #1e293b; }
+tr:last-child td { border-bottom: none; }
+tr.model-row { cursor: pointer; transition: background .15s; }
+tr.model-row:hover { background: rgba(99,102,241,.06); }
+tr.model-row.active { background: rgba(99,102,241,.12); }
+.rank-num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 700; font-size: 12px; }
+.model-cell { display: flex; align-items: center; gap: 8px; }
+.model-cell .icon { font-size: 20px; }
+.model-cell .name { font-weight: 600; }
+.model-cell .provider { font-size: 10px; color: #64748b; }
+.feat-icon { font-size: 14px; cursor: help; margin: 0 1px; }
+.stars { display: inline-flex; gap: 2px; font-size: 18px; }
+.star { cursor: pointer; transition: transform .15s, color .15s; user-select: none; }
+.star:hover { transform: scale(1.3); }
+.star.active { color: #fbbf24 !important; }
+.star.inactive { color: #334155 !important; }
+.score-cell { font-weight: 700; font-size: 15px; }
+.viewer-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.94); z-index: 1000; flex-direction: column; }
+.viewer-overlay.open { display: flex; }
+.viewer-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: #0f172a; border-bottom: 1px solid #1e293b; flex-shrink: 0; }
+.viewer-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.viewer-close { background: none; border: 1px solid #334155; color: #94a3b8; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all .15s; }
+.viewer-close:hover { background: #1e293b; color: #e2e8f0; }
+.viewer-tabs { display: flex; gap: 0; background: #0a0e17; border-bottom: 1px solid #1e293b; flex-shrink: 0; }
+.viewer-tab { padding: 10px 20px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; background: transparent; color: #64748b; transition: all .15s; border-bottom: 2px solid transparent; }
+.viewer-tab:hover { color: #e2e8f0; }
+.viewer-tab.active { color: #e2e8f0; border-bottom-color: #6366f1; }
+.viewer-body { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.viewer-content { display: none; flex: 1; overflow: hidden; }
+.viewer-content.active { display: flex; }
+.viewer-body iframe { width: 100%; height: 100%; border: none; background: #0f131a; }
+.code-viewer { flex: 1; overflow: auto; background: #0d1117; padding: 0; font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.6; }
+.code-viewer pre { margin: 0; padding: 16px; white-space: pre-wrap; word-break: break-word; color: #c9d1d9; }
+.code-viewer .line-num { color: #484f58; user-select: none; min-width: 40px; display: inline-block; text-align: right; padding-right: 12px; }
+.code-header { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: #161b22; border-bottom: 1px solid #21262d; flex-shrink: 0; font-size: 11px; color: #8b949e; }
+.code-header .round-badge { font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+.round-r1 { background: rgba(59,130,246,.15); color: #60a5fa; }
+.round-r2 { background: rgba(168,85,247,.15); color: #c084fc; }
+.pm-viewer { flex: 1; overflow: auto; background: #0d1117; padding: 20px; }
+.pm-prompt-box { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+.pm-prompt-box h3 { color: #f59e0b; margin-bottom: 8px; font-size: 13px; }
+.pm-prompt-box pre { white-space: pre-wrap; color: #c9d1d9; font-size: 13px; line-height: 1.7; font-family: inherit; }
+.pm-response-box { background: #0d1117; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; }
+.pm-response-box h3 { color: #6366f1; margin-bottom: 8px; font-size: 13px; }
+.pm-response-box .response-text { white-space: pre-wrap; color: #c9d1d9; font-size: 13px; line-height: 1.7; }
+.viewer-footer { display: flex; align-items: center; justify-content: center; gap: 20px; padding: 14px 20px; background: #0f172a; border-top: 1px solid #1e293b; flex-shrink: 0; }
+.viewer-footer .label { color: #64748b; font-size: 12px; margin-right: 8px; }
+.viewer-footer .stars { font-size: 28px; }
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; background: #0f172a; border-radius: 10px; padding: 4px; border: 1px solid #1e293b; }
+.tab-btn { padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; background: transparent; color: #64748b; transition: all .15s; }
+.tab-btn:hover { color: #e2e8f0; }
+.tab-btn.active { background: #1e293b; color: #e2e8f0; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.click-hint { font-size: 10px; color: #475569; display: block; }
+.loading-html { display: flex; align-items: center; justify-content: center; height: 100%; color: #64748b; font-size: 16px; }
+@media (max-width: 768px) { body { padding: 12px; } h1 { font-size: 22px; } table { font-size: 11px; } td, th { padding: 8px; } .feat-icon { font-size: 11px; } .stars { font-size: 14px; } .bar-label { font-size: 9px; } .bar-rect { width: 36px; } .bar-score { font-size: 14px; } .code-viewer { font-size: 10px; } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏆 Coding Olympiad — PEGATON</h1>
+    <div class="subtitle">
+      <strong>3 rondas completas:</strong> R1 Código (datos generados) · R2 Código (BTC real) · R3 PM/Organización ·
+      <span id="date-badge">03/05/2026</span>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('coding')">📊 Código (R1+R2)</button>
+      <button class="tab-btn" onclick="switchTab('pm')">📋 PM / Organizador (R3)</button>
+      <button class="tab-btn" onclick="switchTab('overall')">🏆 Ranking Global</button>
+      <button class="tab-btn" onclick="switchTab('about')">ℹ️ Cómo funciona</button>
+    </div>
+
+    <div class="tab-content active" id="tab-coding">
+      <div class="barchart" id="bar-chart-coding"></div>
+      <div class="table-wrap">
+        <table><thead><tr>
+          <th style="width:40px">#</th><th>Modelo</th><th style="width:60px;text-align:center">Pts</th>
+          <th style="width:50px;text-align:center">Ln</th><th style="width:55px;text-align:center">⏱️</th>
+          <th style="width:80px;text-align:center">Tokens</th><th style="width:60px;text-align:center">💰</th>
+          <th>Features</th><th style="width:120px;text-align:center">Tu ⭐</th>
+        </tr></thead><tbody id="table-body-coding"></tbody></table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-pm">
+      <div class="barchart" id="bar-chart-pm"></div>
+      <div class="table-wrap">
+        <table><thead><tr>
+          <th style="width:40px">#</th><th>Modelo</th><th style="width:70px;text-align:center">PM Total</th>
+          <th style="width:55px;text-align:center">🔍 Int.</th><th style="width:55px;text-align:center">⚙️ Anál.</th>
+          <th style="width:55px;text-align:center">📋 Plan</th><th style="width:55px;text-align:center">💬 Com.</th>
+          <th style="width:60px;text-align:center">⏱️</th><th style="width:60px;text-align:center">Chars</th>
+          <th style="width:120px;text-align:center">Tu ⭐</th>
+        </tr></thead><tbody id="table-body-pm"></tbody></table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-overall">
+      <div class="barchart" id="bar-chart-overall"></div>
+      <div class="table-wrap">
+        <table><thead><tr>
+          <th style="width:40px">#</th><th>Modelo</th><th style="width:65px;text-align:center">Global</th>
+          <th style="width:60px;text-align:center">📊 Coding</th><th style="width:60px;text-align:center">📋 PM</th>
+          <th style="width:120px;text-align:center">Tu ⭐</th>
+        </tr></thead><tbody id="table-body-overall"></tbody></table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-about">
+      <div style="background:#0f172a;border-radius:12px;border:1px solid #1e293b;padding:24px;line-height:1.8;font-size:14px">
+        <h3>📊 R1 — Código con Datos Generados</h3>
+        <p style="color:#94a3b8;margin-bottom:16px">Cada modelo recibió el mismo prompt pidiendo un dashboard financiero interactivo con datos generados internamente, Canvas 2D puro, sin librerías externas.</p>
+        <h3>📊 R2 — Código con Datos Reales de BTC</h3>
+        <p style="color:#94a3b8;margin-bottom:16px">Mismo prompt pero con datos reales de BTC/USDT de los últimos 30 días obtenidos de Binance API.</p>
+        <h3>📋 R3 — PM / Organizador</h3>
+        <p style="color:#94a3b8;margin-bottom:16px">Cada modelo actuó como Senior Project Manager analizando una solicitud de cliente.</p>
+        <h3>🏆 Scoring</h3>
+        <p style="color:#94a3b8;margin-bottom:8px"><strong>Coding:</strong> 40% features + 25% completitud + 20% velocidad + 15% coste</p>
+        <p style="color:#94a3b8;margin-bottom:8px"><strong>PM:</strong> 25% interpretación + 25% análisis + 25% plan + 25% comunicación</p>
+        <p style="color:#94a3b8"><strong>Global:</strong> 60% coding + 40% PM + ajuste por puntuación del usuario</p>
+      </div>
+    </div>
+
+    <!-- CODING VIEWER OVERLAY -->
+    <div class="viewer-overlay" id="viewer">
+      <div class="viewer-header">
+        <div class="viewer-title">
+          <span id="viewer-icon">🧠</span><span id="viewer-name">Modelo</span>
+          <span id="viewer-round-badge" style="font-size:10px;padding:2px 8px;border-radius:4px"></span>
+        </div>
+        <button class="viewer-close" onclick="closeViewer()">✕ Cerrar</button>
+      </div>
+      <div class="viewer-tabs" id="viewer-tab-bar">
+        <button class="viewer-tab active" onclick="switchViewerTab('widget')">🖥️ Widget</button>
+        <button class="viewer-tab" onclick="switchViewerTab('code')">📝 Código</button>
+      </div>
+      <div class="viewer-body">
+        <div class="viewer-content active" id="viewer-content-widget">
+          <div class="loading-html" id="viewer-loading">Cargando widget...</div>
+          <iframe id="viewer-frame" style="display:none" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+        <div class="viewer-content" id="viewer-content-code">
+          <div class="code-header">
+            <span id="code-round-label">R1</span>
+            <span style="color:#484f58">|</span>
+            <span id="code-lines-info">0 líneas</span>
+            <span style="color:#484f58">|</span>
+            <span id="code-chars-info">0 caracteres</span>
+          </div>
+          <div class="code-viewer" id="code-content"><pre>Selecciona un modelo para ver su código</pre></div>
+        </div>
+      </div>
+      <div class="viewer-footer">
+        <span class="label">Tu puntuación (0-10):</span>
+        <div class="stars" id="viewer-stars"></div>
+        <span style="color:#64748b;font-size:12px;margin-left:12px" id="viewer-rating-info">&mdash;</span>
+      </div>
+    </div>
+
+    <!-- PM VIEWER OVERLAY -->
+    <div class="viewer-overlay" id="pm-viewer">
+      <div class="viewer-header">
+        <div class="viewer-title">
+          <span id="pm-viewer-icon">📋</span><span id="pm-viewer-name">Modelo PM</span>
+        </div>
+        <button class="viewer-close" onclick="closePMViewer()">✕ Cerrar</button>
+      </div>
+      <div class="viewer-body">
+        <div class="pm-viewer" id="pm-viewer-content">
+          <div class="pm-prompt-box">
+            <h3>📋 PROMPT ENTREGADO A TODOS LOS MODELOS</h3>
+            <pre id="pm-prompt-text"></pre>
+          </div>
+          <div class="pm-response-box">
+            <h3>📝 RESPUESTA COMPLETA DEL MODELO</h3>
+            <div class="response-text" id="pm-response-text"></div>
+          </div>
+        </div>
+      </div>
+      <div class="viewer-footer">
+        <span class="label">Tu puntuación PM (0-10):</span>
+        <div class="stars" id="pm-viewer-stars"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+const CODING = [
+  {
+    "id": "llama-groq",
+    "label": "Llama 3.3 70B (Groq)",
+    "icon": "🦙",
+    "color": "#22c55e",
+    "provider": "groq",
+    "score": 82,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 100
+    },
+    "time_s": 4.97,
+    "tokens": {
+      "prompt": 261,
+      "completion": 2372,
+      "total": 2633
+    },
+    "lines": 267,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        /* Dark theme */\n        body {\n            background-color: #2f2f2f;\n            color: #fff;\n            font-family: Arial, sans-serif;\n        }\n        #chart-container {\n            width: 100%;\n            height: 600px;\n            border: 1px solid #444;\n            padding: 10px;\n        }\n        #chart {\n            width: 100%;\n            height: 100%;\n        }\n        #volume-chart {\n            width: 100%;\n            height: 100px;\n            border-top: 1px solid #444;\n        }\n    </style>\n</head>\n<body>\n    <div id=\"chart-container\">\n        <canvas id=\"chart\"></canvas>\n        <canvas id=\"volume-chart\"></canvas>\n    </div>\n    <script>\n        // Set seed for Math.random()\n        function srand(seed) {\n            Math.seed = seed;\n        }\n        function rand() {\n            var x = Math.sin(Math.seed++) * 10000;\n            return x - Math.floor(x);\n        }\n        srand(12345);\n\n        // Generate sample price data\n        function generateData(days) {\n            var data = [];\n            var open = 100;\n            var high = 100;\n            var low = 100;\n            var close = 100;\n            var volume = 1000;\n            for (var i = 0; i < days; i++) {\n                open = close + (rand() * 2 - 1) * 5;\n                high = open + (rand() * 2 - 1) * 5;\n                low = open - (rand() * 2 - 1) * 5;\n                close = open + (rand() * 2 - 1) * 2;\n                volume = volume + (rand() * 2 - 1) * 100;\n                data.push({\n                    date: new Date(new Date().getTime() - i * 24 * 60 * 60 * 1000),\n                    open: open,\n                    high: high,\n                    low: low,\n                    close: close,\n                    volume: volume\n                });\n            }\n            return data;\n        }\n\n        // Calculate moving averages\n        function calculateMA(data, days) {\n            var ma = [];\n            for (var i = 0; i < data.length; i++) {\n                if (i < days - 1) {\n                    ma.push(null);\n                } else {\n                    var sum = 0;\n                    for (var j = i - days + 1; j <= i; j++) {\n                        sum += data[j].close;\n                    }\n                    ma.push(sum / days);\n                }\n            }\n            return ma;\n        }\n\n        // Draw chart\n        function drawChart(ctx, data, ma7, ma21, width, height) {\n            ctx.clearRect(0, 0, width, height);\n            ctx.fillStyle = '#fff';\n            ctx.font = '12px Arial';\n            ctx.textAlign = 'left';\n            ctx.textBaseline = 'top';\n\n            // Draw grid\n            ctx.strokeStyle = '#444';\n            ctx.lineWidth = 1;\n            for (var i = 0; i < 5; i++) {\n                ctx.beginP",
+    "code_full_len": 10092,
+    "widget_html": "llama-groq.html"
+  },
+  {
+    "id": "nemotron-super",
+    "label": "Nemotron 3 Super 120B",
+    "icon": "💎",
+    "color": "#6366f1",
+    "provider": "openrouter",
+    "score": 79,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 77
+    },
+    "time_s": 202.36,
+    "tokens": {
+      "prompt": 234,
+      "completion": 3176,
+      "total": 3410
+    },
+    "lines": 332,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Financial Dashboard Widget</title>\n<style>\n  html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#0d0d0d;color:#eee;}\n  .container{position:relative;width:100%;max-width:960px;margin:0 auto;padding:10px;box-sizing:border-box;}\n  canvas{display:block;width:100%;height:auto;background:#111;}\n  #tooltip{\n    position:absolute;pointer-events:none;background:rgba(0,0,0,0.7);color:#fff;\n    padding:6px 10px;border-radius:4px;font-size:13px;white-space:nowrap;\n    border:1px solid #333;transform:translate(-50%,-100%);z-index:10;\n  }\n</style>\n</head>\n<body>\n<div class=\"container\">\n  <canvas id=\"priceCanvas\"></canvas>\n  <canvas id=\"volumeCanvas\"></canvas>\n  <div id=\"tooltip\" class=\"tooltip\"></div>\n</div>\n\n<script>\n/* ==== Seeded Random (Mulberry32) ==== */\nfunction mulberry32(seed) {\n  return function() {\n    var t = (seed += 0x6D2B79F5) >>> 0;\n    t = Math.imul(t ^ t >>> 15, t | 1);\n    t ^= t + Math.imul(t ^ t >>> 7, t | 61);\n    return ((t ^ t >>> 14) >>> 0) / 4294967296;\n  };\n}\n\n/* ==== Data Generation ==== */\nconst rand = mulberry32(12345); // fixed seed\nconst totalDays = 30;\nconst data = [];\nlet price = 100; // starting price\nconst startDate = new Date(Date.now() - totalDays * 24 * 60 * 60 * 1000);\n\nfor (let i = 0; i < totalDays; i++) {\n  const change = (rand() * 2 - 1) * 0.02; // +/-2%\n  price = Math.max(1, price + price * change);\n\n  const open = price;\n  const close = price * (1 + (rand() * 2 - 1) * 0.01);\n  const high = Math.max(open, close) * (1 + rand() * 0.005);\n  const low = Math.min(open, close) * (1 - rand() * 0.005);\n  const volume = rand() * 1_000_000 + 500_000;\n\n  const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);\n  data.push({\n    time: date,\n    dateString: date.toISOString().split('T')[0],\n    open, high, low, close, volume\n  });\n}\n\n/* ==== Moving Averages ==== */\nfunction computeSMA(arr, period) {\n  const sma = new Array(arr.length).fill(null);\n  let sum = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sum += arr[i];\n    if (i >= period) sum -= arr[i - period];\n    if (i >= period - 1) sma[i] = sum / period;\n  }\n  return sma;\n}\nconst closes = data.map(d => d.close);\nconst sma7 = computeSMA(closes, 7);\nconst sma21 = computeSMA(closes, 21);\n\n/* ==== Canvas Setup ==== */\nconst priceCanvas = document.getElementById('priceCanvas');\nconst volumeCanvas = document.getElementById('volumeCanvas');\nconst ctxPrice = priceCanvas.getContext('2d');\nconst ctxVol = volumeCanvas.getContext('2d');\nconst tooltip = document.getElementById('tooltip');\n\nlet priceDirty = true;\nlet volDirty = true;\nlet isDragging = false;\nlet startMouseX = 0;\nlet startOffsetX = 0;\nconst zoomSpeed = 0.001;\n\n// view parameters (pixel space)\nlet xScale = 1;   // pixels per bar\nlet xOffset = 0;  // pixel offset where index 0 maps\nconst padding = 40; // left/right space for axis\n\nfunction resizeCanvases() {\n  const dpr = window.devicePixelRatio || 1;\n ",
+    "code_full_len": 11002,
+    "widget_html": "nemotron-super.html"
+  },
+  {
+    "id": "owl-alpha",
+    "label": "Owl Alpha",
+    "icon": "🦉",
+    "color": "#f43f5e",
+    "provider": "openrouter",
+    "score": 78,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 75
+    },
+    "time_s": 179.56,
+    "tokens": {
+      "prompt": 328,
+      "completion": 6073,
+      "total": 6401
+    },
+    "lines": 699,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        /* Reset and base styles */\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background: linear-gradient(135deg, #0f1923 0%, #1a2634 100%);\n            color: #e0e6ed;\n            min-height: 100vh;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            padding: 20px;\n        }\n\n        .dashboard {\n            width: 100%;\n            max-width: 1200px;\n            background: #131e29;\n            border-radius: 12px;\n            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);\n            overflow: hidden;\n        }\n\n        .header {\n            padding: 20px 25px;\n            background: #1a2634;\n            border-bottom: 1px solid #2a3a4a;\n        }\n\n        .header h1 {\n            font-size: 1.5rem;\n            font-weight: 600;\n            color: #e0e6ed;\n            margin-bottom: 5px;\n        }\n\n        .header .subtitle {\n            font-size: 0.9rem;\n            color: #8a9bb0;\n        }\n\n        .chart-container {\n            position: relative;\n            width: 100%;\n            height: 500px;\n            background: #131e29;\n        }\n\n        #mainCanvas {\n            display: block;\n            width: 100%;\n            height: 100%;\n        }\n\n        .tooltip {\n            position: absolute;\n            background: rgba(20, 30, 40, 0.95);\n            border: 1px solid #3a4a5a;\n            border-radius: 6px;\n            padding: 12px;\n            font-size: 0.85rem;\n            pointer-events: none;\n            opacity: 0;\n            transition: opacity 0.15s ease;\n            z-index: 10;\n            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);\n        }\n\n        .tooltip.visible {\n            opacity: 1;\n        }\n\n        .tooltip-row {\n            display: flex;\n            justify-content: space-between;\n            margin-bottom: 4px;\n        }\n\n        .tooltip-label {\n            color: #8a9bb0;\n            margin-right: 15px;\n        }\n\n        .tooltip-value {\n            font-weight: 600;\n            color: #e0e6ed;\n        }\n\n        .positive {\n            color: #26a69a;\n        }\n\n        .negative {\n            color: #ef5350;\n        }\n\n        .legend {\n            display: flex;\n            justify-content: center;\n            gap: 20px;\n            padding: 15px;\n            background: #1a2634;\n            border-top: 1px solid #2a3a44;\n        }\n\n        .legend-item {\n            display: flex;\n            align-items: center;\n            gap: 8px;\n            font-size: 0.85rem;\n            color: #8a9bb0;\n        }\n\n        .legend-color {\n            width: 16px;\n            height: 3px;\n           ",
+    "code_full_len": 28727,
+    "widget_html": "owl-alpha.html"
+  },
+  {
+    "id": "qwen3-coder",
+    "label": "Qwen3 Coder",
+    "icon": "🐉",
+    "color": "#0ea5e9",
+    "provider": "openrouter",
+    "score": 78,
+    "components": {
+      "features": 90,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 76
+    },
+    "time_s": 71.27,
+    "tokens": {
+      "prompt": 236,
+      "completion": 4950,
+      "total": 5186
+    },
+    "lines": 606,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": false,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            background-color: #0c0c14;\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            color: #e0e0e0;\n            padding: 20px;\n            min-height: 100vh;\n        }\n\n        .dashboard-container {\n            max-width: 1200px;\n            margin: 0 auto;\n            background-color: #12121e;\n            border-radius: 8px;\n            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);\n            overflow: hidden;\n        }\n\n        .dashboard-header {\n            padding: 20px;\n            border-bottom: 1px solid #2a2a3a;\n        }\n\n        .dashboard-header h1 {\n            font-size: 1.5rem;\n            font-weight: 600;\n            color: #64b5f6;\n        }\n\n        .chart-container {\n            position: relative;\n            height: 500px;\n            padding: 20px;\n        }\n\n        canvas {\n            display: block;\n            width: 100%;\n            height: 100%;\n        }\n\n        .tooltip {\n            position: absolute;\n            background-color: rgba(15, 15, 25, 0.9);\n            border: 1px solid #2a2a3a;\n            border-radius: 4px;\n            padding: 10px;\n            pointer-events: none;\n            font-size: 12px;\n            z-index: 10;\n            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);\n            backdrop-filter: blur(4px);\n        }\n\n        .tooltip-row {\n            display: flex;\n            justify-content: space-between;\n            margin-bottom: 4px;\n        }\n\n        .tooltip-label {\n            color: #90a4ae;\n        }\n\n        .tooltip-value {\n            color: #e0e0e0;\n            font-weight: 500;\n        }\n\n        .positive {\n            color: #4caf50;\n        }\n\n        .negative {\n            color: #f44336;\n        }\n\n        @media (max-width: 768px) {\n            .chart-container {\n                height: 400px;\n                padding: 10px;\n            }\n            \n            .dashboard-header {\n                padding: 15px;\n            }\n            \n            .dashboard-header h1 {\n                font-size: 1.2rem;\n            }\n        }\n    </style>\n</head>\n<body>\n    <div class=\"dashboard-container\">\n        <div class=\"dashboard-header\">\n            <h1>Financial Dashboard</h1>\n        </div>\n        <div class=\"chart-container\">\n            <canvas id=\"chartCanvas\"></canvas>\n            <div class=\"tooltip\" id=\"chartTooltip\" style=\"display: none;\"></div>\n        </div>\n    </div>\n\n    <script>\n        // Seeded random number generator\n        function seededRandom(seed) {\n            let state = seed;\n            return function() {\n                state = (state * 1664525 + 1013904223) % Math.pow(2, 32);\n             ",
+    "code_full_len": 25109,
+    "widget_html": "qwen3-coder.html"
+  },
+  {
+    "id": "gemini-flash",
+    "label": "Gemini 2.5 Flash",
+    "icon": "✨",
+    "color": "#10b981",
+    "provider": "google",
+    "score": 77,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 90
+    },
+    "time_s": 70.92,
+    "tokens": {
+      "prompt": 3228,
+      "completion": 10759,
+      "total": 23030
+    },
+    "lines": 954,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>BTC/USDT Candlestick Chart</title>\n    <style>\n        /* Basic CSS Reset & Dark Theme */\n        body {\n            margin: 0;\n            padding: 0;\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background-color: #1a1a1a; /* Dark background */\n            color: #e0e0e0; /* Light text */\n            overflow: hidden; /* Prevent body scroll */\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            min-height: 100vh; /* Ensure body takes full viewport height */\n        }\n\n        #chart-container {\n            width: 100vw;\n            height: 100vh;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n        }\n\n        canvas {\n            display: block;\n            background-color: #0d0d0d; /* Even darker for chart background */\n            border: 1px solid #333;\n            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);\n            /* Max width/height for responsiveness, actual size set by JS */\n            max-width: 98%;\n            max-height: 98%;\n            cursor: grab; /* Default cursor for panning */\n        }\n    </style>\n</head>\n<body>\n    <div id=\"chart-container\">\n        <canvas id=\"candlestickChart\"></canvas>\n    </div>\n\n    <script>\n        // Provided BTC/USDT data (last 30 days as of 2026-05-02)\n        const BTC_DATA = [\n          {\n            \"date\": \"2026-04-03\",\n            \"open\": 66901.99,\n            \"high\": 67370.42,\n            \"low\": 66282.0,\n            \"close\": 66964.3,\n            \"volume\": 11429.13131\n          },\n          {\n            \"date\": \"2026-04-04\",\n            \"open\": 66964.29,\n            \"high\": 67562.93,\n            \"low\": 66775.91,\n            \"close\": 67300.42,\n            \"volume\": 7373.51613\n          },\n          {\n            \"date\": \"2026-04-05\",\n            \"open\": 67300.42,\n            \"high\": 69136.2,\n            \"low\": 66611.66,\n            \"close\": 69034.18,\n            \"volume\": 11733.46752\n          },\n          {\n            \"date\": \"2026-04-06\",\n            \"open\": 69034.18,\n            \"high\": 70351.46,\n            \"low\": 68300.0,\n            \"close\": 68853.66,\n            \"volume\": 20281.61044\n          },\n          {\n            \"date\": \"2026-04-07\",\n            \"open\": 68853.66,\n            \"high\": 72761.0,\n            \"low\": 67732.01,\n            \"close\": 71924.22,\n            \"volume\": 23750.49661\n          },\n          {\n            \"date\": \"2026-04-08\",\n            \"open\": 71924.22,\n            \"high\": 72857.0,\n            \"low\": 70707.23,\n            \"close\": 71069.93,\n            \"volume\": 19802.68627\n          },\n          {\n            \"date\": \"2026-04-09\",\n            \"open\": 71069.93,\n            \"high\": 73145.0,\n            \"low\": 70466.0,\n            \"close\": 71787.97,\n            ",
+    "code_full_len": 36767,
+    "widget_html": "gemini-flash.html"
+  },
+  {
+    "id": "deepseek-flash",
+    "label": "DeepSeek V4 Flash",
+    "icon": "🔮",
+    "color": "#ef4444",
+    "provider": "deepseek",
+    "score": 76,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 85
+    },
+    "time_s": 138.54,
+    "tokens": {
+      "prompt": 2260,
+      "completion": 12884,
+      "total": 15144
+    },
+    "lines": 1056,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>BTC/USDT Candlestick Chart</title>\n    <style>\n        /* ── reset & base ── */\n        *,\n        *::before,\n        *::after {\n            box-sizing: border-box;\n            margin: 0;\n            padding: 0;\n        }\n\n        body {\n            background: #0b0b1a;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            min-height: 100vh;\n            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n            padding: 16px;\n            margin: 0;\n        }\n\n        /* ── main container ── */\n        .container {\n            width: 100%;\n            max-width: 1280px;\n            background: #111128;\n            border-radius: 16px;\n            border: 1px solid #2a2a50;\n            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);\n            overflow: hidden;\n            padding: 20px 20px 12px 20px;\n        }\n\n        /* ── header bar ── */\n        .header {\n            display: flex;\n            align-items: baseline;\n            gap: 16px;\n            padding: 0 4px 16px 4px;\n            flex-wrap: wrap;\n        }\n\n        .symbol {\n            font-size: 22px;\n            font-weight: 700;\n            color: #e8e8f0;\n            letter-spacing: -0.3px;\n        }\n        .symbol small {\n            font-size: 14px;\n            font-weight: 400;\n            color: #8888aa;\n            margin-left: 6px;\n        }\n\n        .price {\n            font-size: 28px;\n            font-weight: 700;\n            color: #26c6aa;\n            letter-spacing: -0.5px;\n        }\n\n        .change {\n            font-size: 16px;\n            font-weight: 500;\n            color: #26c6aa;\n            background: rgba(38, 198, 170, 0.12);\n            padding: 2px 12px;\n            border-radius: 6px;\n        }\n\n        .header .meta {\n            margin-left: auto;\n            font-size: 13px;\n            color: #6666aa;\n        }\n\n        /* ── chart wrapper ── */\n        .chart-wrapper {\n            position: relative;\n            width: 100%;\n            border-radius: 10px;\n            overflow: hidden;\n            background: #0d0d22;\n            border: 1px solid #1e1e42;\n        }\n\n        #chartCanvas {\n            display: block;\n            width: 100%;\n            height: auto;\n            cursor: crosshair;\n            touch-action: none;\n            background: #0d0d22;\n        }\n\n        /* ── tooltip ── */\n        .tooltip {\n            position: absolute;\n            pointer-events: none;\n            background: rgba(10, 10, 30, 0.94);\n            border: 1px solid #3a3a6a;\n            border-radius: 10px;\n            padding: 14px 18px;\n            color: #d0d0e8;\n            font-size: 13px;\n            line-height: 1.6;\n            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);\n            backdrop-filter: b",
+    "code_full_len": 36142,
+    "widget_html": "deepseek-flash.html"
+  },
+  {
+    "id": "deepseek-v4-flash",
+    "label": "DeepSeek V4 Flash (Flash)",
+    "icon": "\ud83e\udd16",
+    "color": "#a855f7",
+    "provider": "deepseek",
+    "score": 76,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 85
+    },
+    "time_s": 138.98,
+    "tokens": {
+      "prompt": 2260,
+      "completion": 13005,
+      "total": 15265
+    },
+    "lines": 1131,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\" />\n    <title>BTC/USDT Chart</title>\n    <style>\n        /* ----- RESET & GLOBAL ----- */\n        *,\n        *::before,\n        *::after {\n            box-sizing: border-box;\n            margin: 0;\n            padding: 0;\n        }\n\n        body {\n            background: #060b15;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            min-height: 100vh;\n            font-family: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;\n            padding: 12px;\n        }\n\n        /* ----- CHART CONTAINER ----- */\n        .chart-container {\n            position: relative;\n            width: 100%;\n            max-width: 1200px;\n            background: #0d1117;\n            border-radius: 14px;\n            border: 1px solid #1e2a3a;\n            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);\n            padding: 18px 18px 14px 18px;\n            user-select: none;\n            -webkit-user-select: none;\n            touch-action: none;\n        }\n\n        /* ----- HEADER / TITLE BAR ----- */\n        .chart-header {\n            display: flex;\n            align-items: center;\n            justify-content: space-between;\n            padding: 0 4px 12px 4px;\n            border-bottom: 1px solid #1c2533;\n            flex-wrap: wrap;\n            gap: 8px;\n        }\n\n        .chart-pair {\n            display: flex;\n            align-items: center;\n            gap: 10px;\n        }\n\n        .chart-pair h1 {\n            font-size: 22px;\n            font-weight: 700;\n            color: #e6edf3;\n            letter-spacing: -0.3px;\n        }\n\n        .chart-pair .badge {\n            font-size: 11px;\n            font-weight: 600;\n            color: #8b949e;\n            background: #161e2b;\n            padding: 2px 10px;\n            border-radius: 6px;\n            border: 1px solid #1e2a3a;\n        }\n\n        .chart-last-price {\n            display: flex;\n            align-items: baseline;\n            gap: 12px;\n        }\n\n        .chart-last-price .price {\n            font-size: 26px;\n            font-weight: 700;\n            color: #00c853;\n            letter-spacing: -0.5px;\n        }\n\n        .chart-last-price .change {\n            font-size: 14px;\n            font-weight: 600;\n            color: #8b949e;\n        }\n\n        .chart-last-price .change.pos {\n            color: #00c853;\n        }\n        .chart-last-price .change.neg {\n            color: #ff1744;\n        }\n\n        /* ----- CANVAS WRAPPER ----- */\n        .canvas-wrapper {\n            position: relative;\n            width: 100%;\n            margin-top: 8px;\n            border-radius: 6px;\n            overflow: hidden;\n        }\n\n        #chartCanvas {\n            display: block;\n            width: 100%;\n            height: auto;\n            background: #0d1117;\n        ",
+    "code_full_len": 38875,
+    "widget_html": "deepseek-v4-flash.html"
+  },
+  {
+    "id": "tencent-hy3",
+    "label": "Tencent HY3 Preview",
+    "icon": "🐧",
+    "color": "#ec4899",
+    "provider": "openrouter",
+    "score": 74,
+    "components": {
+      "features": 80,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 72
+    },
+    "time_s": 125.58,
+    "tokens": {
+      "prompt": 2270,
+      "completion": 8798,
+      "total": 11068
+    },
+    "lines": 838,
+    "round": "R2",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": false
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>BTC/USDT Candlestick Chart</title>\n    <style>\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n            background-color: #0a0e17;\n            color: #e1e5eb;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            min-height: 100vh;\n            padding: 20px;\n        }\n\n        .chart-container {\n            width: 100%;\n            max-width: 1200px;\n            background-color: #141922;\n            border-radius: 8px;\n            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);\n            overflow: hidden;\n            border: 1px solid #2a2e39;\n        }\n\n        .chart-header {\n            padding: 20px;\n            border-bottom: 1px solid #2a2e39;\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            flex-wrap: wrap;\n            gap: 15px;\n        }\n\n        .chart-title {\n            font-size: 1.5rem;\n            font-weight: 600;\n            color: #f0b90b;\n        }\n\n        .price-info {\n            display: flex;\n            align-items: center;\n            gap: 15px;\n            flex-wrap: wrap;\n        }\n\n        .current-price {\n            font-size: 1.8rem;\n            font-weight: 700;\n            color: #e1e5eb;\n        }\n\n        .price-change {\n            font-size: 1rem;\n            padding: 4px 10px;\n            border-radius: 4px;\n            font-weight: 600;\n        }\n\n        .positive {\n            background-color: rgba(0, 200, 83, 0.15);\n            color: #00c853;\n        }\n\n        .negative {\n            background-color: rgba(255, 82, 82, 0.15);\n            color: #ff5252;\n        }\n\n        .chart-wrapper {\n            position: relative;\n            width: 100%;\n            height: 70vh;\n            min-height: 500px;\n        }\n\n        canvas {\n            display: block;\n            width: 100%;\n            height: 100%;\n            cursor: crosshair;\n        }\n\n        .tooltip {\n            position: absolute;\n            background-color: rgba(20, 25, 34, 0.95);\n            border: 1px solid #2a2e39;\n            border-radius: 4px;\n            padding: 12px;\n            pointer-events: none;\n            opacity: 0;\n            transition: opacity 0.2s;\n            font-size: 0.85rem;\n            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n            z-index: 10;\n            min-width: 180px;\n        }\n\n        .tooltip-header {\n            font-weight: 600;\n            margin-bottom: 8px;\n            color: #f0b90b;\n            border-bottom: 1px solid #2a2e39;\n            padding-bottom: 5px;\n        }\n\n        .tooltip-row {\n            display: flex;\n            justify-content: space-between;\n  ",
+    "code_full_len": 34522,
+    "widget_html": "tencent-hy3.html"
+  },
+  {
+    "id": "groq-qwen3",
+    "label": "Qwen3 32B (Groq)",
+    "icon": "⚡",
+    "color": "#eab308",
+    "provider": "groq",
+    "score": 73,
+    "components": {
+      "features": 90,
+      "completeness": 65,
+      "speed": 30,
+      "cost": 100
+    },
+    "time_s": 8.22,
+    "tokens": {
+      "prompt": 111,
+      "completion": 3591,
+      "total": 3702
+    },
+    "lines": 251,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": true,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 9,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"/>\n  <style>\n    html, body {\n      margin: 0;\n      padding: 0;\n      background: #1e1e1e;\n      color: #00ff00;\n      font-family: monospace;\n      overflow: hidden;\n    }\n    canvas {\n      display: block;\n      width: 100vw;\n      height: 100vh;\n      image-rendering: pixelated;\n    }\n    #tooltip {\n      position: absolute;\n      background: rgba(0, 255, 0, 0.2);\n      padding: 4px 8px;\n      border: 1px solid #00ff00;\n      border-radius: 4px;\n      pointer-events: none;\n      font-size: 12px;\n    }\n  </style>\n  <title>Financial Chart</title>\n</head>\n<body>\n<canvas id=\"chart\"></canvas>\n<div id=\"tooltip\"></div>\n<script>\n  const canvas = document.getElementById('chart');\n  const ctx = canvas.getContext('2d');\n  const tooltip = document.getElementById('tooltip');\n\n  let data = [];\n  let sma7 = [];\n  let sma21 = [];\n  let seed = 123;\n  let zoom = 1;\n  let pan = 0;\n  let dragging = false;\n  let dragStart = {x:0,y:0};\n\n  // Seeded random\n  function seededRandom() {\n    seed = (seed * 9301 + 49297) % 233280;\n    return seed / 233280;\n  }\n\n  // Generate OHLCV data\n  function generateData() {\n    const prices = [100];\n    for (let i = 1; i < 30; i++) {\n      const change = (seededRandom() - 0.5) * 0.02;\n      prices.push(prices[i-1] * (1 + change));\n    }\n    data = [];\n    for (let i = 0; i < 30; i++) {\n      const open = prices[i];\n      const range = (seededRandom() - 0.5) * 0.01 * open;\n      const high = open + Math.abs(range) + (seededRandom() * 0.005 * open);\n      const low = open - Math.abs(range) - (seededRandom() * 0.005 * open);\n      const close = high - (high - low) * seededRandom();\n      data.push({ \n        open, high, low, close, \n        volume: 10000 + seededRandom() * 20000 \n      });\n    }\n  }\n\n  // Calculate SMA\n  function calculateSMA(period) {\n    const sma = [];\n    for (let i = 0; i < data.length; i++) {\n      if (i < period - 1) continue;\n      let sum = 0;\n      for (let j = i - period + 1; j <= i; j++) sum += data[j].close;\n      sma.push({x: i, y: sum / period});\n    }\n    return sma;\n  }\n\n  // Resize canvas\n  function resizeCanvas() {\n    canvas.width = window.innerWidth;\n    canvas.height = window.innerHeight;\n  }\n  window.addEventListener('resize', resizeCanvas);\n  resizeCanvas();\n\n  // Chart drawing\n  function drawChart() {\n    ctx.clearRect(0, 0, canvas.width, canvas.height);\n    const width = canvas.width;\n    const height = canvas.height;\n    const chartHeight = height * 0.7;\n    const volumeHeight = height * 0.3;\n    const padding = 40;\n    const innerWidth = width - 2 * padding;\n    const innerHeight = chartHeight - 2 * padding;\n\n    // Calculate visible range\n    const visibleWidth = innerWidth / zoom;\n    const startX = Math.max(0, Math.floor(pan - visibleWidth/2));\n    const endX = Math.min(data.length, Math.floor(startX + visibleWidth));\n    const visibleData = data.slic",
+    "code_full_len": 7207,
+    "widget_html": "groq-qwen3.html"
+  },
+  {
+    "id": "groq-llama4",
+    "label": "Llama 4 Scout 17B (Groq)",
+    "icon": "🦍",
+    "color": "#06b6d4",
+    "provider": "groq",
+    "score": 70,
+    "components": {
+      "features": 60,
+      "completeness": 100,
+      "speed": 30,
+      "cost": 100
+    },
+    "time_s": 4.21,
+    "tokens": {
+      "prompt": 198,
+      "completion": 1736,
+      "total": 1934
+    },
+    "lines": 186,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": false,
+      "pan": false,
+      "responsive": true,
+      "dark": false,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": true,
+      "interactive": false
+    },
+    "feat_count": 6,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard</title>\n    <style>\n        body {\n            font-family: Arial, sans-serif;\n            background-color: #2b2b2b;\n            color: #fff;\n            margin: 0;\n            padding: 0;\n        }\n        #dashboard {\n            width: 800px;\n            margin: 20px auto;\n            display: flex;\n            flex-direction: column;\n            align-items: center;\n        }\n        #chart-container {\n            width: 100%;\n            height: 600px;\n            border: 1px solid #444;\n            background-color: #333;\n        }\n        #volume-chart-container {\n            width: 100%;\n            height: 200px;\n            border: 1px solid #444;\n            background-color: #333;\n        }\n    </style>\n</head>\n<body>\n    <div id=\"dashboard\">\n        <div id=\"chart-container\"></div>\n        <div id=\"volume-chart-container\"></div>\n    </div>\n\n    <script>\n        // Generate sample data\n        const seed = 123;\n        Math.random = function() {\n            const x = Math.sin(seed++) * 10000;\n            return x - Math.floor(x);\n        };\n        const data = [];\n        for (let i = 0; i < 30; i++) {\n            const date = new Date(Date.now() - i * 24 * 60 * 60 * 1000);\n            const open = Math.random() * 100 + 50;\n            const high = open + Math.random() * 10;\n            const low = open - Math.random() * 10;\n            const close = open + Math.random() * 5 - 2.5;\n            const volume = Math.random() * 100000 + 50000;\n            data.push({ date, open, high, low, close, volume });\n        }\n\n        // Calculate moving averages\n        const sma7 = [];\n        const sma21 = [];\n        for (let i = 0; i < data.length; i++) {\n            if (i >= 6) {\n                const sum7 = data.slice(i - 6, i + 1).reduce((acc, curr) => acc + curr.close, 0);\n                sma7.push(sum7 / 7);\n            } else {\n                sma7.push(null);\n            }\n            if (i >= 20) {\n                const sum21 = data.slice(i - 20, i + 1).reduce((acc, curr) => acc + curr.close, 0);\n                sma21.push(sum21 / 21);\n            } else {\n                sma21.push(null);\n            }\n        }\n\n        // Get canvas elements\n        const chartContainer = document.getElementById('chart-container');\n        const volumeChartContainer = document.getElementById('volume-chart-container');\n        const chartCanvas = document.createElement('canvas');\n        chartCanvas.width = chartContainer.offsetWidth;\n        chartCanvas.height = chartContainer.offsetHeight;\n        chartContainer.appendChild(chartCanvas);\n        const volumeChartCanvas = document.createElement('canvas');\n        volumeChartCanvas.width = volumeChartContainer.offsetWidth;\n        volumeChartCanvas.height = volumeChartContainer.offsetHeight;\n        volumeChartContainer.appendC",
+    "code_full_len": 7357,
+    "widget_html": "groq-llama4.html"
+  {
+    "id": "deepseek-v4pro",
+    "label": "DeepSeek V4 Pro",
+    "icon": "\ud83d\udd34",
+    "color": "#dc2626",
+    "provider": "openrouter",
+    "score": 67,
+    "components": {
+      "features": 80,
+      "completeness": 35,
+      "speed": 30,
+      "cost": 50
+    },
+    "time_s": 292.5,
+    "tokens": {
+      "prompt": 222,
+      "completion": 10000,
+      "total": 10222
+    },
+    "lines": 601,
+    "round": "R1",
+    "has_r1": true,
+    "has_r2": true,
+    "features": {
+      "canvas": true,
+      "tooltip": true,
+      "zoom": true,
+      "pan": true,
+      "responsive": true,
+      "dark": false,
+      "moving_avg": true,
+      "volume": true,
+      "data_gen": false,
+      "interactive": true
+    },
+    "feat_count": 8,
+    "code_preview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Financial Dashboard - Candlestick Chart</title>\n    <style>\n        :root {\n            --bg: #0d1117;\n            --surface: #161b22;\n            --border: #21262d;\n            --text: #c9d1d9;\n            --text-secondary: #8b949e;\n            --green: #26a69a;\n            --red: #ef5350;\n            --blue: #58a6ff;\n            --orange: #f0883e;\n            --grid: #1c2128;\n        }\n\n        * {\n            margin: 0;\n            padding: 0;\n            box-sizing: border-box;\n        }\n\n        body {\n            background-color: #090c10;\n            display: flex;\n            justify-content: center;\n            align-items: center;\n            min-height: 100vh;\n            font-family: 'Segoe UI', 'Inter', 'SF Pro Display', system-ui, -apple-system, sans-serif;\n            padding: 16px;\n            -webkit-tap-highlight-color: transparent;\n            user-select: none;\n            -webkit-user-select: none;\n            -webkit-touch-callout: none;\n        }\n\n        .dashboard-container {\n            width: 100%;\n            max-width: 1050px;\n            background: var(--surface);\n            border: 1px solid var(--border);\n            border-radius: 12px;\n            overflow: hidden;\n            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3);\n            display: flex;\n            flex-direction: column;\n        }\n\n        .dashboard-header {\n            display: flex;\n            align-items: center;\n            justify-content: space-between;\n            padding: 14px 20px;\n            border-bottom: 1px solid var(--border);\n            flex-wrap: wrap;\n            gap: 10px;",
+    "code_full_len": 21878,
+    "widget_html": "deepseek-v4pro.html"
+  }
+];
+
+const PM = [
+  {
+    "id": "pm-deepseek-flash",
+    "label": "DeepSeek V4 Flash",
+    "icon": "🔮",
+    "color": "#ef4444",
+    "provider": "deepseek",
+    "response_chars": 4701,
+    "time_s": 23.88,
+    "tokens": {
+      "prompt": 482,
+      "completion": 1911,
+      "total": 2393
+    },
+    "full_response": "INTERPRETACION:\nEl cliente pide una herramienta “con IA” que decida cuándo comprar/vender, gráficos bonitos y alertas por Telegram, con bajo costo de mantenimiento y un presupuesto de $3,000 en 4 semanas. Sin embargo, lo que realmente necesita es un sistema **confiable, simple y accionable** que le dé señales de trading básicas, no una inteligencia artificial sofisticada. El cliente asume que “IA” es mágica y barata, y no ve los siguientes riesgos:  \n- **Datos financieros**: APIs gratuitas tienen límites, latencia y falta de precisión en tiempo real.  \n- **Regulación**: Dar recomendaciones de inversión sin licencia puede exponer a la startup a riesgos legales.  \n- **Mantenimiento**: Cualquier sistema con modelos predictivos requiere monitoreo, actualización de parámetros y reentrenamiento, lo que incrementa costos.  \n- **Expectativas de precisión**: No hay estrategia infalible; el usuario podría culpar a la herramienta por pérdidas.  \nLo que falta en su solicitud: definición de activos concretos, horizonte de inversión, tolerancia al riesgo, y si prefiere señales intradía o de largo plazo.\n\nANALISIS:\n- **Arquitectura clave**: Aplicación web SPA (React/Vue) + backend serverless (Node.js en Vercel/Netlify) + base de datos ligera (SQLite o Firebase) para almacenar configuraciones. Las alertas se envían vía bot de Telegram (gratuito). Datos de mercado desde Alpha Vantage (5 requests/min gratis) o Yahoo Finance (no oficial).  \n- **Dependencias críticas**: API de datos financieros (punto único de falla), bot de Telegram (requiere hosting 24/7), y precisión de indicadores técnicos.  \n- **Riesgos principales**: Límite de requests de la API gratuita, falta de datos históricos extensos, posible bloqueo por uso no autorizado, y ausencia de backtesting robusto.  \n- **Stack sugerido**: Frontend: React + Recharts (gráficos). Backend: Node.js + Express (serverless). Cálculos: ta-lib (o implementación manual de promedios móviles). Alertas: Telegraf (bot de Telegram).  \n- **Esfuerzo real vs. presupuesto**: Con 2 developers junior (~14h/semana c/u) y 1 diseñador freelance (10h/semana), total ~110h dev + 40h diseño = ~150h. Presupuesto $3,000 => $20/h promedio. Es factible solo para un MVP muy limitado (sin IA ni backtesting).\n\nPLAN:\nConfigurar entorno de desarrollo y repositorio | Dev1 | 4h | Alta\nIntegrar API de datos financieros (Alpha Vantage) | Dev1 | 8h | Alta\nImplementar cálculo de indicador SMA (cruce 50/200) | Dev1 | 6h | Alta\nConstruir componente de gráfico lineal con precio y SMA | Dev2 + Diseñador | 8h (dev) + 4h (diseño) | Alta\nCrear bot de Telegram para alertas (comando /start, /suscribir) | Dev2 | 6h | Alta\nLógica de alerta: detectar cruce y enviar mensaje | Dev2 | 4h | Alta\nInterfaz de usuario básica (selector de activo, vela/día) | Dev2 + Diseñador | 6h (dev) + 6h (diseño) | Alta\nDesplegar aplicación en Vercel + bot en Railway (gratuito) | Dev1 | 4h | Alta\nPruebas unitarias (cálculos, alertas) | Dev1 | 4h | Alta\nDocumentación de uso y limitaciones | Dev1 | 2h | Media\nAgregar soporte para múltiples activos (BTC, SPY, etc.) | Dev1 | 6h | Media\nConfiguración de parámetros desde UI (periodos SMA) | Dev2 | 5h | Media\nBacktesting simple (comparar señales pasadas) | Dev1 | 8h | Baja\nModelo ML básico (regresión lineal para tendencia) | Dev2 | 10h | Baja\nMejoras visuales (tooltips, responsive) | Diseñador | 6h | Baja\nNotificaciones push vía web (adicional) | Dev1 | 4h | No implementar\n\nCOMUNICACION:\nHola [Nombre del Cliente],\n\nGracias por confiarnos este proyecto. Para asegurar que el asistente sea útil, viable y de bajo mantenimiento, he ajustado el alcance a lo que realmente podemos entregar en 4 semanas con el presupuesto y equipo disponible.\n\n**SÍ podemos lograr:**  \n- Una herramienta web que muestra gráficos de precios con indicadores técnicos (promedios móviles) y genera alertas por Telegram cuando se detectan cruces de compra/venta.  \n- Soporte para 2-3 activos principales (ej. BTC, SPY, oro) usando datos gratuitos (actualización cada 15-20 minutos).  \n- Interfaz limpia y responsiva.\n\n**NO podemos (por ahora):**  \n- “IA” real o machine learning (requiere datos históricos extensos y mantenimiento costoso).  \n- Trading en tiempo real ni ejecución de órdenes (riesgo legal y operativo).  \n- Backtesting robusto o personalización avanzada de estrategias.\n\n**Necesitamos de su parte:**  \n- Definir los activos concretos a monitorear.  \n- Crear un bot de Telegram (usted gestiona el token).  \n- Aceptar que las señales son informativas y no garantizan ganancias.\n\nEntregaremos un MVP funcional en 4 semanas, con documentación para que usted mismo pueda agregar más activos o parámetros después. ¿Le parece bien?\n\nSaludos,\n[Tu Nombre]",
+    "file": "pm_test/pm-deepseek-flash.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 7
+  },
+  {
+    "id": "pm-deepseek-v4-flash",
+    "label": "DeepSeek V4 Flash",
+    "icon": "🧠",
+    "color": "#a855f7",
+    "provider": "deepseek",
+    "response_chars": 5015,
+    "time_s": 25.91,
+    "tokens": {
+      "prompt": 482,
+      "completion": 2062,
+      "total": 2544
+    },
+    "full_response": "INTERPRETACION:\n\nEl cliente pide una herramienta \"con IA\" que le diga cuándo comprar/vender, con gráficos bonitos y alertas por Telegram, asumiendo que es fácil y barato. En realidad, necesita un **sistema prototipo de señales básicas** (no una IA robusta) que le permita visualizar indicadores técnicos y recibir notificaciones. Los riesgos que no ve incluyen: la imposibilidad de predecir mercados con precisión (incluso con IA), los costos ocultos de datos en tiempo real (APIs de pago), la responsabilidad legal si sigue señales erróneas, y la complejidad de mantener un modelo de ML con datos históricos. También asume que dos desarrolladores junior y un diseñador freelance con 10h/semana pueden entregar un producto funcional en 4 semanas, lo que exige un alcance muy reducido. Falta definir: activos concretos (cripto, acciones), fuente de datos, lógica de señales (qué indicadores), requisitos de backtesting, y plan de mantenimiento post-lanzamiento.\n\nANALISIS:\n\n- **Decisiones arquitectónicas clave**: Arquitectura serverless (AWS Lambda + API Gateway) para minimizar costos operativos; base de datos ligera (SQLite o PostgreSQL gestionada); frontend SPA con React; backend en Python (FastAPI) para integración sencilla con APIs financieras y Telegram.\n- **Dependencias críticas**: API de datos de mercado (Alpha Vantage o Yahoo Finance – gratis pero con límites), Telegram Bot API, librería de gráficos (Chart.js), y posiblemente una librería simple de ML (scikit-learn para regresión lineal – no LSTM).\n- **Riesgos principales**: Límites de tasa de las APIs gratuitas; sobrecarga de los juniors al aprender nuevas tecnologías; señales falsas que generen pérdidas (riesgo reputacional); falta de tiempo para pruebas.\n- **Stack tecnológico sugerido**: Frontend: React + Chart.js. Backend: Python + FastAPI + pandas. Infra: Vercel (frontend) + Railway/Heroku (backend). Alertas: python-telegram-bot.\n- **Estimación de esfuerzo real vs. presupuesto**: 4 semanas → 160h de desarrollo (2 juniors x 80h) + 40h de diseño = 200h total. Presupuesto $3,000 → $15/h, asumiendo tasa de juniors (posible, pero ajustado). Un MVP funcional requeriría ~250h, por lo que el alcance debe priorizar lo esencial.\n\nPLAN:\n\nConfiguración del proyecto y repositorio | PM | 4h | Alta\nSelección y conexión de API de datos (1 activo, e.g., Bitcoin) | Dev1 | 10h | Alta\nImplementación de indicador básico (SMA 20/50) | Dev1 | 8h | Alta\nDesarrollo de endpoint REST para datos e indicadores | Dev1 | 6h | Alta\nFrontend: pantalla de gráfico de velas + línea SMA | Dev2 | 16h | Alta\nIntegración de Chart.js con datos del backend | Dev2 | 6h | Alta\nConfiguración de bot de Telegram y comando básico | Dev1 | 8h | Alta\nLógica de alertas: cuando SMA20 cruza SMA50 → enviar mensaje | Dev1 | 4h | Alta\nDiseño de UI/UX (colores, layout, responsivo) | Designer | 12h | Alta\nPruebas de integración (backend + frontend + Telegram) | Dev1, Dev2 | 8h | Alta\nDespliegue en Vercel + Railway | PM, Dev1 | 4h | Alta\nSoporte multi-activo (añadir ETH, AAPL) | Dev1 | 12h | Media\nSegundo indicador (RSI 14) | Dev1 | 6h | Media\nSelector de activos en frontend | Dev2 | 6h | Media\nBacktesting simple con datos históricos (tabla de resultados) | Dev1 | 12h | Media\nPequeño modelo de regresión lineal como “IA” básica (predicción de tendencia a 1 día) | Dev1 | 10h | Baja\nAutenticación de usuario (login básico) | Dev2 | 8h | Baja\nDocumentación de mantenimiento para el cliente | PM | 4h | Baja\nPruebas de carga y ajuste de límites API | PM | 4h | Baja\n\nCOMUNICACION:\n\nHola [Nombre del Cliente],\n\nGracias por confiar en nosotros. Tras analizar tu solicitud, queremos alinear expectativas para que el proyecto sea un éxito en 4 semanas con el presupuesto disponible.\n\n**Lo que SÍ podemos entregar:**\n- Una herramienta funcional que muestra gráficos de precios (velas) de un activo principal (Bitcoin) con indicadores técnicos (media móvil, RSI).\n- Alertas automáticas por Telegram cuando se detecten cruces de medias (señal de compra/venta simple).\n- Una interfaz limpia y responsive diseñada por nuestro freelance.\n- Despliegue en la nube sin costos fijos altos.\n\n**Lo que NO podemos incluir en este plazo:**\n- Un sistema de trading con IA compleja (redes neuronales, aprendizaje profundo). La IA se limitará a una regresión lineal básica como demostración.\n- Cobertura de múltiples activos en tiempo real (solo podremos añadir 2-3 más si el tiempo lo permite).\n- Backtesting completo o garantía de rentabilidad. Las señales son indicativas, no asesoría financiera.\n- Mantenimiento continuo: necesitarás gestionar las claves API y posibles ajustes de datos.\n\n**Lo que necesitamos de tu parte:**\n- Definir claramente qué activos priorizar (cripto, acciones, etc.) y proporcionar acceso a una API de datos (ej. Alpha Vantage gratuita).\n- Aceptar que la precisión de las señales es limitada y que este es un prototipo para validar la idea.\n- Revisar y aprobar el diseño visual durante la primera semana.\n\nEstamos listos para empezar. ¿Confirmas estos alcances?",
+    "file": "pm_test/pm-deepseek-v4-flash.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 9
+  },
+  {
+    "id": "pm-gemini",
+    "label": "Gemini 2.5 Flash",
+    "icon": "✨",
+    "color": "#10b981",
+    "provider": "google",
+    "response_chars": 9107,
+    "time_s": 29.78,
+    "tokens": {
+      "prompt": 443,
+      "completion": 2426,
+      "total": 6791
+    },
+    "full_response": "INTERPRETACION:\nEl cliente busca una herramienta de apoyo a la decisión de inversión, automatizada y con un toque de modernidad (\"IA\"). Su solicitud textual (\"Necesito una herramienta que me diga cuándo comprar y vender. Que tenga gráficos bonitos y me avise por Telegram. Usa IA, obviamente. Y que no sea cara de mantener.\") revela varias suposiciones y riesgos no considerados:\n\n*   **Necesidad real vs. Petición:** El cliente pide una \"caja negra\" que le dé señales de compra/venta. La necesidad real es probablemente un MVP que valide una hipótesis de inversión, automatice el monitoreo de ciertos criterios y le notifique, reduciendo el esfuerzo manual. No busca un asesor financiero, sino una herramienta de apoyo.\n*   **Riesgos no vistos:**\n    *   **Regulatorios:** Generar señales de compra/venta puede implicar asesoramiento financiero, con implicaciones legales y regulatorias significativas.\n    *   **Fiabilidad y Pérdidas:** Las señales de inversión son inherentemente riesgosas y no garantizan rentabilidad. Un sistema que \"diga cuándo comprar y vender\" puede generar falsas expectativas y pérdidas financieras.\n    *   **Expectativas de \"IA\":** La \"IA, obviamente\" es un buzzword. Implementar una IA sofisticada y efectiva en 4 semanas con este presupuesto es inviable. El cliente asume que la IA es una solución mágica y fácil.\n    *   **Fuentes de Datos:** No menciona de dónde obtendrá los datos de los activos, lo cual es crítico y puede ser costoso o limitado.\n    *   **Complejidad \"Multi-activo\":** Implica manejar diferentes mercados, APIs, horarios y lógicas, lo cual es ambicioso para un MVP.\n    *   **Costo de Mantenimiento:** Un sistema de trading con datos en tiempo real y lógica compleja puede ser *muy* caro de mantener, no \"no caro\".\n*   **Asunciones del cliente:**\n    *   Que generar señales de compra/venta es una tarea sencilla y directa.\n    *   Que la \"IA\" es fácil de integrar y ofrecerá resultados superiores de inmediato.\n    *   Que el presupuesto y tiempo son suficientes para una herramienta completa y rentable.\n    *   Que los datos financieros son gratuitos y fácilmente accesibles.\n*   **Qué falta en su solicitud:**\n    *   **Objetivo de negocio claro:** ¿Para quién es esta herramienta? ¿Qué problema específico resuelve? ¿Qué tipo de activos? ¿Qué estrategia de inversión subyacente?\n    *   **Definición de \"IA\":** ¿Qué tipo de inteligencia? ¿Análisis técnico, Machine Learning, reglas heurísticas?\n    *   **Criterios de éxito:** ¿Cómo se medirá el éxito de la herramienta? (ej. precisión de señales, reducción de tiempo de análisis).\n    *   **Requisitos no funcionales:** Escalabilidad, seguridad, latencia de datos.\n    *   **Responsabilidad:** ¿Quién asume la responsabilidad por las decisiones tomadas basándose en las señales?\n\nANALISIS:\n*   **Decisiones arquitectónicas clave:**\n    *   **Enfoque MVP:** Priorizar un solo tipo de activo y una estrategia de análisis técnico simple para la primera iteración.\n    *   **Backend:** Python (FastAPI/Flask) por su robustez en procesamiento de datos y librerías de análisis.\n    *   **Base de Datos:** PostgreSQL para almacenar configuraciones y datos históricos relevantes.\n    *   **Alertas:** Integración directa con Telegram Bot API.\n    *   **Visualización (MVP):** Generación de gráficos como imágenes (Matplotlib) desde el backend para enviar por Telegram, evitando un frontend web complejo inicialmente.\n    *   **Despliegue:** Servicios PaaS (Heroku, Render) para un despliegue rápido y de bajo costo.\n*   **Dependencias críticas:**\n    *   **APIs de Datos Financieros:** Acceso a datos históricos y en tiempo real (ej. Alpha Vantage, Finnhub, Yahoo Finance API). La disponibilidad, límites de rate y costos son críticos.\n    *   **Librerías de Análisis Técnico:** `pandas_ta` o `ta-lib` en Python.\n    *   **Telegram Bot API:** Para la funcionalidad de alertas.\n    *   **Conocimiento del Dominio:** Entender las métricas y estrategias de inversión para implementar las reglas.\n*   **Riesgos principales:**\n    *   **Costo/Limitaciones de APIs de Datos:** Las APIs gratuitas suelen ser insuficientes; las de pago pueden exceder el presupuesto.\n    *   **Expectativas del Cliente vs. Realidad:** La brecha entre lo que el cliente espera de la \"IA\" y lo que es factible en 4 semanas es el mayor riesgo.\n    *   **Complejidad de la Lógica de Señales:** Definir reglas de \"compra/venta\" que sean útiles y no triviales en el tiempo dado.\n    *   **Curva de Aprendizaje del Equipo Junior:** Manejar datos financieros y APIs de trading puede ser nuevo para ellos.\n    *   **Alcance Descontrolado:** El cliente podría solicitar más funcionalidades o activos durante el proyecto.\n*   **Stack tecnológico sugerido:**\n    *   **Backend:** Python 3.x (FastAPI), Pandas, NumPy, `pandas_ta`, `python-telegram-bot`, Matplotlib.\n    *   **Base de Datos:** PostgreSQL.\n    *   **Despliegue:** Docker, Heroku/Render.\n*   **Estimación de esfuerzo real vs. presupuesto:**\n    *   **Presupuesto:** $3,000.\n    *   **Costo de Equipo (4 semanas):** 2 Devs Junior (320h) + 1 Diseñador (40h). Si los $3,000 incluyen salarios, es inviable (costo estimado de mano de obra > $10,000).\n    *   **Asunción:** Los $3,000 son para gastos operativos (APIs, hosting, licencias, etc.), y el equipo ya está cubierto por la startup. Con esta asunción, el presupuesto es ajustado pero manejable para un MVP, priorizando APIs gratuitas o de bajo costo.\n\nPLAN:\n**Must Have (MVP Core - 2 semanas)**\n[Definición de Estrategia y Activo (MVP)] | PM + Cliente | 8h | Alta\n[Selección y Configuración de API de Datos (1 activo)] | Dev 1 | 16h | Alta\n[Desarrollo de Módulo de Análisis Técnico (Reglas simples)] | Dev 2 | 24h | Alta\n[Integración con Telegram Bot API para Alertas] | Dev 1 | 16h | Alta\n[Base de Datos para Configuración y Datos Históricos (MVP)] | Dev 2 | 16h | Alta\n[Desarrollo de Lógica de Señales (Comprar/Vender - Basado en reglas)] | Dev 2 | 24h | Alta\n[Despliegue Básico en Cloud (Heroku/Render)] | Dev 1 | 12h | Alta\n[Diseño de Mensajes de Alerta Telegram] | Diseñador | 8h | Alta\n[Pruebas Unitarias y de Integración (MVP)] | Dev 1, Dev 2 | 20h | Alta\n\n**Should Have (Mejoras para la 3ra-4ta semana si hay tiempo)**\n[Generación de Gráficos Simples para Telegram (Matplotlib)] | Dev 2 | 20h | Media\n[Refinamiento de Estrategia de Señales] | PM + Dev 2 | 10h | Media\n[Manejo Básico de Errores y Logs] | Dev 1 | 8h | Media\n[Documentación Técnica Básica] | Dev 1, Dev 2 | 10h | Media\n\n**Could Have (Si todo lo anterior está listo y sobra tiempo/presupuesto)**\n[Interfaz Web Mínima para Visualización de Gráficos] | Dev 1 + Diseñador | 30h (Dev: 20h, Diseñador: 10h) | Baja\n[Soporte para un Segundo Tipo de Activo] | Dev 1, Dev 2 | 40h | Baja\n[Implementación de Modelo ML Muy Simple (e.g., regresión lineal)] | Dev 2 | 30h | Baja\n\n**Won't Have (Fuera de alcance para 4 semanas / $3,000)**\n[Asesoramiento de Inversión Regulado] | N/A | N/A | N/A\n[Integración con Brokers para Ejecución Automática] | N/A | N/A | N/A\n[IA Avanzada (Deep Learning, NLP para noticias)] | N/A | N/A | N/A\n[Plataforma de Trading Completa] | N/A | N/A | N/A\n\nCOMUNICACION:\nEstimado cliente,\n\nGracias por confiar en nosotros para este emocionante proyecto. He analizado su solicitud para un asistente de inversiones multi-activo que genere señales de compra/venta, muestre gráficos, alerte por Telegram, use IA y sea de bajo mantenimiento. Entiendo perfectamente la visión de una herramienta inteligente que le apoye en sus decisiones.\n\nPara las próximas 4 semanas y con el presupuesto de $3,000, nos enfocaremos en construir un **Producto Mínimo Viable (MVP)** robusto y funcional.\n\n**Lo que SÍ podemos lograr:**\n*   Un sistema que genere **señales de compra/venta basadas en reglas de análisis técnico predefinidas** para **un tipo de activo específico** (ej. una criptomoneda o una acción).\n*   **Alertas por Telegram** con estas señales.\n*   **Gráficos básicos** que acompañen las alertas en Telegram, mostrando el contexto de la señal.\n*   Una arquitectura diseñada para ser **escalable y de bajo mantenimiento** a futuro, permitiendo añadir más funcionalidades.\n\n**Lo que NO podremos incluir en esta fase inicial:**\n*   Una \"IA\" avanzada (Machine Learning complejo) que aprenda y se adapte automáticamente. La implementaremos como reglas claras y configurables.\n*   Soporte para múltiples tipos de activos o estrategias complejas simultáneamente.\n*   Una interfaz web completa con dashboards interactivos avanzados.\n*   Integración directa con brokers para ejecución automática de operaciones.\n\n**Para avanzar, necesitamos de su parte:**\n1.  **Definir la estrategia de inversión inicial:** ¿Qué reglas o indicadores técnicos le interesan para generar las señales?\n2.  **Seleccionar el tipo de activo principal:** ¿En qué activo nos enfocamos para este MVP? (ej. BTC/USD, AAPL).\n3.  **Acceso a APIs de datos:** Si tiene alguna preferencia o cuenta existente para datos financieros, sería de gran ayuda.\n\nCon su colaboración, construiremos una base sólida y valiosa. Estoy a su disposición para una reunión inicial y definir estos puntos clave.",
+    "file": "pm_test/pm-gemini.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 10
+  },
+  {
+    "id": "pm-llama3",
+    "label": "Llama 3.3 70B",
+    "icon": "🦙",
+    "color": "#22c55e",
+    "provider": "groq",
+    "response_chars": 3216,
+    "time_s": 2.68,
+    "tokens": {
+      "prompt": 511,
+      "completion": 826,
+      "total": 1337
+    },
+    "full_response": "INTERPRETACION:\nEl cliente necesita una herramienta que le proporcione recomendaciones de inversión y le avise cuando deba comprar o vender. Sin embargo, está pidiendo una herramienta que utilice inteligencia artificial (IA) y tenga gráficos atractivos, lo que puede ser un desafío en un plazo de 4 semanas y con un presupuesto de $3,000. El cliente también asume que la herramienta no será cara de mantener, lo que puede no ser el caso si no se consideran los costos de infraestructura y mantenimiento a largo plazo. Un riesgo que el cliente no está viendo es la complejidad de integrar la IA con los datos de mercado y la posibilidad de que la herramienta no sea lo suficientemente precisa. También falta en su solicitud la definición de qué tipo de activos se van a invertir y qué es lo que se considera una \"buena\" recomendación de inversión.\n\nANALISIS:\nDecisiones arquitectónicas clave: Utilizar un framework de IA como TensorFlow o PyTorch, utilizar una base de datos NoSQL como MongoDB, y utilizar un servicio de mensajería como Telegram API. Dependencias críticas: La disponibilidad de datos de mercado precisos y actualizados, la capacidad de la IA para aprender y adaptarse a los cambios en el mercado. Riesgos principales: La complejidad de la IA, la integridad de los datos, la seguridad de la aplicación. Stack tecnológico sugerido: Python, TensorFlow, MongoDB, Telegram API. Estimación de esfuerzo real vs. presupuesto: El esfuerzo real puede ser mayor que el presupuesto, ya que la complejidad de la IA y la integración con los datos de mercado pueden requerir más tiempo y recursos.\n\nPLAN:\n[Tarea 1] | Definir requisitos y alcance del proyecto | Project Manager | 8 | Alta\n[Tarea 2] | Investigar y seleccionar framework de IA | Developer 1 | 16 | Alta\n[Tarea 3] | Diseñar la base de datos y la estructura de datos | Developer 2 | 12 | Media\n[Tarea 4] | Desarrollar la lógica de negocio y la integración con la IA | Developer 1 | 24 | Alta\n[Tarea 5] | Diseñar la interfaz de usuario y la experiencia del usuario | Diseñador freelance | 10 | Media\n[Tarea 6] | Integrar la aplicación con Telegram API | Developer 2 | 8 | Baja\n[Tarea 7] | Realizar pruebas y depuración | Developer 1 y Developer 2 | 16 | Alta\n\nCOMUNICACION:\nEstimado cliente, gracias por considerarnos para su proyecto de asistente de inversiones multi-activo. Después de analizar sus requisitos, podemos ofrecerle una herramienta básica que proporcione recomendaciones de inversión y le avise cuando deba comprar o vender. Sin embargo, debido a la complejidad de la IA y la integración con los datos de mercado, no podemos garantizar la precisión de las recomendaciones en un plazo de 4 semanas. También es importante considerar que la herramienta puede requerir costos de infraestructura y mantenimiento a largo plazo. Para asegurarnos de que el proyecto se complete dentro del plazo y el presupuesto, necesitamos que usted nos proporcione más información sobre los activos que se van a invertir y qué es lo que se considera una \"buena\" recomendación de inversión. También necesitamos su aprobación para priorizar las tareas y enfocarnos en las funcionalidades más importantes. ¿Podemos programar una reunión para discutir los detalles?",
+    "file": "pm_test/pm-llama3.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 1
+  },
+  {
+    "id": "pm-llama4",
+    "label": "Llama 4 Scout 17B",
+    "icon": "🦙",
+    "color": "#06b6d4",
+    "provider": "groq",
+    "response_chars": 3952,
+    "time_s": 2.07,
+    "tokens": {
+      "prompt": 428,
+      "completion": 873,
+      "total": 1301
+    },
+    "full_response": "### SECCIÓN 1: INTERPRETACIÓN\n\nEl cliente solicita un asistente de inversiones multi-activo que incorpore inteligencia artificial (IA), gráficos atractivos y notificaciones por Telegram, con un presupuesto de $3,000 y un plazo de 4 semanas. El equipo asignado consiste en 2 desarrolladores junior y 1 diseñador freelance con 10 horas de disponibilidad semanal.\n\nEn cuanto a lo que el cliente realmente necesita versus lo que está pidiendo, hay varias consideraciones:\n\n- **Necesidad de definir alcance**: El cliente menciona funcionalidades específicas pero no clarifica el alcance completo del proyecto, como el tipo de activos a considerar, la complejidad de los análisis de IA, o el diseño específico de los gráficos.\n- **Riesgos no considerados**: El cliente no menciona la integración con fuentes de datos financieras, posibles limitaciones legales o regulatorias, o la seguridad de los datos de los usuarios.\n- **Suposiciones**: El cliente asume que la implementación de IA es factible dentro del plazo y presupuesto dados, lo cual puede ser optimista considerando la complejidad de desarrollar modelos de IA efectivos.\n- **Falta en la solicitud**: No se menciona cómo se entrenarán o actualizarán los modelos de IA, ni cómo se abordará la escalabilidad del sistema.\n\n### SECCIÓN 2: ANÁLISIS TÉCNICO\n\n**Decisiones arquitectónicas clave**: \n- Selección del stack tecnológico adecuado para el desarrollo rápido de una aplicación web con integraciones de IA y notificación.\n- Diseño de una arquitectura escalable.\n\n**Dependencias críticas**:\n- Acceso a APIs de datos financieros.\n- Integración con servicios de Telegram para notificaciones.\n\n**Riesgos principales**:\n- Desarrollo de funcionalidades de IA dentro del plazo.\n- Integración con fuentes de datos en tiempo real.\n\n**Stack tecnológico sugerido**: \n- Frontend: React o Angular.\n- Backend: Node.js con Express.\n- IA: TensorFlow o PyTorch con Python.\n\n**Estimación de esfuerzo real vs. presupuesto**: \nDado el equipo y el plazo, parece un desafío desarrollar una aplicación robusta con IA. El presupuesto de $3,000 puede ser insuficiente para la cantidad de trabajo necesario.\n\n### SECCIÓN 3: PLAN DE ACCIÓN\n\n1. **Definición de requisitos** | Project Manager | 10h | Alta\n2. **Diseño de UI/UX** | Diseñador freelance | 20h | Alta\n3. **Setup del entorno de desarrollo** | Desarrolladores junior | 8h | Alta\n4. **Integración con APIs financieras** | Desarrolladores junior | 20h | Alta\n5. **Desarrollo de modelo de IA básico** | Desarrolladores junior | 40h | Alta\n6. **Implementación de notificaciones por Telegram** | Desarrolladores junior | 10h | Media\n7. **Desarrollo del frontend** | Desarrolladores junior | 40h | Alta\n8. **Pruebas y depuración** | Desarrolladores junior | 20h | Alta\n\n### SECCIÓN 4: COMUNICACIÓN AL CLIENTE\n\nEstimado cliente,\n\nEntiendo que estás ansioso por lanzar tu asistente de inversiones multi-activo. Sin embargo, es crucial alinear nuestras expectativas. En 4 semanas y con un presupuesto de $3,000, podemos desarrollar una versión básica de tu proyecto. Podemos implementar un sistema que recolecte datos de mercado, aplique análisis simples, y envíe notificaciones por Telegram. Sin embargo, desarrollar un modelo de IA sofisticado que prediga con precisión cuándo comprar y vender puede requerir más tiempo y recursos.\n\nEs importante considerar que la integración con fuentes de datos financieras confiables, el cumplimiento de regulaciones financieras, y la seguridad de los datos serán cruciales para el éxito de tu proyecto.\n\nPara avanzar, necesitaría que tú:\n\n- Clarifiques el alcance y los requisitos del proyecto.\n- Proporcionas acceso a cualquier fuente de datos financiera que tengas.\n- Estés dispuesto a revisar y ajustar el proyecto en fases.\n\nEstoy aquí para ayudarte a navegar este proceso. Estoy seguro de que podemos construir algo innovador, pero realismo y planificación serán clave.\n\nGracias por tu comprensión.\n\n[Tu Nombre]  \nProject Manager",
+    "file": "pm_test/pm-llama4.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 3
+  },
+  {
+    "id": "pm-nemotron",
+    "label": "Nemotron 3 Super 120B",
+    "icon": "💎",
+    "color": "#6366f1",
+    "provider": "openrouter",
+    "response_chars": 5051,
+    "time_s": 46.23,
+    "tokens": {
+      "prompt": 513,
+      "completion": 3368,
+      "total": 3881
+    },
+    "full_response": "INTERPRETACION:\nEl cliente pide una herramienta que indique cuándo comprar y vender, con gráficos atractivos, alertas por Telegram, uso de IA y bajo costo de mantenimiento. En realidad necesita un sistema confiable de generación de señales de inversión que sea transparente, basado en datos de mercado de calidad y que pueda ser utilizado por usuarios sin conocimientos técnicos profundos. Está asumiendo que la IA puede proporcionar predicciones precisas con poco esfuerzo y que los gráficos bonitos son suficientes para generar confianza. No está considerando riesgos como la calidad y latencia de los datos, el sobreajuste de modelos de IA, la necesidad de cumplimiento regulatorio (asesoría de inversiones), el coste de APIs de datos de mercado y el mantenimiento continuo del modelo. Además, omite aspectos críticos como la gestión de riesgos personales, backtesting, explicabilidad de las señales y un mecanismo de retroalimentación para mejorar el modelo con el tiempo.\n\nANALISIS:\nDecisiones arquitectónicas clave: backend ligero (Python/FastAPI) que ingesta datos de mercado, calcula señales mediante indicadores técnicos simples (medias móviles, RSI) y opcionalmente un modelo de ML ligero; frontend React con Chart.js o TradingView Lightweight Charts para visualización; bot de Telegram para notificaciones; base de datos SQLite/PostgreSQL para almacenar configuraciones y historial; despliegue en contenedores Docker en un VPS de bajo costo (ej. DigitalOcean $5/mes) o plataforma gratuita (Render free tier). Dependencias críticas: API de datos de mercado (Yahoo Finance gratuita o IEX Cloud con plan bajo), token de bot de Telegram, librerías de gráficos. Riesgos principales: dependencia de datos gratuitos con límites de tasa, drift del modelo si se usa ML, falta de asesoría financiera regulada, esfuerzo de mantenimiento del modelo y de la infraestructura. Stack tecnológico sugerido: Python 3.11, FastAPI, SQLAlchemy, scikit-learn (para modelo sencillo), React 18, Chart.js, Docker, GitHub Actions para CI/CD. Estimación de esfuerzo real: aproximadamente 210‑240 horas de desarrollo (incluyendo pruebas, documentación y despliegue) frente a las 360 horas disponibles (2 devs junior 40 h/semana cada uno + diseñador 10 h/semana). El presupuesto de $3,000 equivale a ~ $8.33/h, lo que cubre el esfuerzo si nos enfocamos en el scope esencial y evitamos licencias costosas o modelos de IA complejos.\n\nPLAN:\nConfigurar entorno de desarrollo y repositorio | Dev1 | 8 | Alta\nIntegrar API de datos de mercado (incluye manejo de límites y caché) | Dev1 | 30 | Alta\nDiseñar modelo de señal basado en indicadores técnicos (media móvil, RSI) | Dev2 | 16 | Alta\nImplementar endpoint backend para generar señales y persistencia | Dev2 | 30 | Alta\nDesarrollar frontend con gráficos interactivos y UI atractiva | Diseñador + Dev1 | 40 | Media\nImplementar bot de Telegram para envío de alertas | Dev1 | 16 | Media\nCrear panel de configuración de umbrales, activos y frecuencia de alertas | Dev2 | 20 | Media\nEscribir tests unitarios y de integración (backend y frontend) | Dev1 + Dev2 | 20 | Alta\nRedactar documentación técnica y manual de usuario | Diseñador | 8 | Baja\nRevisión de código, ajuste final y preparación de release | Dev1 + Dev2 | 12 | Alta\nDeploy y configuración de entorno de producción (Docker, VPS) | Dev1 | 12 | Alta\n\nCOMUNICACION:\nHola,\n\nGracias por confiar en nosotros para desarrollar su asistente de inversiones multi‑activo. En las próximas 4 semanas podemos entregar un producto funcional que incluya: ingesta automática de datos de mercado (via API gratuita), generación de señales de compra/venta basada en indicadores técnicos claros (medias móviles y RSI), una interfaz web con gráficos interactivos y atractivos, y un bot de Telegram que le notifique cuando se active una señal. También entregaremos documentación básica y un panel sencillo para ajustar los umbrales y seleccionar los activos que desea seguir.\n\nLo que no podremos alcanzar en este tiempo y presupuesto son: un modelo de IA avanzado (deep learning) que requiera entrenamiento costoso y mantenimiento continuo, acceso a APIs de datos de mercado premium (que impliquen gastos recurrentes), y características de cumplimiento regulatorio avanzado (por ejemplo, asesoría personalizada o reporting para entidades financieras). Además, el sistema será mantenible pero requerirá que usted revise periódicamente los límites de la API gratuita y, si desea escalar o mejorar la precisión de las señales, será necesario asignar recursos adicionales o reconsiderar el scope.\n\nPara que el proyecto sea exitoso necesitamos de su parte: acceso inmediato a una cuenta de desarrollador para la API de datos que elija (por ejemplo, Yahoo Finance o un plan bajo de IEX Cloud), el token de su bot de Telegram, y una lista inicial de activos y umbrales de riesgo que desee monitorear. Con esos elementos podremos cumplir con lo acordado y entregarle una herramienta útil y de bajo costo de mantenimiento.\n\nQuedo atento a sus comentarios y listo para iniciar. Saludos cordiales.",
+    "file": "pm_test/pm-nemotron.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 8
+  },
+  {
+    "id": "pm-qwen3",
+    "label": "Qwen3 32B",
+    "icon": "⚡",
+    "color": "#eab308",
+    "provider": "groq",
+    "response_chars": 5270,
+    "time_s": 3.28,
+    "tokens": {
+      "prompt": 489,
+      "completion": 1444,
+      "total": 1933
+    },
+    "full_response": "<think>\nOkay, let's tackle this step by step. The user is a senior project manager hired by a fintech startup to build a multi-asset investment assistant in 4 weeks with a $3,000 budget. The team has two junior developers and a freelance designer working 10 hours a week. The client wants a tool that tells when to buy and sell, has nice graphs, sends Telegram alerts, uses AI, and isn't expensive to maintain.\n\nFirst, I need to interpret what the client really needs. They mentioned \"multi-activo,\" which translates to multi-asset, so the tool should handle different asset classes like stocks, crypto, etc. The client wants AI for buy/sell signals, which implies machine learning models. But they might not realize the complexity of building accurate models. They also want Telegram integration and good visuals, but maybe they don't consider data sources or model training time. Risks include overestimating AI capabilities, underestimating data needs, and maintenance costs.\n\nNext, the technical analysis. The stack should be cost-effective. Python for ML, maybe TensorFlow or PyTorch. Frontend with React for the designer. Telegram bot using their API. Data sources like Alpha Vantage or CoinGecko for free APIs. Risks: data quality, model accuracy, time to train models. The team is small, so tasks need to be prioritized. Estimating effort: 160 hours total, but with only 2 junior devs and 10h/week from the designer, it's tight. Maybe 120 hours possible, so some features might be cut.\n\nFor the action plan using MoSCoW: Must have is the core functionality—AI model, Telegram alerts, basic UI. Should have includes more data sources and better UI. Could have is advanced features like portfolio optimization. Won't have is maybe real-time data or complex models.\n\nCommunication to the client needs to be clear. Emphasize what's feasible in 4 weeks, the limitations due to budget and team size, and what they need to provide, like data access and feedback.\n\nNow, structuring each section with the required elements. Make sure the analysis covers real needs vs. stated ones, technical decisions, and realistic planning. Check the hours against the available time. The message to the client should align expectations, mention constraints, and ask for their support.\n</think>\n\nINTERPRETACION:\nEl cliente busca una herramienta de inversión automatizada con IA que ofrezca señales de compra/venta, visualización de datos y notificaciones en Telegram. Sin embargo, no reconoce que:  \n1. **La IA requiere datos históricos de alta calidad y entrenamiento** (no menciona acceso a APIs de mercado).  \n2. **La \"belleza\" de los gráficos implica trabajo de diseño UX/UI** (el diseñador freelance tiene solo 10h/semana).  \n3. **La \"bajo costo de mantenimiento\" es compleja**: modelos de IA necesitan actualizaciones periódicas.  \n4. **No especifica activos a cubrir** (acciones, criptomonedas, etc.), lo que afecta la arquitectura.  \n5. **Riesgo de sobreestimar la capacidad predictiva de la IA** sin validación científica.  \n\nANALISIS:\n- **Arquitectura**: Backend en Python (Flask/FastAPI) + ML (TensorFlow/PyTorch), frontend en React, Telegram bot con API.  \n- **Dependencias críticas**: APIs de datos financieros (ej: Alpha Vantage, CoinGecko) y entrenamiento de modelos.  \n- **Riesgos**:  \n  - Falta de datos históricos de calidad para entrenar IA.  \n  - Limitaciones de los desarrolladores juniors en ML.  \n  - Diseño UX/UI insuficiente por horas del freelance.  \n- **Stack sugerido**: Python, React, PostgreSQL, Telegram API, Docker.  \n- **Esfuerzo real**: ~160h (4 semanas x 40h). Presupuesto: $3,000 (~$75/h). Equipo disponible: ~120h (2 devs x 40h + diseñador x 10h). **Falta 40h**; se requiere optimización.  \n\nPLAN:\n[Tarea 1: Definir activos y APIs de datos] | [Dev 1] | [4h] | [Alta]  \n[Tarea 2: Entrenar modelo básico de IA (regresión)] | [Dev 2] | [16h] | [Alta]  \n[Tarea 3: Backend para procesar señales y notificaciones] | [Dev 1] | [12h] | [Alta]  \n[Tarea 4: Frontend básico con gráficos (Chart.js)] | [Diseñador] | [10h] | [Alta]  \n[Tarea 5: Integrar Telegram bot] | [Dev 2] | [8h] | [Alta]  \n[Tarea 6: Validar modelo con datos históricos] | [Dev 1] | [10h] | [Media]  \n[Tarea 7: Diseño UX/UI avanzado] | [Diseñador] | [10h] | [Media]  \n[Tarea 8: Optimizar modelo con técnicas avanzadas] | [Dev 2] | [10h] | [Baja]  \n[Tarea 9: Implementar escalabilidad y seguridad] | [Dev 1] | [10h] | [Baja]  \n\nCOMUNICACION:\nEstimado cliente, en 4 semanas construiremos un prototipo funcional con:  \n✅ Señales de compra/venta básicas usando IA (regresión lineal).  \n✅ Gráficos interactivos con Chart.js y notificaciones en Telegram.  \n✅ Arquitectura escalable para futuras mejoras.  \n\n**No incluiremos**:  \n❌ Modelos avanzados de IA (ej: redes neuronales profundas) por tiempo y datos.  \n❌ Diseño UX/UI premium (usaremos el 10h/semana del diseñador).  \n❌ Integración con múltiples activos (priorizaremos 1-2 para demostrar funcionalidad).  \n\nNecesitamos:  \n1. Acceso a datos históricos de mercado (proporcionar APIs o datos).  \n2. Feedback semanal para ajustar el modelo.  \n3. Confirmar activos prioritarios (ej: acciones vs. criptomonedas).  \n\nEl costo de mantenimiento será bajo si usamos APIs gratuitas, pero requerirá actualizaciones periódicas. ¿Está bien este enfoque?",
+    "file": "pm_test/pm-qwen3.txt",
+    "pm_score": 95,
+    "pm_detail": {
+      "interpretacion": 10,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 5
+  },
+  {
+    "id": "pm-tencent",
+    "label": "Tencent HY3 Preview",
+    "icon": "🐧",
+    "color": "#ec4899",
+    "provider": "openrouter",
+    "response_chars": 6467,
+    "time_s": 121.5,
+    "tokens": {
+      "prompt": 554,
+      "completion": 6853,
+      "total": 7407
+    },
+    "full_response": "INTERPRETACION:\nEl cliente solicita una herramienta de asistencia de inversiones multi-activo con señales de compra/venta, gráficos atractivos, alertas por Telegram, uso de IA y bajo costo de mantenimiento. Sin embargo, sus expectativas presentan brechas importantes:\n\n- **Necesidad real**: Un sistema que apoye la toma de decisiones de inversión, probablemente para uso personal o interno, con alertas oportunas y visualización clara. No necesariamente requiere IA avanzada, sino lógica confiable.\n- **Riesgos no vistos**: \n  - Regulatorios: Dar señales de inversión puede considerarse asesoría financiera y requerir cumplimiento normativo.\n  - Datos: Las fuentes de datos fiables (ej. Bloomberg, Refinitiv) son costosas; las gratuitas tienen limitaciones de calidad y disponibilidad.\n  - IA: \"Usar IA\" es una expectativa difusa; entrenar modelos predictivos requiere tiempo, datos históricos y experiencia, no viable en 4 semanas con presupuesto limitado.\n  - Mantenimiento: Un sistema con IA propia es costoso de mantener; el cliente asume que será barato.\n- **Suposiciones**:\n  - Que $3,000 es suficiente para un producto funcional con IA.\n  - Que dos desarrolladores junior y un diseñador part-time pueden entregar un producto complejo en 4 semanas.\n  - Que la integración de múltiples activos es trivial.\n- **Faltantes**:\n  - Definición de activos (acciones, cripto, etc.).\n  - Fuentes de datos específicas.\n  - Detalle de qué significa \"IA\" para ellos.\n  - Aclaración de \"no cara de mantener\" (¿hosting serverless, sin base de datos, etc.?).\n  - Qué se considera \"gráficos bonitos\" (interactivos, estáticos, envío por Telegram).\n\nANALISIS:\n**Decisiones arquitectónicas clave**:\n- Enfoque MVP: una arquitectura sencilla con backend en Python para procesamiento y un bot de Telegram como interfaz principal, complementado con un dashboard web básico.\n- Uso de APIs de datos gratuitas (yfinance, Alpha Vantage) para limitar costos.\n- Lógica de señales basada en indicadores técnicos (ej. medias móviles, RSI) en lugar de modelos de IA complejos, aunque se puede presentar como \"asistencia inteligente\".\n- Generación de gráficos con librerías como Matplotlib o Plotly, enviados como imágenes por Telegram o integrados en web.\n- Despliegue en plataformas de bajo costo (Heroku, Render, Vercel) para minimizar mantenimiento.\n\n**Dependencias críticas**:\n- Acceso a APIs de datos financieros (posible necesidad de claves API gratuitas).\n- Token de bot de Telegram y configuración de webhook.\n- Disponibilidad de los desarrolladores junior para trabajar tiempo completo; diseñador 10h/semana.\n- Clarificación del cliente sobre activos y alcance.\n\n**Riesgos principales**:\n- Desbordamiento de alcance por expectativas de IA.\n- Latencia o indisponibilidad de datos gratuitos.\n- Limitaciones técnicas de los desarrolladores junior.\n- Presupuesto insuficiente para cubrir esfuerzo real (estimado en ~300-400 horas de desarrollo, equivalente a $6k-$12k a tarifas de mercado).\n- Tiempo: 4 semanas es ajustado para un producto mínimo viable.\n\n**Stack tecnológico sugerido**:\n- Backend: Python, Flask/FastAPI (o Streamlit para dashboard rápido).\n- Datos: yfinance, Alpha Vantage, ccxt (si incluye cripto).\n- Telegram: python-telegram-bot.\n- Gráficos: Matplotlib, Plotly.\n- Frontend (básico): HTML/CSS, o Streamlit.\n- Hosting: Heroku (free tier) o Render.\n- Control de versiones: GitHub.\n\n**Estimación de esfuerzo real vs. presupuesto**:\n- Esfuerzo real para un MVP funcional: ~250-350 horas de desarrollo y diseño.\n- Presupuesto: $3,000. Con equipo actual, el costo aproximado sería: 2 devs junior (asumiendo $15/hora) * 160 horas c/u = $4,800, más diseñador (10h/semana * 4 = 40h a $20/hora = $800) total $5,600, sin contar PM. El presupuesto es deficitario; se debe reducir drásticamente el alcance para ajustarse.\n\nPLAN:\nMust: Definición de alcance, activos y fuentes de datos | PM | 10 | Alta\nMust: Configuración de repositorio y entorno de desarrollo | Dev1 | 4 | Alta\nMust: Integración de API de datos financieros (yfinance/Alpha Vantage) | Dev2 | 12 | Alta\nMust: Implementación de lógica de señales con indicadores técnicos | Dev1 | 20 | Alta\nMust: Creación de bot de Telegram y envío de alertas | Dev2 | 16 | Alta\nMust: Generación de gráficos y envío por Telegram o web | Dev1 | 16 | Alta\nMust: Dashboard web básico para visualización de gráficos | Dev2 | 24 | Alta\nMust: Despliegue en plataforma de bajo costo (Heroku/Render) | Dev1 | 8 | Alta\nMust: Pruebas y corrección de errores | Dev1, Dev2 | 20 | Alta\nMust: Documentación básica y manual de usuario | PM | 4 | Alta\nShould: Diseño UI/UX del dashboard web | Designer | 20 | Media\nShould: Configuración de preferencias de alerta (activos, frecuencia) | Dev2 | 12 | Media\nShould: Soporte para múltiples clases de activos (ampliación) | Dev1 | 16 | Media\nCould: Implementación de modelo simple de machine learning para señales | Dev1 | 40 | Baja\nCould: Módulo de backtesting histórico | Dev2 | 30 | Baja\n\nCOMUNICACION:\nEstimado cliente,\n\nEntendemos su visión de contar con un asistente de inversiones que notifique oportunidades por Telegram y presente gráficos atractivos. Sin embargo, con un presupuesto de $3,000 y 4 semanas, debemos alinear expectativas para asegurar un producto viable.\n\nLo que SÍ podemos entregar:\n- Un MVP funcional que genere señales de compra/venta basadas en indicadores técnicos probados (no IA compleja, pero sí \"asistencia inteligente\").\n- Integración con Telegram para alertas y envío de gráficos básicos.\n- Un dashboard web sencillo con visualización de precios y señales para los activos que definamos (ej. 3-5 activos iniciales).\n- Uso de datos gratuitos y despliegue en servicios de bajo costo para minimizar mantenimiento.\n\nLo que NO podemos entregar en este plazo/presupuesto:\n- Modelos de IA avanzados o predictivos profundos.\n- Soporte para gran cantidad de activos o datos en tiempo real costosos.\n- Interfaz de usuario muy elaborada (el diseñador tiene solo 10h/semana).\n- Funcionalidades multiusuario o cumplimiento regulatorio como asesor de inversión.\n\nNecesitamos de su parte:\n1. Definir 3-5 activos prioritarios (acciones, cripto, etc.).\n2. Confirmar si cuenta con alguna API de datos de pago; de lo contrario, usaremos fuentes gratuitas.\n3. Proporcionar un token para el bot de Telegram.\n4. Retroalimentación ágil durante el desarrollo.\n\nCon enfoque y priorización, entregaremos una herramienta útil y de bajo mantenimiento. ¡Trabajemos juntos para el éxito del proyecto!",
+    "file": "pm_test/pm-tencent.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 7
+  },
+  {
+    "id": "pm-v4pro",
+    "label": "DeepSeek V4 Pro",
+    "icon": "🔴",
+    "color": "#dc2626",
+    "provider": "openrouter",
+    "response_chars": 5651,
+    "time_s": 132.07,
+    "tokens": {
+      "prompt": 482,
+      "completion": 5097,
+      "total": 5579
+    },
+    "full_response": "INTERPRETACION:\nEl cliente pide un asistente de inversión automático con IA, gráficos y notificaciones en Telegram. Realmente necesita un sistema simple de alertas basado en reglas que le ayude a decidir, no una herramienta de trading algorítmico de grado institucional. Asume que “IA” resolverá mágicamente la predicción de mercado, sin considerar la necesidad de datos históricos masivos, modelos complejos y validación regulatoria. No está viendo riesgos clave: la responsabilidad legal de emitir recomendaciones de compra/venta, la dependencia de APIs de datos financieros que son costosas o inestables en sus capas gratuitas, y que un sistema “barato de mantener” requiere fuentes de datos y hosting casi gratuitos. Falta en su solicitud: definición de activos específicos, criterios de entrada/salida, nivel de riesgo aceptable, y quién asume la responsabilidad de las señales. También omite que sin presupuesto para APIs profesionales el alcance se reduce drásticamente.\n\nANALISIS:\nDecisiones arquitectónicas clave: arquitectura serverless o de bajo costo (Render/Fly.io), backend ligero con Python (FastAPI), frontend React con Chart.js, bot de Telegram usando webhooks, y base de datos SQLite o PostgreSQL mínima. Dependencias críticas: APIs de datos de mercado (Yahoo Finance – no oficial, Alpha Vantage capa gratuita, CoinGecko) con límites de peticiones y posible interrupción sin aviso. Riesgos principales: inestabilidad de las fuentes de datos gratuitas, calidad de las señales sin backtesting robusto, implicaciones legales por dar señales financieras sin disclaimer, y expectativas irreales del cliente respecto a “IA”. Stack sugerido: Backend: Python + FastAPI, Frontend: React + Vite + Chart.js + Tailwind, Bot: python-telegram-bot, BD: PostgreSQL o SQLite en Supabase/Neon, despliegue: Vercel (front) + Render (back), repositorio GitHub con acciones CI/CD. Esfuerzo real vs. presupuesto: el alcance mínimo viable ronda las 350 h entre desarrollo, diseño y gestión. Con tarifas de mercado incluso junior ($20‑40/h), el coste real supera los $7,000. El presupuesto de $3,000 es inviable sin usar voluntarios o software 100 % gratuito, lo que compromete calidad y mantenimiento.\n\nPLAN:\n[Tarea] | [Responsable] | [Horas] | [Prioridad]\nConfiguración de infraestructura cloud, CI/CD y repositorio | Dev2 | 8h | Alta\nConexión a APIs de mercado (Yahoo Finance, CoinGecko) y almacenamiento de precios | Dev2 | 20h | Alta\nImplementación de indicadores técnicos (RSI, MACD) y lógica de señal de entrada/salida | Dev1 | 30h | Alta\nDesarrollo del bot de Telegram: comandos básicos y suscripción a alertas | Dev1 | 15h | Alta\nMotor de alertas: evaluación periódica y envío proactivo por Telegram | Dev1 | 15h | Alta\nDiseño UX/UI del dashboard: wireframes, guía visual y paleta | Designer | 15h | Alta\nMaquetación y desarrollo del dashboard web con Chart.js (gráficos de velas + señales) | Dev2 | 40h | Alta\nAPI backend para servir datos de mercado y señales al dashboard | Dev1 | 20h | Alta\nIntegración del dashboard con backend y despliegue web | Dev2 | 20h | Alta\nPruebas de integración, validación de señales y gestión de errores | Dev1 + Dev2 | 30h (15h c/u) | Alta\nGestión de proyecto, comunicación con cliente y control de riesgos | PM | 20h | Alta\nDocumentación básica de uso y guía de configuración | Dev1 | 8h | Media\nSoporte multi‑activo ampliado (más criptos, divisas) | Dev2 | 15h | Media\nPágina de configuración de parámetros de indicadores desde el dashboard | Dev1 | 15h | Media\nBacktesting visual simple de las señales generadas | Dev1 | 20h | Media\nAjustes de diseño responsivo y micro‑interacciones | Designer | 10h | Media\nAnálisis de sentimiento básico usando NLP sobre noticias (API gratuita) | Dev1 | 20h | Baja\nExportación de histórico de señales en CSV | Dev2 | 8h | Baja\n\nCOMUNICACION:\nEstimado cliente, gracias por la confianza. En 4 semanas con su equipo actual podemos entregar un producto funcional, pero debemos alinear expectativas con la realidad técnica y presupuestaria.\n\nLo que SÍ tendrá en 4 semanas:\n- Un bot de Telegram que le enviará señales de compra/venta basadas en indicadores técnicos clásicos (RSI, MACD) para un conjunto definido de activos (ej. 5 criptomonedas y 2 índices).\n- Un panel web con gráficos de velas que mostrarán los precios y las señales generadas, accesible desde navegador.\n- Alertas automáticas sin intervención manual, utilizando fuentes de datos gratuitas.\n- La “IA” se implementará como una capa de reglas y, opcionalmente, análisis de sentimiento simple sobre noticias, no como modelos predictivos profundos.\n\nLo que NO tendrá:\n- Predicciones basadas en machine learning o redes neuronales (requieren datos históricos masivos, entrenamiento y presupuesto para infraestructura especializada).\n- Ejecución automática de órdenes ni conexión con exchanges; las señales son meramente informativas.\n- Una app móvil nativa ni soporte multi‑activo ilimitado.\n- Garantía de resultados ni asesoramiento financiero regulado (incluiremos los disclaimers legales necesarios).\n\nPara lograrlo, necesitamos de su parte:\n1. Lista cerrada de los activos que quiere monitorear y los criterios que le gustaría priorizar.\n2. Aceptación de los riesgos asociados al uso de APIs gratuitas, que pueden tener interrupciones o retrasos.\n3. Confirmación de que su presupuesto ($3,000) se destinará exclusivamente a los costes de infraestructura y eventuales APIs básicas, mientras que el equipo aporta las horas descritas (el esfuerzo real duplica ese monto). De no ser posible, el alcance se reducirá al bot de Telegram sin dashboard.\n\nEstoy a su disposición para detallar el plan y empezar de inmediato.",
+    "file": "pm_test/pm-v4pro.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    },
+    "user_score": 8
+  },
+  {
+    "id": "pm-claude35",
+    "label": "Claude 3.5 Haiku",
+    "icon": "🧡",
+    "color": "#d97706",
+    "provider": "openrouter",
+    "response_chars": 2450,
+    "time_s": 0,
+    "tokens": {},
+    "full_response": "INTERPRETACION:\nEl cliente busca una herramienta automatizada de trading, pero no comprende completamente:\n- La complejidad de generar recomendaciones de inversión precisas\n- Los riesgos legales y regulatorios de dar consejos financieros\n- La necesidad de disclaimers y gestión de expectativas\n- El costo real de mantener un sistema de IA financiera\n\nRiesgos no vistos:\n- Posibles pérdidas económicas por recomendaciones incorrectas\n- Necesidad de entrenamiento constante del modelo\n- Complejidad de integrar múltiples fuentes de datos financieros\n- Seguridad y protección de datos sensibles\n\nAsunciones del cliente:\n- Que la IA puede predecir mercados con alta precisión\n- Que el desarrollo será simple y económico\n- Que las alertas serán 100% confiables\n\nANALISIS:\nArquitectura sugerida:\n- Backend: Python (FastAPI)\n- Machine Learning: TensorFlow/PyTorch\n- Integración: Websockets, Telegram Bot API\n- Bases de datos: PostgreSQL, TimescaleDB\n- Infraestructura: Docker, Kubernetes \n\nDependencias críticas:\n- APIs financieras (Alpha Vantage, Yahoo Finance)\n- Servicios de machine learning\n- Infraestructura cloud (AWS/GCP)\n\nRiesgos principales:\n- Precisión del modelo predictivo\n- Costos de datos financieros\n- Complejidad de integración\n\nEstimación:\n- Presupuesto real necesario: $8,000-$12,000\n- Tiempo real: 6-8 semanas\n- Esfuerzo de developers: 320-400 horas\n\nPLAN:\n[Definir arquitectura base] | Dev1 | 40h | Alta\n[Configurar servicios cloud] | Dev2 | 32h | Alta\n[Modelo predictivo inicial] | Dev1 | 60h | Alta\n[Integración APIs financieras] | Dev2 | 40h | Alta\n[Desarrollo bot Telegram] | Dev1 | 24h | Media\n[Diseño interfaz] | Diseñador | 20h | Media\n[Testing] | Ambos Devs | 40h | Alta\n[Documentación] | Dev2 | 16h | Baja\n\nCOMUNICACION:\nEstimado cliente,\n\nDespués de analizar su solicitud, podemos desarrollar un prototipo funcional de asistente de inversiones con capacidades iniciales de análisis. En 4 semanas entregaremos:\n\n✅ Dashboard básico\n✅ Alertas por Telegram\n✅ Modelo predictivo inicial de bajo riesgo\n✅ Integración con mercados principales\n\nNO podremos garantizar:\n❌ Predicciones 100% precisas\n❌ Cobertura de todos los activos\n❌ Sistema completamente autónomo\n\nNecesitaremos de su colaboración para:\n- Definir activos de interés\n- Proporcionar fuentes de datos\n- Validar iteraciones del modelo\n\nEl costo estimado requiere ajuste del presupuesto inicial. ¿Podemos agendar una reunión para detallar expectativas?\n\nSaludos,\n[Tu Nombre]",
+    "file": "pm_test/pm-claude35.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    }
+  },
+  {
+    "id": "pm-qwen25",
+    "label": "Qwen 2.5 72B",
+    "icon": "⚜️",
+    "color": "#8b5cf6",
+    "provider": "openrouter",
+    "response_chars": 5465,
+    "time_s": 0,
+    "tokens": {},
+    "full_response": "### SECCIÓN 1: INTERPRETACIÓN\nEl cliente desea un asistente de inversiones multi-activo que le indique cuándo comprar y vender, con gráficos visuales atractivos y notificaciones por Telegram. Además, espera que la herramienta utilice Inteligencia Artificial (IA) y que sea económica de mantener. \n\n**Necesidades reales:**\n- **Asistente básico de señales de trading:** El cliente necesita una herramienta que genere señales básicas de compra y venta basadas en algoritmos simples.\n- **Interfaz intuitiva:** Una interfaz gráfica fácil de usar con visualizaciones claras.\n- **Notificaciones en tiempo real:** Notificaciones por Telegram para estar al tanto de las señales de trading.\n\n**Riesgos no vistos:**\n- **Complejidad de la IA:** La implementación de IA de alta calidad es compleja y puede requerir más tiempo y recursos.\n- **Costos ocultos:** El mantenimiento y actualización continua de una herramienta de trading basada en IA puede ser costoso.\n- **Regulaciones y seguridad:** La regulación financiera y la seguridad de los datos son aspectos críticos que no se mencionan.\n\n**Asumpciones:**\n- **Conocimientos técnicos:** El cliente assume que el equipo tiene experiencia en IA y trading.\n- **Tiempo y presupuesto:** Subestima la complejidad del proyecto y el tiempo necesario para desarrollarlo adecuadamente.\n\n**Fallas en la solicitud:**\n- **Especificación técnica:** Falta una definición clara de los algoritmos y modelos de IA a utilizar.\n- **Mantenimiento:** No se menciona el plan de mantenimiento y actualización.\n- **Pruebas y validación:** No se especifica cómo se probará y validarán las señales de trading.\n\n### SECCIÓN 2: ANÁLISIS TÉCNICO\n**Decisiones arquitectónicas clave:**\n- **Microservicios:** Utilizar una arquitectura de microservicios para modularizar las funcionalidades (señales de trading, notificaciones, interfaz de usuario).\n- **APIs REST:** Comunicación entre microservicios mediante APIs REST.\n- **Base de datos NoSQL:** MongoDB para almacenar datos de trading y usuarios.\n\n**Dependencias críticas:**\n- **APIs de brokers:** Integración con APIs de brokers para obtener datos de mercado.\n- **Servicio de notificaciones:** Integración con la API de Telegram para enviar notificaciones.\n\n**Riesgos principales:**\n- **Integración con APIs:** Problemas de conectividad y limitaciones en las APIs de brokers.\n- **Rendimiento de la IA:** Riesgo de que los modelos de IA no sean precisos o confiables.\n- **Seguridad:** Riesgo de vulnerabilidades en la protección de datos financieros.\n\n**Stack tecnológico sugerido:**\n- **Backend:** Node.js, Express.js\n- **Frontend:** React.js\n- **Base de datos:** MongoDB\n- **IA y Machine Learning:** TensorFlow.js\n- **Notificaciones:** API de Telegram\n- **Despliegue:** Docker, AWS\n\n**Estimación de esfuerzo real vs. presupuesto:**\n- **Esfuerzo estimado:** 240 horas (60 horas/semana * 4 semanas)\n- **Esfuerzo disponible:** 160 horas (2 developers junior * 40 horas/semana + 1 diseñador freelance * 10 horas/semana * 4 semanas)\n- **Diferencia:** -80 horas\n\n### SECCIÓN 3: PLAN DE ACCIÓN\n[Tarea 1: Definir requerimientos y especificaciones técnicas] | [PM] | [8] | [Alta]\n[Tarea 2: Diseñar arquitectura del sistema] | [PM] | [16] | [Alta]\n[Tarea 3: Configurar entorno de desarrollo y despliegue] | [Developer 1] | [12] | [Alta]\n[Tarea 4: Desarrollar backend para señales de trading] | [Developer 1] | [32] | [Alta]\n[Tarea 5: Desarrollar backend para notificaciones] | [Developer 2] | [16] | [Alta]\n[Tarea 6: Desarrollar frontend con React.js] | [Developer 2] | [32] | [Alta]\n[Tarea 7: Integrar API de Telegram para notificaciones] | [Developer 2] | [16] | [Alta]\n[Tarea 8: Diseñar interfaz de usuario] | [Diseñador] | [20] | [Alta]\n[Tarea 9: Implementar modelos de IA básicos] | [Developer 1] | [24] | [Alta]\n[Tarea 10: Pruebas unitarias y de integración] | [PM y Developers] | [24] | [Alta]\n[Tarea 11: Documentación técnica y usuario] | [PM] | [12] | [Media]\n[Tarea 12: Despliegue y configuración en AWS] | [Developer 1] | [16] | [Alta]\n[Tarea 13: Actualizaciones y mantenimiento] | [WON'T HAVE] | [N/A] | [Baja]\n\n### SECCIÓN 4: COMUNICACIÓN AL CLIENTE\nEstimado [Nombre del Cliente],\n\nGracias por confiar en nosotros para desarrollar tu asistente de inversiones multi-activo. Entendemos tus necesidades y estamos comprometidos a entregarte una herramienta de calidad en el tiempo y presupuesto acordados. Sin embargo, queremos alinearte sobre lo que es realista hacer en 4 semanas con el presupuesto de $3,000.\n\n**Lo que SÍ podemos hacer:**\n- Desarrollar un asistente básico de señales de trading con algoritmos simples.\n- Crear una interfaz de usuario intuitiva con gráficos visuales.\n- Implementar notificaciones por Telegram para señales de trading.\n- Entregar una solución funcional y bien documentada.\n\n**Lo que NO podemos hacer:**\n- Implementar un modelo de IA avanzado con alta precisión.\n- Proporcionar un plan de mantenimiento y actualización continuo.\n- Desarrollar funcionalidades adicionales que no sean esenciales.\n\n**Lo que necesitamos de tu parte:**\n- Claridad en las señalizaciones de trading que deseas implementar.\n- Acceso a APIs de brokers para obtener datos de mercado.\n- Colaboración en la validación de las señales de trading.\n\nEstamos seguros de que con tu apoyo y orientación, podremos entregar un producto que cumpla con tus expectativas iniciales. Estamos abiertos a cualquier feedback o ajuste que consideres necesario.\n\nSaludos cordiales,\n[Tu Nombre]\n[Tu Cargo]\n[Tu Contacto]",
+    "file": "pm_test/pm-qwen25.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    }
+  },
+  {
+    "id": "pm-llama31",
+    "label": "Llama 3.1 70B",
+    "icon": "🦙",
+    "color": "#22c55e",
+    "provider": "openrouter",
+    "response_chars": 3712,
+    "time_s": 0,
+    "tokens": {},
+    "full_response": "**SECCIÓN 1: INTERPRETACIÓN**\n\nEl cliente está pidiendo un asistente de inversiones multi-activo que utilice inteligencia artificial (IA) para proporcionar recomendaciones de compra y venta, con gráficos atractivos y notificaciones por Telegram. Sin embargo, hay varios riesgos y suposiciones que no se están considerando:\n\n* La complejidad de implementar un sistema de IA que proporcione recomendaciones precisas y confiables en un plazo de 4 semanas es alta.\n* No se menciona la fuente de los datos que se utilizarán para alimentar el sistema de IA, lo que podría ser un problema crítico.\n* El cliente asume que el sistema puede ser mantenido a un costo razonable, pero no se han considerado los costos de infraestructura y mantenimiento a largo plazo.\n* No se han definido los requisitos de seguridad y privacidad para el manejo de datos financieros sensibles.\n\n**SECCIÓN 2: ANÁLISIS TÉCNICO**\n\nDecisiones arquitectónicas clave:\n\n* Utilizar un framework de IA como TensorFlow o PyTorch para desarrollar el modelo de recomendaciones.\n* Utilizar una base de datos NoSQL como MongoDB para almacenar los datos financieros.\n* Utilizar una API de Telegram para enviar notificaciones.\n\nDependencias críticas:\n\n* Acceso a datos financieros precisos y actualizados.\n* Configuración de la infraestructura de IA y base de datos.\n\nRiesgos principales:\n\n* Complejidad de implementar un sistema de IA en un plazo corto.\n* Posibles errores en la configuración de la infraestructura.\n* Problemas de seguridad y privacidad.\n\nStack tecnológico sugerido:\n\n* Python como lenguaje de programación principal.\n* TensorFlow o PyTorch para el desarrollo del modelo de IA.\n* MongoDB como base de datos NoSQL.\n* API de Telegram para enviar notificaciones.\n\nEstimación de esfuerzo real vs. presupuesto:\n\n* El presupuesto de $3,000 es bajo para un proyecto de esta complejidad.\n* Se estima que el esfuerzo real necesario para completar el proyecto es de al menos 200 horas.\n\n**SECCIÓN 3: PLAN DE ACCIÓN**\n\n[Tarea 1] | [Responsable] | [Horas] | [Prioridad]\nDefinir los requisitos de datos financieros | Desarrollador 1 | 8 | Alta\nConfigurar la infraestructura de IA y base de datos | Desarrollador 2 | 16 | Alta\nDesarrollar el modelo de recomendaciones | Desarrollador 1 | 24 | Alta\nImplementar la API de Telegram | Desarrollador 2 | 8 | Media\nDiseñar la interfaz de usuario | Diseñador | 10 | Media\nPruebas y depuración | Desarrollador 1 y 2 | 16 | Alta\n\n**SECCIÓN 4: COMUNICACIÓN AL CLIENTE**\n\nEstimado [Nombre del cliente],\n\nGracias por considerarme para este proyecto. Después de analizar sus requisitos, me gustaría discutir algunas cuestiones importantes.\n\nEn 4 semanas, podemos desarrollar un sistema básico de recomendaciones que utilice IA, pero es importante tener en cuenta que la complejidad de implementar un sistema de IA precisas y confiables es alta. También necesitaremos acceso a datos financieros precisos y actualizados, lo que podría ser un problema crítico.\n\nEn cuanto a la infraestructura, necesitaremos configurar un entorno de IA y base de datos que sea escalable y seguro. Esto requiere una planificación y configuración cuidadosas para evitar errores y problemas de seguridad.\n\nEn términos de presupuesto, estimamos que el esfuerzo real necesario para completar el proyecto es de al menos 200 horas, lo que supera el presupuesto de $3,000.\n\nSin embargo, podemos ofrecer una versión básica del sistema que cumpla con los requisitos más importantes en el plazo de 4 semanas. Para lograr esto, necesitaremos priorizar las tareas y enfocarnos en los aspectos más críticos del proyecto.\n\nPor favor, hágamelo saber si está de acuerdo con esta propuesta y si tiene alguna pregunta o inquietud.\n\nAtentamente,\n[Tu nombre]",
+    "file": "pm_test/pm-llama31.txt",
+    "pm_score": 98,
+    "pm_detail": {
+      "interpretacion": 25,
+      "analisis": 25,
+      "plan": 25,
+      "comunicacion": 25
+    }
+  }
+];
+
+const PM_PROMPT = "Eres un Senior Project Manager contratado por una fintech startup. \nTu cliente te dice:\n\n\"Necesito una herramienta que me diga cuándo comprar y vender. \nQue tenga gráficos bonitos y me avise por Telegram. \nUsa IA, obviamente. \nY que no sea cara de mantener.\"\n\nContexto del proyecto:\n- Presupuesto: $3,000\n- Plazo: 4 semanas\n- Equipo: 2 developers junior + 1 diseñador freelance (10h/semana)\n- Objetivo: Asistente de inversiones multi-activo\n\nTu tarea es analizar esta solicitud como Project Manager experto y entregar un informe estructurado con estas secciones:\n\n1. INTERPRETACIÓN: ¿Qué necesita realmente el cliente vs lo que pide? \n   ¿Qué riesgos no está viendo? ¿Qué falta en su solicitud?\n\n2. ANÁLISIS TÉCNICO: Decisiones arquitectónicas clave, dependencias críticas, \n   riesgos principales, stack tecnológico sugerido, estimación de esfuerzo real vs presupuesto.\n\n3. PLAN DE ACCIÓN: Lista de tareas con responsable, horas estimadas y prioridad.\n\n4. COMUNICACIÓN AL CLIENTE: Redacta el mensaje que le enviarías explicando \n   el alcance realista, las limitaciones y lo que realmente se puede entregar.";
+
+const CODE_TO_PM = {"llama-groq": "pm-llama3", "groq-llama4": "pm-llama4", "groq-qwen3": "pm-qwen3", "deepseek-v4pro": "pm-v4pro", "gemini-flash": "pm-gemini", "deepseek-v4flash": "pm-deepseek-v4-flash", "tencent-hy3": "pm-tencent", "deepseek-flash": "pm-deepseek-flash"};
+
+const STORAGE_KEY = 'olympiad_user_ratings_v3';
+function getRatings() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; } }
+function saveRating(id, stars) { const r = getRatings(); r[id] = Math.max(0, Math.min(10, stars)); localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); renderAll(); }
+function timeColor(s) { if (s === null || s === undefined) return '#64748b'; if (s < 10) return '#22c55e'; if (s < 30) return '#f59e0b'; return '#ef4444'; }
+function costBadge(p, t) { if (p === 'groq' || p === 'google') return '<span class="badge badge-free">GRATIS</span>'; if (p === 'deepseek') return '<span class="badge badge-paid">$' + (((t&&t.total||0)/1e6)*.2).toFixed(4) + '</span>'; return '<span class="badge badge-warn">OpenRouter</span>'; }
+const FEAT_MAP = [['canvas','🎨'],['tooltip','💬'],['zoom','🔍'],['pan','✋'],['responsive','📱'],['dark','🌙'],['moving_avg','📈'],['volume','📊'],['data_gen','🔄'],['interactive','👉🏻']];
+function getPmScore(codeId) { const pmId = CODE_TO_PM[codeId]; if (!pmId) return null; const m = PM.find(x => x.id === pmId); return m ? m.pm_score : null; }
+let currentModelId = null;
+function q(s) { return "'" + s.replace(/'/g, "\\'") + "'"; }
+function combinedScore(m, u) { return Math.round((m.score || 0) * 0.7 + (u * 10) * 0.3); }
+function getOverall(codeId, u) { const cm = CODING.find(x => x.id === codeId); if (!cm) return 0; const codingScore = cm.score || 0; const pmScore = getPmScore(codeId) || 0; const auto = Math.round(codingScore * 0.6 + pmScore * 0.4); return Math.round(auto * 0.7 + (u * 10) * 0.3); }
+
+function renderAll() { const ratings = getRatings(); renderCoding(ratings); renderPM(ratings); renderOverall(ratings); }
+
+function renderCoding(ratings) {
+  const sorted = [...CODING].sort((a,b) => combinedScore(b, ratings[b.id]||0) - combinedScore(a, ratings[a.id]||0));
+  const maxScore = Math.max(...sorted.map(m => combinedScore(m, ratings[m.id]||0) || 1), 1);
+  document.getElementById('bar-chart-coding').innerHTML = sorted.map(m => {
+    const cs = combinedScore(m, ratings[m.id]||0); const h = Math.max(8, (cs / maxScore) * 130); const ur = (ratings[m.id] || 0) > 0;
+    return '<div class="bar-group" onclick="openViewer(' + q(m.id) + ')"><div class="bar-score" style="color:' + m.color + '">' + cs + '</div><div class="bar-rect' + (ur ? ' user-rated' : '') + '" style="height:' + h + 'px;background:' + m.color + '"></div><div class="bar-label">' + m.label.split(' ')[0] + '<br><span class="bar-time">' + (m.time_s||0) + 's</span></div></div>';
+  }).join('');
+  document.getElementById('table-body-coding').innerHTML = sorted.map((m,i) => {
+    const cs = combinedScore(m, ratings[m.id]||0); const r = ratings[m.id] || 0;
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const rankStyle = medal ? '' : 'background:rgba(51,65,85,0.3);color:#94a3b8';
+    const tok = m.tokens || {}; const c = m.components || {};
+    let featHtml = '';
+    if (m.features) { for (const [key, icon] of FEAT_MAP) { if (m.features[key]) featHtml += '<span class="feat-icon" title="' + key + '">' + icon + '</span>'; } }
+    if (!featHtml) featHtml = '<span style="color:#475569">—</span>';
+    let starsHtml = ''; for (let s=1; s<=10; s++) { starsHtml += '<span class="star ' + (s<=r?'active':'inactive') + '" onclick="event.stopPropagation();saveRating(' + q(m.id) + ',' + s + ');">★</span>'; }
+    return '<tr class="model-row' + (m.id===currentModelId?' active':'') + '" onclick="openViewer(' + q(m.id) + ')"><td><span class="rank-num" style="' + rankStyle + '">' + (medal||(i+1)) + '</span></td><td><div class="model-cell"><span class="icon">' + (m.icon||'🤖') + '</span><div><div class="name">' + m.label + '</div><span class="provider">' + m.provider + ' · ' + (c.completeness||0) + '% completo · ' + (m.round||'') + '</span></div></div></td><td class="score-cell" style="color:' + m.color + ';text-align:center">' + cs + '</td><td style="text-align:center;color:#94a3b8">' + (m.lines||'—') + '</td><td style="text-align:center;color:' + timeColor(m.time_s) + '">' + (m.time_s||0) + 's</td><td style="text-align:center;color:#94a3b8;font-size:11px">' + ((tok.total||0).toLocaleString()) + '<div style="font-size:8px;color:#475569">' + (tok.prompt||0).toLocaleString() + '→' + (tok.completion||0).toLocaleString() + '</div></td><td style="text-align:center">' + costBadge(m.provider, tok) + '</td><td style="font-size:11px">' + featHtml + '</td><td style="text-align:center"><div class="stars" onclick="event.stopPropagation()">' + starsHtml + '</div></td></tr>';
+  }).join('');
+}
+
+function renderPM(ratings) {
+  const sorted = [...PM].sort((a,b) => b.pm_score - a.pm_score);
+  const maxScore = Math.max(...PM.map(m => m.pm_score), 1);
+  document.getElementById('bar-chart-pm').innerHTML = sorted.map(m => {
+    const h = Math.max(8, (m.pm_score / maxScore) * 130);
+    return '<div class="bar-group" onclick="openPMViewer(' + q(m.id) + ')"><div class="bar-score" style="color:' + m.color + '">' + m.pm_score + '</div><div class="bar-rect" style="height:' + h + 'px;background:' + m.color + '"></div><div class="bar-label">' + m.label.split(' ')[0] + '<br><span class="bar-time">' + m.time_s + 's</span></div></div>';
+  }).join('');
+  document.getElementById('table-body-pm').innerHTML = sorted.map((m,i) => {
+    const r = ratings['pm_' + m.id] || 0; const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const rankStyle = medal ? '' : 'background:rgba(51,65,85,0.3);color:#94a3b8'; const d = m.pm_detail || {};
+    let starsHtml = ''; for (let s=1; s<=10; s++) { starsHtml += '<span class="star ' + (s<=r?'active':'inactive') + '" onclick="event.stopPropagation();saveRating(' + q('pm_' + m.id) + ',' + s + ');">★</span>'; }
+    return '<tr class="model-row" onclick="openPMViewer(' + q(m.id) + ')" style="cursor:pointer"><td><span class="rank-num" style="' + rankStyle + '">' + (medal||(i+1)) + '</span></td><td><div class="model-cell"><span class="icon">' + (m.icon||'📋') + '</span><div><div class="name">' + m.label + '</div><span class="provider">' + m.provider + '<span class="click-hint">Click para ver prompt + respuesta</span></span></div></div></td><td class="score-cell" style="color:' + m.color + ';text-align:center">' + m.pm_score + '</td><td style="text-align:center">' + (d.interpretacion||'—') + '</td><td style="text-align:center">' + (d.analisis||'—') + '</td><td style="text-align:center">' + (d.plan||'—') + '</td><td style="text-align:center">' + (d.comunicacion||'—') + '</td><td style="text-align:center;color:' + timeColor(m.time_s) + '">' + m.time_s + 's</td><td style="text-align:center;color:#94a3b8">' + (m.response_chars||0).toLocaleString() + '</td><td style="text-align:center"><div class="stars">' + starsHtml + '</div></td></tr>';
+  }).join('');
+}
+
+function renderOverall(ratings) {
+  const overall = CODING.filter(m => getPmScore(m.id) !== null).map(m => { const u = ratings[m.id] || 0; return { ...m, codingScore: m.score || 0, pmScore: getPmScore(m.id) || 0, overall: getOverall(m.id, u) }; }).sort((a,b) => b.overall - a.overall);
+  const maxOv = Math.max(...overall.map(m => m.overall || 1), 1);
+  document.getElementById('bar-chart-overall').innerHTML = overall.map(m => { const h = Math.max(8, (m.overall / maxOv) * 130); const ur = (ratings[m.id] || 0) > 0; return '<div class="bar-group"><div class="bar-score" style="color:' + m.color + '">' + m.overall + '</div><div class="bar-rect' + (ur?' user-rated':'') + '" style="height:' + h + 'px;background:' + m.color + '"></div><div class="bar-label">' + m.label.split(' ')[0] + '<br><span class="bar-time">C:' + m.codingScore + ' PM:' + m.pmScore + '</span></div></div>'; }).join('');
+  document.getElementById('table-body-overall').innerHTML = overall.map((m,i) => { const r = ratings[m.id] || 0; const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':''; const rankStyle = medal ? '' : 'background:rgba(51,65,85,0.3);color:#94a3b8'; let starsHtml = ''; for (let s=1; s<=10; s++) { starsHtml += '<span class="star ' + (s<=r?'active':'inactive') + '" onclick="event.stopPropagation();saveRating(' + q(m.id) + ',' + s + ');">★</span>'; } const cColor = m.codingScore >= 80 ? '#22c55e' : m.codingScore >= 50 ? '#f59e0b' : '#ef4444'; const pColor = m.pmScore >= 80 ? '#22c55e' : m.pmScore >= 50 ? '#f59e0b' : '#ef4444'; return '<tr class="model-row"><td><span class="rank-num" style="' + rankStyle + '">' + (medal||(i+1)) + '</span></td><td><div class="model-cell"><span class="icon">' + (m.icon||'🤖') + '</span><div><div class="name">' + m.label + '</div><span class="provider">' + m.provider + '</span></div></div></td><td class="score-cell" style="color:' + m.color + ';text-align:center">' + m.overall + '</td><td style="text-align:center;color:' + cColor + ';font-weight:600">' + m.codingScore + '</td><td style="text-align:center;color:' + pColor + ';font-weight:600">' + m.pmScore + '</td><td style="text-align:center"><div class="stars">' + starsHtml + '</div></td></tr>'; }).join('');
+}
+
+// ── CODING VIEWER ──
+function openViewer(modelId) {
+  currentModelId = modelId; const m = CODING.find(x => x.id === modelId); if (!m) return;
+  document.getElementById('viewer-icon').textContent = m.icon || '🤖';
+  document.getElementById('viewer-name').textContent = m.label;
+  document.getElementById('viewer-round-badge').textContent = m.round || '';
+  document.getElementById('viewer-round-badge').className = 'round-badge ' + (m.round === 'R2' ? 'round-r2' : 'round-r1');
+  document.getElementById('viewer-loading').style.display = 'flex';
+  document.getElementById('viewer-loading').textContent = 'Cargando widget...';
+  document.getElementById('viewer-frame').style.display = 'none';
+  if (m.widget_html) {
+    fetch('coding-olympiad/html/' + m.widget_html).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); }).then(html => { document.getElementById('viewer-frame').srcdoc = html; document.getElementById('viewer-loading').style.display = 'none'; document.getElementById('viewer-frame').style.display = 'block'; }).catch(err => { document.getElementById('viewer-loading').textContent = '⚠ Error: ' + err.message; });
+  } else {
+    document.getElementById('viewer-loading').textContent = '⚠ No hay widget HTML para este modelo';
+  }
+  // Code view
+  const code = m.code_preview || '';
+  document.getElementById('code-round-label').textContent = (m.round||'') + ' — ' + (m.has_r2 ? 'BTC real' : 'Datos generados');
+  document.getElementById('code-lines-info').textContent = (m.lines||0) + ' líneas';
+  document.getElementById('code-chars-info').textContent = (m.code_full_len||0).toLocaleString() + ' caracteres';
+  const lines = code.split('\n');
+  let formattedHtml = '';
+  for (let i = 0; i < lines.length; i++) { formattedHtml += '<span class="line-num">' + String(i+1).padStart(4,' ') + '</span>' + escapeHtml(lines[i]) + '\n'; }
+  document.getElementById('code-content').innerHTML = '<pre>' + formattedHtml + '</pre>';
+  switchViewerTab('widget');
+  const ratings = getRatings(); const r = ratings[modelId] || 0; updateViewerStars(modelId, r);
+  document.getElementById('viewer').classList.add('open');
+}
+
+function escapeHtml(text) { return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function switchViewerTab(tab) {
+  document.querySelectorAll('#viewer-tab-bar .viewer-tab').forEach(btn => { btn.classList.toggle('active', btn.textContent.toLowerCase().includes(tab)); });
+  document.getElementById('viewer-content-widget').classList.toggle('active', tab === 'widget');
+  document.getElementById('viewer-content-code').classList.toggle('active', tab === 'code');
+}
+
+function updateViewerStars(modelId, rating) {
+  const vs = document.getElementById('viewer-stars'); vs.innerHTML = '';
+  for (let s=1; s<=10; s++) { const star = document.createElement('span'); star.className = 'star'; star.style.color = s <= rating ? '#fbbf24' : '#334155'; star.textContent = '★'; star.onclick = function() { saveRating(modelId, s); updateViewerStars(modelId, s); }; vs.appendChild(star); }
+  document.getElementById('viewer-rating-info').innerHTML = rating > 0 ? rating + '/10 (peso combinado: +' + Math.round(rating*3) + ' pts)' : 'Pulsa una estrella para puntuar';
+}
+
+function closeViewer() { document.getElementById('viewer').classList.remove('open'); document.getElementById('viewer-frame').srcdoc = ''; document.getElementById('viewer-frame').style.display = 'none'; document.getElementById('viewer-loading').style.display = 'flex'; }
+
+// ── PM VIEWER ──
+function openPMViewer(pmId) {
+  const m = PM.find(x => x.id === pmId); if (!m) return;
+  document.getElementById('pm-viewer-icon').textContent = m.icon || '📋';
+  document.getElementById('pm-viewer-name').textContent = m.label + ' — PM Score: ' + m.pm_score + '/100';
+  document.getElementById('pm-prompt-text').textContent = PM_PROMPT;
+  document.getElementById('pm-response-text').textContent = m.full_response || '(Sin respuesta)';
+  const ratings = getRatings(); const r = ratings['pm_' + pmId] || 0;
+  const vs = document.getElementById('pm-viewer-stars'); vs.innerHTML = '';
+  for (let s=1; s<=10; s++) { const star = document.createElement('span'); star.className = 'star'; star.style.color = s <= r ? '#fbbf24' : '#334155'; star.textContent = '★'; star.onclick = function() { saveRating('pm_' + pmId, s); const newR = getRatings()['pm_' + pmId] || 0; Array.from(vs.children).forEach((st, i) => { st.style.color = (i+1) <= newR ? '#fbbf24' : '#334155'; }); }; vs.appendChild(star); }
+  document.getElementById('pm-viewer').classList.add('open');
+}
+
+function closePMViewer() { document.getElementById('pm-viewer').classList.remove('open'); }
+
+function switchTab(tab) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active')); document.getElementById('tab-' + tab).classList.add('active'); document.querySelector('.tab-btn[onclick*="' + tab + '"]').classList.add('active'); }
+
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeViewer(); closePMViewer(); } if (e.key === '1') switchTab('coding'); if (e.key === '2') switchTab('pm'); if (e.key === '3') switchTab('overall'); if (e.key === '4') switchTab('about'); });
+document.getElementById('date-badge').textContent = new Date().toLocaleDateString('es-ES');
+renderAll();
+
+</script>
+</body>
+</html>

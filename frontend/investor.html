@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PEGATON - Inversor</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+:root{--card-bg:#131b2e;--border:#1e2a45;--bg:#0d1525}
+body{background:#0a0e17;color:#e6edf5;font-family:'Segoe UI',sans-serif}
+.status-bar{display:flex;justify-content:space-between;background:var(--card-bg);padding:8px 14px;border-radius:10px;margin-bottom:12px;font-size:12px;color:#8b9bb5}
+.section-title{font-size:13px;font-weight:600;color:#8b9bb5;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 8px}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.score-ring{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.action-btn{display:block;width:100%;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;text-align:center;margin-top:8px;cursor:default}
+.action-COMPRAR{background:#00c853;color:#000}.action-ACUMULAR{background:#00bcd4;color:#000}.action-MANTENER{background:#ffc107;color:#000}.action-REDUCIR{background:#ff6d00;color:#000}.action-EVITAR{background:#d50000;color:#fff}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.detail-item{background:var(--bg);padding:6px 8px;border-radius:6px;font-size:11px}
+.detail-item .label{color:#6b7a8f;font-size:9px;text-transform:uppercase}
+.detail-item .value{font-weight:600}
+.alcista{color:#00e676}.bajista{color:#ff5252}.neutral{color:#ffc107}
+.macro-indicators{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.macro-item{background:var(--bg);padding:6px 10px;border-radius:6px;font-size:11px;display:flex;flex-direction:column}
+.macro-item .val{font-weight:600;font-size:13px}
+.loading{text-align:center;color:#6b7a8f;font-size:13px;padding:20px}
+.watchlist-input{display:flex;gap:8px;margin-top:8px}
+.watchlist-input input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:#e6edf5;font-size:13px}
+.watchlist-input input::placeholder{color:#3a4a5f}
+.watchlist-input button{background:#00d4ff;border:none;border-radius:8px;padding:8px 16px;color:#000;font-weight:600;cursor:pointer;font-size:13px}
+.asset-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+.asset-row:last-child{border-bottom:none}
+.asset-info{flex:1}.asset-info .name{font-weight:600;font-size:14px}.asset-info .price{font-size:12px;color:#8b9bb5}
+.asset-score{font-weight:700;font-size:18px;min-width:40px;text-align:center}
+.remove-btn{background:none;border:none;color:#ff5252;cursor:pointer;font-size:16px;padding:4px}
+.port-item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.port-input{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.port-input input{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:#e6edf5;font-size:12px;flex:1;min-width:60px}
+.port-input button{background:#00c853;border:none;border-radius:6px;padding:6px 12px;color:#000;font-weight:600;cursor:pointer;font-size:12px}
+.matrix-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:8px}
+.matrix-item{background:var(--bg);border-radius:8px;padding:12px;text-align:center}
+.matrix-item .sym{font-size:13px;color:#8b9bb5}
+.matrix-item .act{font-size:15px;font-weight:700;margin:4px 0}
+.matrix-item .conf{font-size:11px;color:#8b9bb5}
+.matrix-item .reas{font-size:10px;color:#3a4a5f;margin-top:4px}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Panel</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval">🏆 Eval</a>
+  <a href="/processes">⚙️ Procesos</a>
+  <a href="/health">🩺 Salud</a>
+  <a href="/agents">🤖 Agentes</a>
+  <a href="/projects">📁 Proyectos</a>
+</nav>
+<div class="container">
+  <div class="section-title">📊 AGENTE INVERSOR</div>
+  <div class="status-bar"><span><span class="status-dot green pulse"></span>LIVE · <span id="assetCount">3</span> activos</span><span id="lastUpdate">--</span></div>
+
+  <!-- MATRIX DE ACCIÓN: ¿QUÉ HACER HOY? -->
+  <div class="card" style="border-color:#ffc107">
+    <div class="section-title">🎯 ¿QUÉ HACER HOY? — MATRIZ DE ACCIONES</div>
+    <div class="matrix-grid" id="matrixGrid"><div class="loading">Cargando...</div></div>
+  </div>
+
+  <!-- MACRO PANEL -->
+  <div class="card">
+    <div class="section-title">🏛️ MACRO PANEL</div>
+    <div class="macro-indicators" id="macroIndicators"></div>
+    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" id="macroFactors"></div>
+  </div>
+
+  <!-- WATCHLIST -->
+  <div class="card">
+    <div class="section-title">🔍 WATCHLIST</div>
+    <div id="watchlistAssets"></div>
+    <div class="watchlist-input">
+      <input id="newSymbol" placeholder="Añadir símbolo (ej: AAPL, TSLA, GC=F)" onkeydown="if(event.key==='Enter')addSymbol()">
+      <button onclick="addSymbol()">+ Añadir</button>
+    </div>
+  </div>
+
+  <!-- SCORE CARDS -->
+  <div id="scoreCards"><div class="loading">Cargando señales...</div></div>
+
+  <!-- PORTFOLIO TRACKER -->
+  <div class="card" style="border-color:#00e676">
+    <div class="section-title">👤 MI PORTFOLIO</div>
+    <div id="portfolioDisplay"></div>
+    <div class="port-input">
+      <input id="portSym" placeholder="Símbolo" style="max-width:80px">
+      <input id="portQty" placeholder="Cant." type="number" style="max-width:70px">
+      <input id="portPrice" placeholder="Precio entrada" type="number" style="max-width:90px" step="0.01">
+      <button onclick="addPosition()">+ Añadir posición</button>
+    </div>
+  </div>
+
+  <div class="footer">Auto-refresh 30s · Macro: FRED · Precios: Twelve Data · Watchlist/Portfolio: localStorage</div>
+</div>
+
+<script>
+const API = '/api/v1/score';
+const DEFAULT_SYMBOLS = ['SPY', 'EUR/USD', 'BTC/USD'];
+
+function scoreColor(s){if(s>=80)return '#00c853';if(s>=60)return '#00bcd4';if(s>=40)return '#ffc107';if(s>=20)return '#ff6d00';return '#d50000'}
+function getAction(s){if(s>=80)return 'COMPRAR';if(s>=60)return 'ACUMULAR';if(s>=40)return 'MANTENER';if(s>=20)return 'REDUCIR';return 'EVITAR'}
+
+// === WATCHLIST (localStorage) ===
+function getWatchlist(){try{return JSON.parse(localStorage.getItem('pegaton_watchlist'))||DEFAULT_SYMBOLS}catch{return DEFAULT_SYMBOLS}}
+function saveWatchlist(w){localStorage.setItem('pegaton_watchlist',JSON.stringify(w))}
+
+function addSymbol(){
+  const inp=document.getElementById('newSymbol');
+  const sym=inp.value.toUpperCase().trim();
+  if(!sym)return;
+  const w=getWatchlist();
+  if(!w.includes(sym)){w.push(sym);saveWatchlist(w)}
+  inp.value='';
+  fetchAll();
+}
+function removeSymbol(sym){
+  let w=getWatchlist().filter(s=>s!==sym);
+  if(w.length===0)w=['SPY'];
+  saveWatchlist(w);
+  fetchAll();
+}
+
+// === PORTFOLIO (localStorage) ===
+function getPortfolio(){try{return JSON.parse(localStorage.getItem('pegaton_portfolio'))||[]}catch{return[]}}
+function savePortfolio(p){localStorage.setItem('pegaton_portfolio',JSON.stringify(p))}
+
+function addPosition(){
+  const sym=document.getElementById('portSym').value.toUpperCase().trim();
+  const qty=parseFloat(document.getElementById('portQty').value);
+  const price=parseFloat(document.getElementById('portPrice').value);
+  if(!sym||!qty||!price)return;
+  const p=getPortfolio();
+  p.push({sym,qty,price,date:new Date().toISOString().slice(0,10)});
+  savePortfolio(p);
+  document.getElementById('portSym').value='';
+  document.getElementById('portQty').value='';
+  document.getElementById('portPrice').value='';
+  fetchAll();
+}
+
+// === FETCH ALL DATA ===
+async function fetchPrices(symbols){
+  const prices={};
+  for(const sym of symbols){
+    try{
+      const r=await fetch(`/api/v1/score/query?symbol=${encodeURIComponent(sym)}`);
+      if(r.ok)prices[sym]=await r.json();
+    }catch{}
+  }
+  return prices;
+}
+
+async function fetchAll(){
+  const wl=getWatchlist();
+  document.getElementById('assetCount').textContent=wl.length;
+  
+  try{
+    const r=await fetch(`${API}/`);
+    const allData=await r.json();
+    
+    // Merge with default data + custom symbols
+    const data={...allData};
+    // Fetch custom symbols
+    for(const sym of wl){
+      if(!data[sym]){
+        try{
+          const rr=await fetch(`/api/v1/score/query?symbol=${encodeURIComponent(sym)}`);
+          if(rr.ok)data[sym]=await rr.json();
+        }catch{}
+      }
+    }
+    
+    renderMacro(data);
+    renderMatrix(data);
+    renderWatchlist(data);
+    renderScores(data);
+    renderPortfolio(data);
+    document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString();
+  }catch(e){document.getElementById('scoreCards').innerHTML='<div class="loading">Error de conexión</div>'}
+}
+
+// === RENDER MACRO ===
+function renderMacro(data){
+  const m=data?.SPY?.macro_details||{};
+  const inds=m.indicators||{};
+  const names={FEDFUNDS:'Fed Funds',CPIAUCSL:'CPI',PAYEMS:'Nóminas',UNRATE:'Desempleo',DGS10:'10Y Yield',UMCSENT:'Confianza',INDPRO:'Prod.Ind.',PCEPI:'PCE'};
+  let h='';
+  for(const[k,v]of Object.entries(inds)){
+    const cls=v.score>=55?'alcista':v.score>=45?'neutral':'bajista';
+    h+=`<div class="macro-item"><span class="val ${cls}">${v.value?.toFixed(2)}</span><span>${names[k]||k}</span></div>`;
+  }
+  document.getElementById('macroIndicators').innerHTML=h;
+  let f='';
+  if(m.alcistas?.length)f+=m.alcistas.map(k=>`<span class="alcista">🟢 ${names[k]||k}</span>`).join(' ');
+  if(m.bajistas?.length)f+=m.bajistas.map(k=>`<span class="bajista">🔴 ${names[k]||k}</span>`).join(' ');
+  document.getElementById('macroFactors').innerHTML=f;
+}
+
+// === RENDER MATRIX ===
+function renderMatrix(data){
+  const wl=getWatchlist();
+  const actions={COMPRAR:[],ACUMULAR:[],MANTENER:[],REDUCIR:[],EVITAR:[]};
+  const reasons={};
+  
+  for(const sym of wl){
+    const s=data[sym];
+    if(!s||!s.pegaton_score)continue;
+    const act=getAction(s.pegaton_score);
+    actions[act].push(sym);
+    
+    // Build reason
+    const td=s.technical_details||{};
+    const parts=[];
+    if(td.rsi!==undefined)parts.push(`RSI ${td.rsi}`);
+    if(td.macd_bullish!==undefined)parts.push(td.macd_bullish?'MACD ↑':'MACD ↓');
+    if(td.sma50_above!==undefined)parts.push(td.sma50_above?'SMA50 ↑':'SMA50 ↓');
+    reasons[sym]=parts.join(' · ')||'--';
+  }
+  
+  const conf=s=>{const sc=data[s]?.pegaton_score;return sc>=80?'Alta':sc>=60?'Media-Alta':sc>=40?'Media':sc>=20?'Media-Baja':'Baja'};
+  const emoji={COMPRAR:'🔵',ACUMULAR:'🔵',MANTENER:'🟡',REDUCIR:'🟠',EVITAR:'🔴'};
+  const order=['COMPRAR','ACUMULAR','MANTENER','REDUCIR','EVITAR'];
+  
+  let h='';
+  for(const act of order){
+    for(const sym of (actions[act]||[])){
+      const sc=data[sym]?.pegaton_score||0;
+      h+=`<div class="matrix-item" style="border:1px solid ${scoreColor(sc)}40">
+        <div class="sym">${sym}</div>
+        <div class="act">${emoji[act]} ${act}</div>
+        <div class="conf">Score ${sc} · ${conf(sym)}</div>
+        <div class="reas">${reasons[sym]||''}</div>
+      </div>`;
+    }
+  }
+  if(!h)h='<div class="loading">Sin datos para mostrar</div>';
+  document.getElementById('matrixGrid').innerHTML=h;
+}
+
+// === RENDER WATCHLIST ===
+function renderWatchlist(data){
+  const wl=getWatchlist();
+  let h='';
+  for(const sym of wl){
+    const s=data[sym];
+    const sc=s?.pegaton_score||'--';
+    const price=s?.technical_details?.last_close?.toLocaleString()||'--';
+    const clr=sc!=='--'?scoreColor(sc):'#3a4a5f';
+    h+=`<div class="asset-row"><div class="asset-info"><div class="name">${sym}</div><div class="price">$${price}</div></div><div class="asset-score" style="color:${clr}">${sc}</div><button class="remove-btn" onclick="removeSymbol('${sym}')">✕</button></div>`;
+  }
+  document.getElementById('watchlistAssets').innerHTML=h;
+}
+
+// === RENDER SCORES ===
+function renderScores(data){
+  const wl=getWatchlist();
+  let h='';
+  for(const sym of wl){
+    const s=data[sym];if(!s||!s.pegaton_score)continue;
+    const sc=s.pegaton_score,act=getAction(sc),td=s.technical_details||{},clr=scoreColor(sc);
+    h+=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><div><div style="font-size:18px;font-weight:600">${sym}</div><div style="font-size:13px;color:#8b9bb5">$${td.last_close?.toLocaleString()||'...'}</div></div><div class="score-ring" style="background:conic-gradient(${clr} ${sc*3.6}deg,#0d1525 ${sc*3.6}deg);color:${clr}">${sc}</div></div><button class="action-btn action-${act}">${act}</button><div class="detail-grid">`;
+    h+=`<div class="detail-item"><span class="label">Macro</span><span class="value">${s.macro_score}</span></div>`;
+    h+=`<div class="detail-item"><span class="label">Técnico</span><span class="value">${s.technical_score}</span></div>`;
+    h+=`<div class="detail-item"><span class="label">RSI (14)</span><span class="value">${td.rsi||'--'}</span></div>`;
+    h+=`<div class="detail-item"><span class="label">MACD</span><span class="value ${td.macd_bullish?'alcista':'bajista'}">${td.macd_bullish?'🟢 Alcista':'🔴 Bajista'}</span></div>`;
+    h+=`<div class="detail-item"><span class="label">SMA50</span><span class="value ${td.sma50_above?'alcista':'bajista'}">${td.sma50_above?'↑ ':'↓ '}${td.sma50_distance?.toFixed(1)}%</span></div>`;
+    h+=`<div class="detail-item"><span class="label">SMA200</span><span class="value ${td.sma200_above?'alcista':'bajista'}">${td.sma200_above?'↑ ':'↓ '}${td.sma200_distance?.toFixed(1)}%</span></div>`;
+    h+=`</div></div>`;
+  }
+  document.getElementById('scoreCards').innerHTML=h||'<div class="loading">Añade símbolos a tu watchlist para ver scores</div>';
+}
+
+// === RENDER PORTFOLIO ===
+async function renderPortfolio(data){
+  const port=getPortfolio();
+  if(!port.length){
+    document.getElementById('portfolioDisplay').innerHTML='<div style="color:#6b7a8f;font-size:13px;padding:8px 0">Sin posiciones. Añade tu primera inversión.</div>';
+    return;
+  }
+  
+  let totalValue=0,totalCost=0;
+  let rows='<table><tr><th>Activo</th><th>Cant.</th><th>P. Entrada</th><th>P. Actual</th><th>P&L</th><th>%</th></tr>';
+  
+  // Fetch current prices for portfolio symbols
+  const syms=[...new Set(port.map(p=>p.sym))];
+  const prices={};
+  for(const sym of syms){
+    const s=data[sym];
+    if(s?.technical_details?.last_close){
+      prices[sym]=s.technical_details.last_close;
+    }
+  }
+  
+  for(const pos of port){
+    const current=prices[pos.sym]||pos.price;
+    const value=pos.qty*current;
+    const cost=pos.qty*pos.price;
+    const pnl=value-cost;
+    const pnlPct=cost>0?((pnl/cost)*100).toFixed(1):'0.0';
+    const color=pnl>=0?'#00e676':'#ff5252';
+    totalValue+=value;
+    totalCost+=cost;
+    rows+=`<tr><td>${pos.sym}</td><td>${pos.qty}</td><td>$${pos.price.toFixed(2)}</td><td>$${current.toFixed(2)}</td><td style="color:${color}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</td><td style="color:${color}">${pnl>=0?'+':''}${pnlPct}%</td></tr>`;
+  }
+  
+  const totalPnl=totalValue-totalCost;
+  const totalPct=totalCost>0?((totalPnl/totalCost)*100).toFixed(1):'0.0';
+  rows+=`<tr style="font-weight:700;border-top:2px solid var(--border)"><td>TOTAL</td><td></td><td></td><td>$${totalValue.toFixed(2)}</td><td style="color:${totalPnl>=0?'#00e676':'#ff5252'}">${totalPnl>=0?'+':''}$${totalPnl.toFixed(2)}</td><td style="color:${totalPnl>=0?'#00e676':'#ff5252'}">${totalPnl>=0?'+':''}${totalPct}%</td></tr>`;
+  rows+='</table>';
+  document.getElementById('portfolioDisplay').innerHTML=rows;
+}
+
+// Initial load
+fetchAll();
+setInterval(fetchAll,30000);
+</script>
+</body>
+</html>

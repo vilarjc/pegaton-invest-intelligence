@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BTC/USDT Candlestick Chart</title>
+    <style>
+        /* ── reset & base ── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #0b0b1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 16px;
+            margin: 0;
+        }
+
+        /* ── main container ── */
+        .container {
+            width: 100%;
+            max-width: 1280px;
+            background: #111128;
+            border-radius: 16px;
+            border: 1px solid #2a2a50;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+            padding: 20px 20px 12px 20px;
+        }
+
+        /* ── header bar ── */
+        .header {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            padding: 0 4px 16px 4px;
+            flex-wrap: wrap;
+        }
+
+        .symbol {
+            font-size: 22px;
+            font-weight: 700;
+            color: #e8e8f0;
+            letter-spacing: -0.3px;
+        }
+        .symbol small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #8888aa;
+            margin-left: 6px;
+        }
+
+        .price {
+            font-size: 28px;
+            font-weight: 700;
+            color: #26c6aa;
+            letter-spacing: -0.5px;
+        }
+
+        .change {
+            font-size: 16px;
+            font-weight: 500;
+            color: #26c6aa;
+            background: rgba(38, 198, 170, 0.12);
+            padding: 2px 12px;
+            border-radius: 6px;
+        }
+
+        .header .meta {
+            margin-left: auto;
+            font-size: 13px;
+            color: #6666aa;
+        }
+
+        /* ── chart wrapper ── */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #0d0d22;
+            border: 1px solid #1e1e42;
+        }
+
+        #chartCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+            touch-action: none;
+            background: #0d0d22;
+        }
+
+        /* ── tooltip ── */
+        .tooltip {
+            position: absolute;
+            pointer-events: none;
+            background: rgba(10, 10, 30, 0.94);
+            border: 1px solid #3a3a6a;
+            border-radius: 10px;
+            padding: 14px 18px;
+            color: #d0d0e8;
+            font-size: 13px;
+            line-height: 1.6;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.12s ease;
+            z-index: 10;
+            min-width: 180px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+        .tooltip.visible {
+            opacity: 1;
+        }
+        .tooltip .tt-date {
+            font-size: 12px;
+            color: #8888bb;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+        .tooltip .tt-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .tooltip .tt-label {
+            color: #7777aa;
+        }
+        .tooltip .tt-value {
+            color: #e0e0f0;
+            font-weight: 500;
+        }
+        .tooltip .tt-value.up {
+            color: #26c6aa;
+        }
+        .tooltip .tt-value.down {
+            color: #ef5350;
+        }
+        .tooltip .tt-volume {
+            border-top: 1px solid #2a2a50;
+            margin-top: 6px;
+            padding-top: 6px;
+            font-size: 12px;
+        }
+
+        /* ── responsive tweaks ── */
+        @media (max-width: 600px) {
+            .container {
+                padding: 12px 10px 8px 10px;
+                border-radius: 10px;
+            }
+            .header {
+                gap: 10px;
+                padding-bottom: 12px;
+            }
+            .symbol {
+                font-size: 18px;
+            }
+            .price {
+                font-size: 22px;
+            }
+            .change {
+                font-size: 13px;
+                padding: 1px 10px;
+            }
+            .tooltip {
+                padding: 10px 14px;
+                font-size: 11px;
+                min-width: 140px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .header .meta {
+                display: none;
+            }
+            .tooltip {
+                padding: 8px 12px;
+                font-size: 10px;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- header -->
+        <div class="header">
+            <span class="symbol">BTC/USDT <small>Binance</small></span>
+            <span class="price" id="lastPrice">$78,664.66</span>
+            <span class="change" id="changeBadge">+2.34%</span>
+            <span class="meta">30d · candlestick</span>
+        </div>
+
+        <!-- chart -->
+        <div class="chart-wrapper" id="chartWrapper">
+            <canvas id="chartCanvas"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════
+        //  DATA
+        // ═══════════════════════════════════════════════════════════════
+
+        const BTC_DATA = [{
+            "date": "2026-04-03",
+            "open": 66901.99,
+            "high": 67370.42,
+            "low": 66282.0,
+            "close": 66964.3,
+            "volume": 11429.13131
+        }, {
+            "date": "2026-04-04",
+            "open": 66964.29,
+            "high": 67562.93,
+            "low": 66775.91,
+            "close": 67300.42,
+            "volume": 7373.51613
+        }, {
+            "date": "2026-04-05",
+            "open": 67300.42,
+            "high": 69136.2,
+            "low": 66611.66,
+            "close": 69034.18,
+            "volume": 11733.46752
+        }, {
+            "date": "2026-04-06",
+            "open": 69034.18,
+            "high": 70351.46,
+            "low": 68300.0,
+            "close": 68853.66,
+            "volume": 20281.61044
+        }, {
+            "date": "2026-04-07",
+            "open": 68853.66,
+            "high": 72761.0,
+            "low": 67732.01,
+            "close": 71924.22,
+            "volume": 23750.49661
+        }, {
+            "date": "2026-04-08",
+            "open": 71924.22,
+            "high": 72857.0,
+            "low": 70707.23,
+            "close": 71069.93,
+            "volume": 19802.68627
+        }, {
+            "date": "2026-04-09",
+            "open": 71069.93,
+            "high": 73145.0,
+            "low": 70466.0,
+            "close": 71787.97,
+            "volume": 18158.42159
+        }, {
+            "date": "2026-04-10",
+            "open": 71787.98,
+            "high": 73434.0,
+            "low": 71426.15,
+            "close": 72962.7,
+            "volume": 17372.63288
+        }, {
+            "date": "2026-04-11",
+            "open": 72962.71,
+            "high": 73790.0,
+            "low": 72513.09,
+            "close": 73043.16,
+            "volume": 9070.94374
+        }, {
+            "date": "2026-04-12",
+            "open": 73043.16,
+            "high": 73137.24,
+            "low": 70505.88,
+            "close": 70740.98,
+            "volume": 13472.46801
+        }, {
+            "date": "2026-04-13",
+            "open": 70741.56,
+            "high": 74900.0,
+            "low": 70566.99,
+            "close": 74417.99,
+            "volume": 24230.21625
+        }, {
+            "date": "2026-04-14",
+            "open": 74418.0,
+            "high": 76038.0,
+            "low": 73795.47,
+            "close": 74131.55,
+            "volume": 26532.94456
+        }, {
+            "date": "2026-04-15",
+            "open": 74131.55,
+            "high": 75425.0,
+            "low": 73514.0,
+            "close": 74809.99,
+            "volume": 14425.04167
+        }, {
+            "date": "2026-04-16",
+            "open": 74809.99,
+            "high": 75534.76,
+            "low": 73309.85,
+            "close": 75154.29,
+            "volume": 17088.68777
+        }, {
+            "date": "2026-04-17",
+            "open": 75154.28,
+            "high": 78333.0,
+            "low": 74529.4,
+            "close": 77072.0,
+            "volume": 25941.36694
+        }, {
+            "date": "2026-04-18",
+            "open": 77072.01,
+            "high": 77420.08,
+            "low": 75445.16,
+            "close": 75691.76,
+            "volume": 9141.84456
+        }, {
+            "date": "2026-04-19",
+            "open": 75691.76,
+            "high": 76240.66,
+            "low": 73762.9,
+            "close": 73801.79,
+            "volume": 11369.82232
+        }, {
+            "date": "2026-04-20",
+            "open": 73801.8,
+            "high": 76558.62,
+            "low": 73724.31,
+            "close": 75840.97,
+            "volume": 16993.41034
+        }, {
+            "date": "2026-04-21",
+            "open": 75840.97,
+            "high": 76927.57,
+            "low": 74821.57,
+            "close": 76336.15,
+            "volume": 14912.57132
+        }, {
+            "date": "2026-04-22",
+            "open": 76336.14,
+            "high": 79472.82,
+            "low": 76132.95,
+            "close": 78178.23,
+            "volume": 19737.51225
+        }, {
+            "date": "2026-04-23",
+            "open": 78178.22,
+            "high": 78662.5,
+            "low": 76960.0,
+            "close": 78257.48,
+            "volume": 16970.79501
+        }, {
+            "date": "2026-04-24",
+            "open": 78257.48,
+            "high": 78581.93,
+            "low": 77264.08,
+            "close": 77437.13,
+            "volume": 12675.14315
+        }, {
+            "date": "2026-04-25",
+            "open": 77437.13,
+            "high": 77885.35,
+            "low": 77140.23,
+            "close": 77625.0,
+            "volume": 5685.1142
+        }, {
+            "date": "2026-04-26",
+            "open": 77625.0,
+            "high": 78961.0,
+            "low": 77326.51,
+            "close": 78657.55,
+            "volume": 7963.56162
+        }, {
+            "date": "2026-04-27",
+            "open": 78657.55,
+            "high": 79485.66,
+            "low": 76459.64,
+            "close": 77371.32,
+            "volume": 16046.92418
+        }, {
+            "date": "2026-04-28",
+            "open": 77371.32,
+            "high": 77478.0,
+            "low": 75666.6,
+            "close": 76342.77,
+            "volume": 13210.72383
+        }, {
+            "date": "2026-04-29",
+            "open": 76342.78,
+            "high": 77904.93,
+            "low": 74937.52,
+            "close": 75780.0,
+            "volume": 18279.93022
+        }, {
+            "date": "2026-04-30",
+            "open": 75780.0,
+            "high": 76669.14,
+            "low": 75323.65,
+            "close": 76346.57,
+            "volume": 10381.81607
+        }, {
+            "date": "2026-05-01",
+            "open": 76346.58,
+            "high": 78914.12,
+            "low": 76320.42,
+            "close": 78231.13,
+            "volume": 17315.46502
+        }, {
+            "date": "2026-05-02",
+            "open": 78231.13,
+            "high": 79199.48,
+            "low": 78040.0,
+            "close": 78664.66,
+            "volume": 6123.6215
+        }];
+
+        // ── last price display ──
+        const lastClose = BTC_DATA[BTC_DATA.length - 1].close;
+        const prevClose = BTC_DATA[BTC_DATA.length - 2].close;
+        const pctChange = ((lastClose - prevClose) / prevClose * 100);
+        document.getElementById('lastPrice').textContent = '$' + lastClose.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        const badge = document.getElementById('changeBadge');
+        badge.textContent = (pctChange >= 0 ? '+' : '') + pctChange.toFixed(2) + '%';
+        badge.style.color = pctChange >= 0 ? '#26c6aa' : '#ef5350';
+        badge.style.background = pctChange >= 0 ? 'rgba(38,198,170,0.12)' : 'rgba(239,83,80,0.12)';
+
+        // ═══════════════════════════════════════════════════════════════
+        //  SMA CALCULATION
+        // ═══════════════════════════════════════════════════════════════
+
+        function calcSMA(data, period) {
+            const closes = data.map(d => d.close);
+            const result = [];
+            for (let i = 0; i < closes.length; i++) {
+                if (i < period - 1) {
+                    result.push(null);
+                } else {
+                    let sum = 0;
+                    for (let j = i - period + 1; j <= i; j++) {
+                        sum += closes[j];
+                    }
+                    result.push(sum / period);
+                }
+            }
+            return result;
+        }
+
+        const sma7 = calcSMA(BTC_DATA, 7);
+        const sma21 = calcSMA(BTC_DATA, 21);
+
+        // ═══════════════════════════════════════════════════════════════
+        //  CANVAS SETUP
+        // ═══════════════════════════════════════════════════════════════
+
+        const canvas = document.getElementById('chartCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('chartWrapper');
+        const tooltip = document.getElementById('tooltip');
+
+        // ── dimensions (set dynamically) ──
+        let W, H;
+        let dpr = 1;
+
+        // margins (in CSS pixels)
+        const MARGIN = { top: 18, right: 80, bottom: 24, left: 6 };
+        const VOLUME_HEIGHT = 70; // px for volume area
+
+        // ── state ──
+        let startIdx = 0; // first visible index (integer)
+        let endIdx = BTC_DATA.length - 1; // last visible index (integer)
+        const MIN_CANDLES = 5;
+        const MAX_CANDLES = BTC_DATA.length;
+
+        // interaction
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartStartIdx = 0;
+        let dragStartEndIdx = 0;
+
+        let hoveredIndex = -1; // -1 = no hover
+
+        // ── resize ──
+        function resize() {
+            const rect = wrapper.getBoundingClientRect();
+            const cssW = rect.width - 2; // 2px for border
+            const cssH = Math.max(400, Math.min(620, cssW * 0.58));
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = cssW * dpr;
+            canvas.height = cssH * dpr;
+            canvas.style.width = cssW + 'px';
+            canvas.style.height = cssH + 'px';
+            W = cssW;
+            H = cssH;
+            ctx.scale(dpr, dpr);
+            draw();
+        }
+
+        window.addEventListener('resize', resize);
+
+        // ── helpers ──
+        function chartArea() {
+            return {
+                x: MARGIN.left,
+                y: MARGIN.top,
+                w: W - MARGIN.left - MARGIN.right,
+                h: H - MARGIN.top - MARGIN.bottom - VOLUME_HEIGHT
+            };
+        }
+
+        function volumeArea() {
+            const ca = chartArea();
+            return {
+                x: MARGIN.left,
+                y: ca.y + ca.h + 4,
+                w: ca.w,
+                h: VOLUME_HEIGHT - 8
+            };
+        }
+
+        function getVisibleIndices() {
+            // ensure valid range
+            let s = Math.max(0, Math.min(startIdx, BTC_DATA.length - MIN_CANDLES));
+            let e = Math.min(BTC_DATA.length - 1, Math.max(endIdx, s + MIN_CANDLES - 1));
+            if (e - s + 1 > MAX_CANDLES) {
+                e = s + MAX_CANDLES - 1;
+            }
+            return { s, e };
+        }
+
+        function candleWidth(visibleCount, chartW) {
+            const slots = visibleCount;
+            const gap = Math.max(1, Math.min(4, chartW / slots * 0.12));
+            return (chartW / slots) - gap;
+        }
+
+        function xPos(index, s, e, chartX, chartW) {
+            const visibleCount = e - s + 1;
+            const slotW = chartW / visibleCount;
+            return chartX + (index - s) * slotW + slotW / 2;
+        }
+
+        // ── color helpers ──
+        function isUp(candle) {
+            return candle.close >= candle.open;
+        }
+
+        function candleColor(candle) {
+            return isUp(candle) ? '#26c6aa' : '#ef5350';
+        }
+
+        function volumeColor(candle) {
+            return isUp(candle) ? 'rgba(38,198,170,0.4)' : 'rgba(239,83,80,0.4)';
+        }
+
+        // ── draw ──
+        function draw() {
+            const ca = chartArea();
+            const va = volumeArea();
+            const { s, e } = getVisibleIndices();
+            const visibleCount = e - s + 1;
+            const slotW = ca.w / visibleCount;
+            const cw = candleWidth(visibleCount, ca.w);
+
+            // ── clear ──
+            ctx.clearRect(0, 0, W, H);
+
+            // ── background ──
+            ctx.fillStyle = '#0d0d22';
+            ctx.fillRect(0, 0, W, H);
+
+            // ── grid lines (horizontal) ──
+            const yGridCount = 6;
+            const allCloses = BTC_DATA.slice(s, e + 1).map(d => d.close);
+            const allHighs = BTC_DATA.slice(s, e + 1).map(d => d.high);
+            const allLows = BTC_DATA.slice(s, e + 1).map(d => d.low);
+            const maxPrice = Math.max(...allHighs);
+            const minPrice = Math.min(...allLows);
+            const priceRange = maxPrice - minPrice || 1;
+            const padding = priceRange * 0.06;
+            const topPrice = maxPrice + padding;
+            const botPrice = minPrice - padding;
+            const range = topPrice - botPrice;
+
+            function yPos(price) {
+                return ca.y + (topPrice - price) / range * ca.h;
+            }
+
+            ctx.strokeStyle = '#1a1a3a';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 6]);
+            for (let i = 0; i <= yGridCount; i++) {
+                const y = ca.y + (i / yGridCount) * ca.h;
+                ctx.beginPath();
+                ctx.moveTo(ca.x, y);
+                ctx.lineTo(ca.x + ca.w, y);
+                ctx.stroke();
+                // label
+                const price = topPrice - (i / yGridCount) * range;
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#6666aa';
+                ctx.font = '11px "SF Mono", "Fira Code", monospace';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('$' + price.toLocaleString('en-US', { minimumFractionDigits: 2 }), W - MARGIN.right + 10, y);
+                ctx.setLineDash([4, 6]);
+            }
+            ctx.setLineDash([]);
+
+            // ── grid lines (vertical) ──
+            const vGridCount = Math.min(visibleCount, 12);
+            const step = Math.max(1, Math.floor(visibleCount / vGridCount));
+            ctx.strokeStyle = '#16163a';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 4]);
+            for (let i = s; i <= e; i += step) {
+                const x = xPos(i, s, e, ca.x, ca.w);
+                ctx.beginPath();
+                ctx.moveTo(x, ca.y);
+                ctx.lineTo(x, ca.y + ca.h + va.h + 8);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // ── draw volume bars ──
+            const volValues = BTC_DATA.slice(s, e + 1).map(d => d.volume);
+            const maxVol = Math.max(...volValues) || 1;
+
+            for (let i = s; i <= e; i++) {
+                const d = BTC_DATA[i];
+                const x = xPos(i, s, e, ca.x, ca.w);
+                const barW = Math.max(1, cw * 0.72);
+                const volH = (d.volume / maxVol) * va.h * 0.92;
+                const col = volumeColor(d);
+                ctx.fillStyle = col;
+                ctx.fillRect(x - barW / 2, va.y + va.h - volH, barW, volH);
+            }
+
+            // ── draw candlesticks ──
+            for (let i = s; i <= e; i++) {
+                const d = BTC_DATA[i];
+                const x = xPos(i, s, e, ca.x, ca.w);
+                const yHigh = yPos(d.high);
+                const yLow = yPos(d.low);
+                const yOpen = yPos(d.open);
+                const yClose = yPos(d.close);
+                const col = candleColor(d);
+                const bodyTop = Math.min(yOpen, yClose);
+                const bodyBot = Math.max(yOpen, yClose);
+                const bodyH = Math.max(1, bodyBot - bodyTop);
+                const barW = Math.max(1, cw * 0.78);
+
+                // wick
+                ctx.strokeStyle = col;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(x, yHigh);
+                ctx.lineTo(x, yLow);
+                ctx.stroke();
+
+                // body
+                ctx.fillStyle = col;
+                ctx.fillRect(x - barW / 2, bodyTop, barW, bodyH);
+
+                // subtle border on body
+                ctx.strokeStyle = col;
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(x - barW / 2, bodyTop, barW, bodyH);
+            }
+
+            // ── draw SMA lines ──
+            function drawSMA(smaArray, color, lineWidth) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                let started = false;
+                for (let i = s; i <= e; i++) {
+                    const val = smaArray[i];
+                    if (val === null || val === undefined) continue;
+                    const x = xPos(i, s, e, ca.x, ca.w);
+                    const y = yPos(val);
+                    if (!started) {
+                        ctx.moveTo(x, y);
+                        started = true;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+            }
+
+            drawSMA(sma7, '#42a5f5', 2.0);
+            drawSMA(sma21, '#ffa726', 2.0);
+
+            // ── SMA legend ──
+            const legendY = ca.y + 18;
+            ctx.font = '12px "Inter", sans-serif';
+            ctx.textBaseline = 'top';
+
+            // SMA-7
+            ctx.fillStyle = '#42a5f5';
+            ctx.fillRect(ca.x + 8, legendY, 18, 3);
+            ctx.fillStyle = '#aab0d0';
+            ctx.textAlign = 'left';
+            ctx.fillText('SMA-7', ca.x + 30, legendY - 2);
+
+            // SMA-21
+            ctx.fillStyle = '#ffa726';
+            ctx.fillRect(ca.x + 90, legendY, 18, 3);
+            ctx.fillStyle = '#aab0d0';
+            ctx.fillText('SMA-21', ca.x + 112, legendY - 2);
+
+            // ── X-axis labels ──
+            const xLabelCount = Math.min(visibleCount, 10);
+            const xStep = Math.max(1, Math.floor(visibleCount / xLabelCount));
+            ctx.fillStyle = '#6666aa';
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+
+            for (let i = s; i <= e; i += xStep) {
+                const d = BTC_DATA[i];
+                const x = xPos(i, s, e, ca.x, ca.w);
+                // format date nicely
+                const parts = d.date.split('-');
+                const label = parts[1] + '/' + parts[2];
+                ctx.fillText(label, x, va.y + va.h + 6);
+            }
+
+            // ── last candle highlight ──
+            const lastIdx = BTC_DATA.length - 1;
+            if (lastIdx >= s && lastIdx <= e) {
+                const x = xPos(lastIdx, s, e, ca.x, ca.w);
+                ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 6]);
+                ctx.beginPath();
+                ctx.moveTo(x, ca.y);
+                ctx.lineTo(x, ca.y + ca.h);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // ── crosshair / hover ──
+            if (hoveredIndex >= s && hoveredIndex <= e) {
+                const d = BTC_DATA[hoveredIndex];
+                const x = xPos(hoveredIndex, s, e, ca.x, ca.w);
+                const yC = yPos(d.close);
+
+                ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 5]);
+                ctx.beginPath();
+                ctx.moveTo(x, ca.y);
+                ctx.lineTo(x, ca.y + ca.h);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // dot on close
+                ctx.beginPath();
+                ctx.arc(x, yC, 4, 0, Math.PI * 2);
+                ctx.fillStyle = candleColor(d);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        //  TOOLTIP
+        // ═══════════════════════════════════════════════════════════════
+
+        function updateTooltip(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const canvasX = clientX - rect.left;
+            const canvasY = clientY - rect.top;
+
+            const ca = chartArea();
+            const { s, e } = getVisibleIndices();
+            const visibleCount = e - s + 1;
+
+            // find nearest candle
+            let minDist = Infinity;
+            let nearest = -1;
+            for (let i = s; i <= e; i++) {
+                const x = xPos(i, s, e, ca.x, ca.w);
+                const dist = Math.abs(canvasX - x);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearest = i;
+                }
+            }
+
+            const maxDist = (ca.w / visibleCount) * 0.6;
+            if (nearest === -1 || minDist > maxDist || canvasX < ca.x || canvasX > ca.x + ca.w || canvasY < ca.y - 20 ||
+                canvasY > ca.y + ca.h + 80) {
+                tooltip.classList.remove('visible');
+                hoveredIndex = -1;
+                draw();
+                return;
+            }
+
+            hoveredIndex = nearest;
+            draw();
+
+            const d = BTC_DATA[nearest];
+            const up = isUp(d);
+            const sign = up ? '+' : '';
+            const volStr = d.volume.toLocaleString('en-US', { maximumFractionDigits: 2 });
+
+            tooltip.innerHTML = `
+            <div class="tt-date">${d.date}</div>
+            <div class="tt-row"><span class="tt-label">Open</span><span class="tt-value">$${d.open.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+            <div class="tt-row"><span class="tt-label">High</span><span class="tt-value">$${d.high.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+            <div class="tt-row"><span class="tt-label">Low</span><span class="tt-value">$${d.low.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+            <div class="tt-row"><span class="tt-label">Close</span><span class="tt-value ${up ? 'up' : 'down'}">${sign}$${d.close.toLocaleString('en-US', {minimumFractionDigits:2})}</span></div>
+            <div class="tt-volume tt-row"><span class="tt-label">Volume</span><span class="tt-value">${volStr}</span></div>
+          `;
+
+            // position tooltip
+            let ttX = clientX - rect.left + 18;
+            let ttY = clientY - rect.top - 10;
+            const ttW = tooltip.offsetWidth;
+            const ttH = tooltip.offsetHeight;
+
+            if (ttX + ttW > rect.width - 10) ttX = clientX - rect.left - ttW - 18;
+            if (ttY + ttH > rect.height - 10) ttY = rect.height - ttH - 10;
+            if (ttY < 6) ttY = 6;
+
+            tooltip.style.left = ttX + 'px';
+            tooltip.style.top = ttY + 'px';
+            tooltip.classList.add('visible');
+        }
+
+        // ── mouse / touch events ──
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) return;
+            updateTooltip(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('visible');
+            hoveredIndex = -1;
+            draw();
+        });
+
+        // ── zoom (mouse wheel) ──
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const ca = chartArea();
+            const { s, e: end } = getVisibleIndices();
+            const visibleCount = end - s + 1;
+
+            // center index at mouse position
+            const ratio = (mouseX - ca.x) / ca.w;
+            const centerIdx = s + ratio * (visibleCount - 1);
+            const centerClamped = Math.max(0, Math.min(BTC_DATA.length - 1, centerIdx));
+
+            const delta = e.deltaY > 0 ? 1.12 : 1 / 1.12;
+            let newCount = Math.round(visibleCount * delta);
+            newCount = Math.max(MIN_CANDLES, Math.min(MAX_CANDLES, newCount));
+
+            let newStart = Math.round(centerClamped - ratio * (newCount - 1));
+            let newEnd = newStart + newCount - 1;
+
+            if (newStart < 0) { newStart = 0;
+                newEnd = newCount - 1; }
+            if (newEnd >= BTC_DATA.length) { newEnd = BTC_DATA.length - 1;
+                newStart = newEnd - newCount + 1; }
+            if (newStart < 0) { newStart = 0; }
+
+            startIdx = newStart;
+            endIdx = newEnd;
+
+            // update tooltip if visible
+            if (tooltip.classList.contains('visible')) {
+                updateTooltip(e.clientX, e.clientY);
+            } else {
+                draw();
+            }
+        }, { passive: false });
+
+        // ── pan (drag) ──
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            dragStartX = e.clientX;
+            dragStartStartIdx = startIdx;
+            dragStartEndIdx = endIdx;
+            canvas.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const ca = chartArea();
+            const dx = e.clientX - dragStartX;
+            const { s, e: end } = getVisibleIndices();
+            const visibleCount = end - s + 1;
+            const pixelsPerCandle = ca.w / visibleCount;
+            const idxShift = -dx / pixelsPerCandle;
+
+            let newStart = Math.round(dragStartStartIdx + idxShift);
+            let newEnd = Math.round(dragStartEndIdx + idxShift);
+
+            if (newStart < 0) { newStart = 0;
+                newEnd = newStart + (dragStartEndIdx - dragStartStartIdx); }
+            if (newEnd >= BTC_DATA.length) { newEnd = BTC_DATA.length - 1;
+                newStart = newEnd - (dragStartEndIdx - dragStartStartIdx); }
+            if (newStart < 0) { newStart = 0;
+                newEnd = Math.min(BTC_DATA.length - 1, newStart + MIN_CANDLES - 1); }
+
+            startIdx = newStart;
+            endIdx = newEnd;
+            draw();
+
+            // update tooltip
+            updateTooltip(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                canvas.style.cursor = 'crosshair';
+            }
+        });
+
+        // ── touch support ──
+        let touchStartX = 0;
+        let touchStartStartIdx = 0;
+        let touchStartEndIdx = 0;
+        let lastTouchDist = 0;
+        let isTouching = false;
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const t = e.touches;
+            if (t.length === 1) {
+                isTouching = true;
+                touchStartX = t[0].clientX;
+                touchStartStartIdx = startIdx;
+                touchStartEndIdx = endIdx;
+            } else if (t.length === 2) {
+                // pinch zoom
+                const dx = t[0].clientX - t[1].clientX;
+                const dy = t[0].clientY - t[1].clientY;
+                lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const t = e.touches;
+            if (t.length === 1 && isTouching) {
+                const rect = canvas.getBoundingClientRect();
+                const ca = chartArea();
+                const dx = t[0].clientX - touchStartX;
+                const { s, e: end } = getVisibleIndices();
+                const visibleCount = end - s + 1;
+                const pixelsPerCandle = ca.w / visibleCount;
+                const idxShift = -dx / pixelsPerCandle;
+
+                let newStart = Math.round(touchStartStartIdx + idxShift);
+                let newEnd = Math.round(touchStartEndIdx + idxShift);
+
+                if (newStart < 0) { newStart = 0;
+                    newEnd = newStart + (touchStartEndIdx - touchStartStartIdx); }
+                if (newEnd >= BTC_DATA.length) { newEnd = BTC_DATA.length - 1;
+                    newStart = newEnd - (touchStartEndIdx - touchStartStartIdx); }
+                if (newStart < 0) { newStart = 0;
+                    newEnd = Math.min(BTC_DATA.length - 1, newStart + MIN_CANDLES - 1); }
+
+                startIdx = newStart;
+                endIdx = newEnd;
+                draw();
+
+                // tooltip at touch point
+                updateTooltip(t[0].clientX, t[0].clientY);
+            } else if (t.length === 2) {
+                const dx = t[0].clientX - t[1].clientX;
+                const dy = t[0].clientY - t[1].clientY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (lastTouchDist > 0) {
+                    const delta = dist / lastTouchDist;
+                    const rect = canvas.getBoundingClientRect();
+                    const cx = (t[0].clientX + t[1].clientX) / 2 - rect.left;
+                    const ca = chartArea();
+                    const { s, e: end } = getVisibleIndices();
+                    const visibleCount = end - s + 1;
+                    const ratio = (cx - ca.x) / ca.w;
+                    const centerIdx = s + ratio * (visibleCount - 1);
+                    const centerClamped = Math.max(0, Math.min(BTC_DATA.length - 1, centerIdx));
+
+                    let newCount = Math.round(visibleCount / delta);
+                    newCount = Math.max(MIN_CANDLES, Math.min(MAX_CANDLES, newCount));
+
+                    let newStart = Math.round(centerClamped - ratio * (newCount - 1));
+                    let newEnd = newStart + newCount - 1;
+
+                    if (newStart < 0) { newStart = 0;
+                        newEnd = newCount - 1; }
+                    if (newEnd >= BTC_DATA.length) { newEnd = BTC_DATA.length - 1;
+                        newStart = newEnd - newCount + 1; }
+                    if (newStart < 0) { newStart = 0; }
+
+                    startIdx = newStart;
+                    endIdx = newEnd;
+                    draw();
+                }
+                lastTouchDist = dist;
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            isTouching = false;
+            if (e.touches.length === 0) {
+                // keep tooltip visible for a moment
+                setTimeout(() => {
+                    if (!isTouching) {
+                        tooltip.classList.remove('visible');
+                        hoveredIndex = -1;
+                        draw();
+                    }
+                }, 2500);
+            }
+        }, { passive: false });
+
+        // ═══════════════════════════════════════════════════════════════
+        //  INIT
+        // ═══════════════════════════════════════════════════════════════
+
+        resize();
+
+        // expose for debugging
+        console.log('✅ BTC/USDT chart loaded — last price: $' + lastClose.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+    </script>
+
+</body>
+</html>

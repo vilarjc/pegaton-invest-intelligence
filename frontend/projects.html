@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON - Proyectos</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  .proj-card {
+    background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;
+    margin-bottom:12px;cursor:pointer;transition:all 0.25s;
+  }
+  .proj-card:hover { border-color:var(--accent); }
+  .proj-card .p-header { display:flex;align-items:center;gap:14px; }
+  .proj-card .p-icon { font-size:30px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:10px; }
+  .proj-card .p-info { flex:1; }
+  .proj-card .p-info h3 { font-size:15px;margin:0; }
+  .proj-card .p-info .p-desc { font-size:12px;color:var(--text-dim);margin-top:2px; }
+  .proj-card .p-meta { display:flex;gap:10px;font-size:11px;color:var(--text-dim);margin-top:6px; }
+  .proj-card .arrow { font-size:18px;color:var(--text-dim);transition:transform 0.2s; }
+  .proj-card .arrow.open { transform:rotate(180deg); }
+
+  .task-list { display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border); }
+  .task-list.open { display:block; }
+  .task-item {
+    display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(30,42,69,0.5);
+  }
+  .task-item:last-child { border-bottom:none; }
+  .task-item .status-dot { width:10px;height:10px;border-radius:50%;margin-top:3px;flex-shrink:0; }
+  .task-item .t-content { flex:1; }
+  .task-item .t-title { font-size:13px;font-weight:500; }
+  .task-item .t-desc { font-size:11px;color:var(--text-dim);margin-top:1px; }
+  .task-item .t-meta { font-size:10px;color:#3a4a5f;margin-top:3px;display:flex;gap:8px; }
+  .status-tag { display:inline-block;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:600; }
+  .st-done { background:rgba(0,230,118,0.12);color:#00e676; }
+  .st-progress { background:rgba(0,212,255,0.12);color:#00d4ff; }
+  .st-pending { background:rgba(255,193,7,0.12);color:#ffc107; }
+  .st-idea { background:rgba(123,47,247,0.12);color:#7b2ff7; }
+  .st-plan { background:rgba(58,74,95,0.5);color:#6b7a8f; }
+
+  .agents-list { display:flex;gap:6px;flex-wrap:wrap;margin-top:8px; }
+  .agent-pill { font-size:10px;padding:3px 10px;border-radius:12px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;gap:4px; }
+
+  .system-bar { display:flex;gap:16px;flex-wrap:wrap;background:var(--card);border-radius:12px;padding:10px 16px;border:1px solid var(--border);margin-bottom:12px;font-size:12px;align-items:center;color:var(--text-dim); }
+
+  .add-project-btn {
+    display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;
+    border:1px dashed var(--border);background:transparent;color:var(--text-dim);
+    font-size:13px;cursor:pointer;transition:all 0.2s;margin-bottom:12px;
+  }
+  .add-project-btn:hover { border-color:var(--accent);color:var(--accent); }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Hub</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval">🏆 Eval</a>
+  <a href="/processes">⚙️ Procesos</a>
+  <a href="/health">🩺 Salud</a>
+  <a href="/agents">🤖 Agentes</a>
+  <a href="/projects" class="active">📁 Proyectos</a>
+</nav>
+<div class="container">
+  <div class="section-title">📁 PROYECTOS Y TAREAS</div>
+  <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">
+    Cada proyecto tiene sus propios agentes, presupuesto y backlog. Haz clic para expandir las tareas.
+    <a href="/projects" style="color:var(--accent);font-size:12px;margin-left:8px;">Ver docs completos →</a>
+  </p>
+
+  <div id="projectList">
+    <div class="loading">Cargando proyectos...</div>
+  </div>
+
+  <button class="add-project-btn" onclick="showNewProjectForm()">➕ Nuevo Proyecto</button>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="section-title">📓 Vault Obsidian</div>
+    <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Documentación completa en el vault:</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <span class="badge badge-blue">01 Visión</span>
+      <span class="badge" style="background:rgba(255,193,7,0.12);color:#ffc107;">02 Backlog MVP</span>
+      <span class="badge" style="background:rgba(0,212,255,0.12);color:#00d4ff;">03 Arquitectura</span>
+      <span class="badge" style="background:rgba(0,230,118,0.12);color:#00e676;">04 Datos</span>
+      <span class="badge" style="background:rgba(123,47,247,0.12);color:#7b2ff7;">05 Model Router</span>
+      <span class="badge" style="background:rgba(255,107,0,0.12);color:#ff6d00;">06 Roadmap</span>
+    </div>
+    <p style="font-size:11px;color:#3a4a5f;margin-top:6px;">Ruta: <code>/root/pegaton_invest_intelligence/obsidian_vault/</code></p>
+  </div>
+
+  <div class="footer">PEGATON · Click en proyecto para ver tareas · Documentación viva</div>
+</div>
+
+<script>
+const API = '/api/v1/system';
+
+const PROJECTS = [
+  {
+    id: 'pegaton-roundtable', icon: '🧠', name: 'Mesa Redonda Multi-Modelo',
+    desc: 'Agentes homólogos: varios modelos analizan el mismo activo, debaten y alcanzan consenso',
+    status: '🟢 Activo', phase: 'Fase 1b',
+    route: '/roundtable',
+    agents: [
+      {name:'Flash', model:'DeepSeek V4 Flash', cost:'$0.14/M IN', role:'Análisis rápido'},
+      {name:'Analista', model:'DeepSeek Chat', cost:'$0.28/M IN', role:'Análisis estándar'},
+      {name:'Reasoner', model:'DeepSeek V4 Flash', cost:'$0.55/M IN', role:'Análisis profundo'},
+      {name:'Consenso', model:'Algoritmo propio', cost:'$0', role:'Comparación y decisión final'},
+    ],
+    budget: { weekly:'~$0.30', monthly:'~$1.20' },
+    tasks: [
+      { title:'✅ MVP Mesa Redonda construido', desc:'Proveedores, análisis paralelo, parseo, consenso, frontend visual', status:'done', owner:'Hermes' },
+      { title:'🔄 Añadir Gemini como homólogo', desc:'Activar con GEMINI_API_KEY en .env', status:'pending', owner:'Usuario' },
+      { title:'🔄 Añadir OpenRouter (NanoTron 3 gratis)', desc:'Modelos gratuitos sin coste de DeepSeek', status:'pending', owner:'Usuario' },
+      { title:'🔄 Consulta a experto en dudas', desc:'Si hay discrepancia, llamar a agente de geoeconomía o macro', status:'idea', owner:'Por definir' },
+      { title:'🔄 Histórico de debates', desc:'Guardar resultados de mesas redondas para análisis posterior', status:'idea', owner:'Por definir' },
+      { title:'🔄 Contraste automático con modelos gratuitos', desc:'Ejecutar misma análisis en modelo gratuito y对比r coste/calidad', status:'idea', owner:'Por definir' },
+    ]
+  },
+  {
+    id: 'pegaton-inversor', icon: '📊', name: 'Agente Inversor',
+    desc: 'Señales en vivo, Pegaton Score multi-activo, análisis macro y técnico, watchlist, portfolio',
+    status: '🟢 Activo', phase: 'Fase 1 - MVP',
+    route: '/investor',
+    agents: [
+      {name:'PM', model:'DeepSeek V4 Flash', cost:'$0.14/M IN', role:'Orquestador'},
+      {name:'Macro', model:'DeepSeek Chat', cost:'$0.28/M IN', role:'Analista macro'},
+      {name:'Técnico', model:'DeepSeek Chat', cost:'$0.28/M IN', role:'Analista técnico'},
+      {name:'Programador', model:'DeepSeek V4 Flash', cost:'$0.14/M IN', role:'Implementador'},
+    ],
+    budget: { weekly:'~$0.60', monthly:'~$2.40' },
+    tasks: [
+      { title:'✅ MVP Core Completado', desc:'Backend, frontend, APIs, scores, landing, budget, health, agents, projects', status:'done', owner:'Hermes' },
+      { title:'✅ Health page arreglada', desc:'Conflicto de ruta /health resuelto — ahora sirve HTML con datos en vivo', status:'done', owner:'Hermes' },
+      { title:'🔄 Agentes homólogos multi-modelo', desc:'Mesa redonda: mismo análisis con distintos modelos, debate y consenso', status:'idea', owner:'Por definir' },
+      { title:'🔄 Backtesting histórico', desc:'Validar Pegaton Score con datos pasados (200 días disponibles)', status:'idea', owner:'Por definir' },
+      { title:'🔄 Alertas Telegram', desc:'Notificaciones push cuando score cambie de zona (MANTENER→COMPRAR)', status:'pending', owner:'Por definir' },
+      { title:'🔄 Gráficos OHLCV + indicadores', desc:'Velas, RSI, MACD visibles con lightweight-charts o Chart.js', status:'pending', owner:'Por definir' },
+      { title:'🔄 Pesos dinámicos macro/técnico', desc:'Ajuste automático según régimen de mercado (crisis→macro pesa más)', status:'idea', owner:'Por definir' },
+      { title:'🔄 Agente Geoeconomía', desc:'Analiza impacto de aranceles, guerras, elecciones, sanciones', status:'idea', owner:'Por definir' },
+      { title:'🔄 Agente Noticias + Sentimiento', desc:'Scraping de headlines + análisis de sentimiento en tiempo real', status:'idea', owner:'Por definir' },
+    ]
+  },
+  {
+    id: 'pegaton-model-router', icon: '🧠', name: 'Model Router & Cost Intelligence',
+    desc: 'Enrutamiento inteligente de modelos, previsión de gasto, detección de coste/valor bajo',
+    status: '🟡 Diseño', phase: 'Fase 1b',
+    route: '/agents',
+    agents: [
+      {name:'Router', model:'DeepSeek V4 Flash', cost:'$0.14/M IN', role:'Enrutador'},
+    ],
+    budget: { weekly:'~$0.10', monthly:'~$0.40' },
+    tasks: [
+      { title:'♻️ Evaluación automática de modelos', desc:'Benchmark de coste, velocidad y calidad de respuesta para cada agente/rol', status:'idea', owner:'Por definir' },
+      { title:'♻️ Mesa redonda multi-modelo', desc:'Varios modelos ejecutan mismo análisis, comparan resultados y toman decisión consensuada', status:'idea', owner:'Por definir' },
+      { title:'♻️ Previsión de gasto semanal', desc:'Proyección basada en consumo histórico por agente y modelo', status:'pending', owner:'Hermes' },
+      { title:'♻️ Migración automática a gratuitos', desc:'Detectar agentes de alto coste/bajo valor y reasignar a modelos gratuitos', status:'idea', owner:'Por definir' },
+      { title:'♻️ Dashboard de contraste', desc:'Comparativa visual de respuestas entre modelos para mismo análisis', status:'idea', owner:'Por definir' },
+    ]
+  },
+  {
+    id: 'pegaton-mobile', icon: '📱', name: 'PEGATON Mobile',
+    desc: 'App Android (Flutter/APK) para acceso móvil con Tailscale',
+    status: '⚪ Planeado', phase: 'Fase 3',
+    route: '/projects',
+    agents: [],
+    budget: { weekly:'$0', monthly:'$0' },
+    tasks: [
+      { title:'📱 APK Android', desc:'Primera build funcional de la app consumiendo la API via Tailscale', status:'plan', owner:'Por definir' },
+      { title:'📱 Watchlist + Portfolio móvil', desc:'Versión mobile del inversor con watchlist editable y portfolio tracker', status:'plan', owner:'Por definir' },
+      { title:'📱 Notificaciones push', desc:'Alertas de cambio de score y señales', status:'plan', owner:'Por definir' },
+    ]
+  },
+  {
+    id: 'pegaton-infra', icon: '⚙️', name: 'Infraestructura',
+    desc: 'Servidor, cron jobs, systemd service, health monitoring',
+    status: '🟢 Activo', phase: 'Infra',
+    route: '/processes',
+    agents: [],
+    budget: { weekly:'$0', monthly:'$0' },
+    tasks: [
+      { title:'✅ systemd service listo', desc:'deploy/pegaton.service — activar con systemctl enable', status:'done', owner:'Hermes' },
+      { title:'✅ Cron jobs activos', desc:'Macro 05:00, Prices 05:30, Health cada 5min, Balance cada hora', status:'done', owner:'Hermes' },
+      { title:'⏳ WebSocket en vez de polling', desc:'Scores actualizados al instante sin refrescar cada 30s', status:'pending', owner:'Por definir' },
+    ]
+  },
+];
+
+function toggleProject(id) {
+  const list = document.getElementById('tasks-' + id);
+  const arrow = document.getElementById('arrow-' + id);
+  if (list) {
+    list.classList.toggle('open');
+    if (arrow) arrow.classList.toggle('open');
+  }
+}
+
+function renderProjects() {
+  const div = document.getElementById('projectList');
+  let h = '';
+  for (const p of PROJECTS) {
+    const doneTasks = p.tasks.filter(t => t.status === 'done').length;
+    const totalTasks = p.tasks.length;
+    h += `<div class="proj-card" onclick="toggleProject('${p.id}')">
+      <div class="p-header">
+        <div class="p-icon">${p.icon}</div>
+        <div class="p-info">
+          <h3>${p.name}</h3>
+          <div class="p-desc">${p.desc}</div>
+          <div class="p-meta">
+            <span>${p.status}</span>
+            <span class="sep" style="color:var(--border)">·</span>
+            <span>${p.phase}</span>
+            <span class="sep" style="color:var(--border)">·</span>
+            <span>${doneTasks}/${totalTasks} tareas</span>
+            <span class="sep" style="color:var(--border)">·</span>
+            <span>💰 ${p.budget.weekly}/sem</span>
+          </div>
+        </div>
+        <span class="arrow" id="arrow-${p.id}">▾</span>
+      </div>
+
+      ${p.agents.length > 0 ? `
+      <div class="agents-list">
+        ${p.agents.map(a => `<span class="agent-pill">🤖 ${a.name} · ${a.model}</span>`).join('')}
+      </div>` : ''}
+
+      <div class="task-list" id="tasks-${p.id}">
+        ${p.tasks.map(t => {
+          let statusLabel = '';
+          if (t.status === 'done') statusLabel = '<span class="status-tag st-done">✅ Hecho</span>';
+          else if (t.status === 'in_progress') statusLabel = '<span class="status-tag st-progress">🔄 En curso</span>';
+          else if (t.status === 'pending') statusLabel = '<span class="status-tag st-pending">⏳ Pendiente</span>';
+          else if (t.status === 'idea') statusLabel = '<span class="status-tag st-idea">💡 Idea</span>';
+          else statusLabel = '<span class="status-tag st-plan">📅 Planeado</span>';
+
+          return `<div class="task-item">
+            <div class="status-dot" style="background:${t.status === 'done' ? '#00e676' : t.status === 'in_progress' ? '#00d4ff' : t.status === 'pending' ? '#ffc107' : t.status === 'idea' ? '#7b2ff7' : '#3a4a5f'}"></div>
+            <div class="t-content">
+              <div class="t-title">${t.title}</div>
+              <div class="t-desc">${t.desc}</div>
+              <div class="t-meta">${statusLabel} ${t.owner ? `<span>👤 ${t.owner}</span>` : ''}</div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  div.innerHTML = h;
+}
+
+function showNewProjectForm() {
+  alert('💡 Nuevo proyecto: háblame por Telegram con la idea y lo creamos juntos.\n\nEjemplo: "Hermes, quiero un proyecto para analizar criptomonedas con agentes especializados"');
+}
+
+renderProjects();
+</script>
+</body>
+</html>

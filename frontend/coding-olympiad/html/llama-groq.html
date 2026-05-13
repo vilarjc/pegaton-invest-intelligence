@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/USDT Candlestick Chart</title>
+    <style>
+        body {
+            background-color: #2f2f2f;
+            color: #fff;
+            font-family: monospace;
+        }
+        #chart {
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="chart" width="800" height="600"></canvas>
+    <script>
+        const BTC_DATA = [{"date": "2026-04-03", "open": 66901.99, "high": 67370.42, "low": 66282.0, "close": 66964.3, "volume": 11429.13131}, {"date": "2026-04-04", "open": 66964.29, "high": 67562.93, "low": 66775.91, "close": 67300.42, "volume": 7373.51613}, {"date": "2026-04-05", "open": 67300.42, "high": 69136.2, "low": 66611.66, "close": 69034.18, "volume": 11733.46752}, {"date": "2026-04-06", "open": 69034.18, "high": 70351.46, "low": 68300.0, "close": 68853.66, "volume": 20281.61044}, {"date": "2026-04-07", "open": 68853.66, "high": 72761.0, "low": 67732.01, "close": 71924.22, "volume": 23750.49661}, {"date": "2026-04-08", "open": 71924.22, "high": 72857.0, "low": 70707.23, "close": 71069.93, "volume": 19802.68627}, {"date": "2026-04-09", "open": 71069.93, "high": 73145.0, "low": 70466.0, "close": 71787.97, "volume": 18158.42159}, {"date": "2026-04-10", "open": 71787.98, "high": 73434.0, "low": 71426.15, "close": 72962.7, "volume": 17372.63288}, {"date": "2026-04-11", "open": 72962.71, "high": 73790.0, "low": 72513.09, "close": 73043.16, "volume": 9070.94374}, {"date": "2026-04-12", "open": 73043.16, "high": 73137.24, "low": 70505.88, "close": 70740.98, "volume": 13472.46801}, {"date": "2026-04-13", "open": 70741.56, "high": 74900.0, "low": 70566.99, "close": 74417.99, "volume": 24230.21625}, {"date": "2026-04-14", "open": 74418.0, "high": 76038.0, "low": 73795.47, "close": 74131.55, "volume": 26532.94456}, {"date": "2026-04-15", "open": 74131.55, "high": 75425.0, "low": 73514.0, "close": 74809.99, "volume": 14425.04167}, {"date": "2026-04-16", "open": 74809.99, "high": 75534.76, "low": 73309.85, "close": 75154.29, "volume": 17088.68777}, {"date": "2026-04-17", "open": 75154.28, "high": 78333.0, "low": 74529.4, "close": 77072.0, "volume": 25941.36694}, {"date": "2026-04-18", "open": 77072.01, "high": 77420.08, "low": 75445.16, "close": 75691.76, "volume": 9141.84456}, {"date": "2026-04-19", "open": 75691.76, "high": 76240.66, "low": 73762.9, "close": 73801.79, "volume": 11369.82232}, {"date": "2026-04-20", "open": 73801.8, "high": 76558.62, "low": 73724.31, "close": 75840.97, "volume": 16993.41034}, {"date": "2026-04-21", "open": 75840.97, "high": 76927.57, "low": 74821.57, "close": 76336.15, "volume": 14912.57132}, {"date": "2026-04-22", "open": 76336.14, "high": 79472.82, "low": 76132.95, "close": 78178.23, "volume": 19737.51225}, {"date": "2026-04-23", "open": 78178.22, "high": 78662.5, "low": 76960.0, "close": 78257.48, "volume": 16970.79501}, {"date": "2026-04-24", "open": 78257.48, "high": 78581.93, "low": 77264.08, "close": 77437.13, "volume": 12675.14315}, {"date": "2026-04-25", "open": 77437.13, "high": 77885.35, "low": 77140.23, "close": 77625.0, "volume": 5685.1142}, {"date": "2026-04-26", "open": 77625.0, "high": 78961.0, "low": 77326.51, "close": 78657.55, "volume": 7963.56162}, {"date": "2026-04-27", "open": 78657.55, "high": 79485.66, "low": 76459.64, "close": 77371.32, "volume": 16046.92418}, {"date": "2026-04-28", "open": 77371.32, "high": 77478.0, "low": 75666.6, "close": 76342.77, "volume": 13210.72383}, {"date": "2026-04-29", "open": 76342.78, "high": 77904.93, "low": 74937.52, "close": 75780.0, "volume": 18279.93022}, {"date": "2026-04-30", "open": 75780.0, "high": 76669.14, "low": 75323.65, "close": 76346.57, "volume": 10381.81607}, {"date": "2026-05-01", "open": 76346.58, "high": 78914.12, "low": 76320.42, "close": 78231.13, "volume": 17315.46502}, {"date": "2026-05-02", "open": 78231.13, "high": 79199.48, "low": 78040.0, "close": 78664.66, "volume": 6123.6215}];
+
+        const chart = document.getElementById('chart');
+        const ctx = chart.getContext('2d');
+        chart.width = 800;
+        chart.height = 600;
+
+        let zoom = 1;
+        let pan = 0;
+
+        let sma7 = [];
+        let sma21 = [];
+
+        for (let i = 0; i < BTC_DATA.length; i++) {
+            if (i >= 6) {
+                let sum7 = 0;
+                for (let j = i - 6; j <= i; j++) {
+                    sum7 += BTC_DATA[j].close;
+                }
+                sma7.push(sum7 / 7);
+            } else {
+                sma7.push(null);
+            }
+
+            if (i >= 20) {
+                let sum21 = 0;
+                for (let j = i - 20; j <= i; j++) {
+                    sum21 += BTC_DATA[j].close;
+                }
+                sma21.push(sum21 / 21);
+            } else {
+                sma21.push(null);
+            }
+        }
+
+        function drawChart() {
+            ctx.clearRect(0, 0, chart.width, chart.height);
+
+            let xScale = chart.width / (BTC_DATA.length * zoom);
+            let yScale = chart.height / (Math.max(...BTC_DATA.map(d => d.high)) - Math.min(...BTC_DATA.map(d => d.low)));
+
+            for (let i = 0; i < BTC_DATA.length; i++) {
+                let x = (i * xScale) + pan;
+                let openY = chart.height - (BTC_DATA[i].open - Math.min(...BTC_DATA.map(d => d.low))) * yScale;
+                let highY = chart.height - (BTC_DATA[i].high - Math.min(...BTC_DATA.map(d => d.low))) * yScale;
+                let lowY = chart.height - (BTC_DATA[i].low - Math.min(...BTC_DATA.map(d => d.low))) * yScale;
+                let closeY = chart.height - (BTC_DATA[i].close - Math.min(...BTC_DATA.map(d => d.low))) * yScale;
+
+                ctx.beginPath();
+                ctx.moveTo(x, openY);
+                ctx.lineTo(x, highY);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(x, lowY);
+                ctx.lineTo(x, closeY);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.stroke();
+
+                ctx.fillStyle = BTC_DATA[i].close > BTC_DATA[i].open ? 'rgba(0, 255, 0, 0.5)' : 'rgba(255, 0, 0, 0.5)';
+                ctx.fillRect(x - 2, Math.min(openY, closeY), 4, Math.abs(openY - closeY));
+
+                if (sma7[i] !== null) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, chart.height - (sma7[i] - Math.min(...BTC_DATA.map(d => d.low))) * yScale);
+                    ctx.lineTo(x, chart.height - (sma7[i] - Math.min(...BTC_DATA.map(d => d.low))) * yScale);
+                    ctx.strokeStyle = 'rgba(0, 0, 255, 0.5)';
+                    ctx.stroke();
+                }
+
+                if (sma21[i] !== null) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, chart.height - (sma21[i] - Math.min(...BTC_DATA.map(d => d.low))) * yScale);
+                    ctx.lineTo(x, chart.height - (sma21[i] - Math.min(...BTC_DATA.map(d => d.low))) * yScale);
+                    ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+                    ctx.stroke();
+                }
+
+                ctx.font = '12px monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(BTC_DATA[i].date, x, chart.height + 10);
+
+                ctx.font = '12px monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(`O: ${BTC_DATA[i].open.toFixed(2)} H: ${BTC_DATA[i].high.toFixed(2)} L: ${BTC_DATA[i].low.toFixed(2)} C: ${BTC_DATA[i].close.toFixed(2)} V: ${BTC_DATA[i].volume.toFixed(2)}`, x, chart.height + 25);
+            }
+
+            for (let i = 0; i < BTC_DATA.length; i++) {
+                let x = (i * xScale) + pan;
+                let volumeY = chart.height + 50 - (BTC_DATA[i].volume / Math.max(...BTC_DATA.map(d => d.volume))) * 50;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillRect(x - 2, volumeY, 4, 50 - volumeY);
+            }
+        }
+
+        drawChart();
+
+        chart.addEventListener('wheel', (e) => {
+            if (e.deltaY > 0) {
+                zoom *= 1.1;
+            } else {
+                zoom /= 1.1;
+            }
+            drawChart();
+        });
+
+        chart.addEventListener('mousemove', (e) => {
+            let x = e.clientX - chart.offsetLeft;
+            let y = e.clientY - chart.offsetTop;
+            let index = Math.floor((x - pan) / (chart.width / (BTC_DATA.length * zoom)));
+            if (index >= 0 && index < BTC_DATA.length) {
+                ctx.font = '12px monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.clearRect(0, 0, 200, 50);
+                ctx.fillText(`Date: ${BTC_DATA[index].date}`, 10, 10);
+                ctx.fillText(`O: ${BTC_DATA[index].open.toFixed(2)} H: ${BTC_DATA[index].high.toFixed(2)} L: ${BTC_DATA[index].low.toFixed(2)} C: ${BTC_DATA[index].close.toFixed(2)} V: ${BTC_DATA[index].volume.toFixed(2)}`, 10, 25);
+            }
+        });
+
+        chart.addEventListener('mousedown', (e) => {
+            let x = e.clientX - chart.offsetLeft;
+            let y = e.clientY - chart.offsetTop;
+            let index = Math.floor((x - pan) / (chart.width / (BTC_DATA.length * zoom)));
+            if (index >= 0 && index < BTC_DATA.length) {
+                ctx.font = '12px monospace';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.clearRect(0, 0, 200, 50);
+                ctx.fillText(`Date: ${BTC_DATA[index].date}`, 10, 10);
+                ctx.fillText(`O: ${BTC_DATA[index].open.toFixed(2)} H: ${BTC_DATA[index].high.toFixed(2)} L: ${BTC_DATA[index].low.toFixed(2)} C: ${BTC_DATA[index].close.toFixed(2)} V: ${BTC_DATA[index].volume.toFixed(2)}`, 10, 25);
+            }
+            let startX = x;
+            chart.addEventListener('mousemove', (e) => {
+                let x = e.clientX - chart.offsetLeft;
+                pan += (x - startX) / zoom;
+                drawChart();
+                startX = x;
+            });
+            chart.addEventListener('mouseup', () => {
+                chart.removeEventListener('mousemove', () => {});
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+# =============================================================================
+# SYSTEM CONFIGURATION
+# =============================================================================
+# Configuración general del sistema de señalización PEGATON
+# =============================================================================
+
+# Versión del spec de configuración
+version: "1.0.0"
+last_updated: "2026-05-12"
+
+# =============================================================================
+# COMBINACIÓN MACRO + TÉCNICO (Spec C)
+# =============================================================================
+blend:
+  macro_weight: 0.40        # Peso del score macro en la combinación final
+  technical_weight: 0.60    # Peso del score técnico en la combinación final
+  # Fórmula: pegaton_score = macro_weight * macro_score + technical_weight * technical_score
+  # NOTA: macro_weight + technical_weight = 1.0
+
+# =============================================================================
+# UMBRALES DE ACCIÓN
+# =============================================================================
+# Formato: [min_score, max_score, action_name, emoji]
+actions:
+  - { min: 80, max: 100, name: "COMPRAR",   emoji: "🔵" }
+  - { min: 60, max: 79,  name: "ACUMULAR",  emoji: "🔵" }
+  - { min: 40, max: 59,  name: "MANTENER",  emoji: "🟡" }
+  - { min: 20, max: 39,  name: "REDUCIR",   emoji: "🟠" }
+  - { min: 0,  max: 19,  name: "EVITAR",    emoji: "🔴" }
+
+# =============================================================================
+# SYMBOLS TRACKED
+# =============================================================================
+symbols:
+  SPY: "SPY"
+  EUR_USD: "EUR/USD"
+  BTC_USD: "BTC/USD"
+
+# =============================================================================
+# DATA SOURCES
+# =============================================================================
+data:
+  macro:
+    type: "sqlite"
+    path: "data/pegaton.db"
+    table: "macro_indicators"
+    source: "FRED"
+    fetch_interval_hours: 24
+  technical:
+    local:
+      type: "sqlite"
+      path: "data/pegaton.db"
+      table: "precios_ohlcv"
+    on_demand:
+      provider: "twelvedata"
+      api_key_env: "TWELVEDATA_API_KEY"
+      default_days: 200
+      interval: "1day"
+  news:
+    table: "news_sentiment"
+    snapshot_interval_hours: 4
+    analyze_hours: 72
+
+# =============================================================================
+# API CONFIGURATION
+# =============================================================================
+api:
+  version: "v1"
+  base_path: "/api/v1"
+  endpoints:
+    signal: "/signal"
+    news_sentiment: "/news-sentiment"
+
+# =============================================================================
+# CACHE & PERFORMANCE
+# =============================================================================
+cache:
+  signal_ttl_seconds: 3600    # Cache del endpoint /signal (1 hora)
+  news_ttl_seconds: 14400     # Cache de noticias (4 horas)
+
+# =============================================================================
+# SCORING BOUNDS
+# =============================================================================
+scoring:
+  min_score: 0
+  max_score: 100
+  default_score: 50            # Score cuando no hay datos

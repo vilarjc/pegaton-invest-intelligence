@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>PEGATON - Evaluación Detallada</title>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0a0e17; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; padding: 16px; }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  .detail-header { margin-bottom: 16px; }
+  .detail-header h1 { font-size: 22px; background: linear-gradient(135deg,#7b2ff7,#00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
+  .detail-header .breadcrumb { font-size: 12px; color: #64748b; margin-top: 4px; }
+  .detail-header .breadcrumb a { color: #58a6ff; text-decoration: none; }
+  .detail-header .breadcrumb a:hover { text-decoration: underline; }
+
+  .team-badge { display: inline-flex; align-items: center; gap: 8px; background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 8px 14px; margin: 8px 0; font-size: 12px; }
+  .team-badge .pm { color: #94a3b8; }
+  .team-badge .dev { color: #58a6ff; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+  @media(max-width:480px){
+    body{padding:8px}
+    nav.navbar{gap:2px;padding:4px 6px}
+    nav.navbar a{padding:4px 6px;font-size:10px}
+    iframe.widget-frame{height:220px}
+    .code-box{max-height:250px;font-size:9px}
+    .spec-content{font-size:10px}
+    .action-bar{flex-direction:column;gap:8px;align-items:stretch}
+    .action-bar .star{font-size:18px}
+    .prompt-box{font-size:11px;max-height:150px}
+  }
+  .card { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; }
+  .card-title { padding: 8px 12px; background: #1a2332; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 6px; }
+  .card-title .right { margin-left: auto; font-size: 9px; color: #475569; }
+
+  iframe.widget-frame { width: 100%; height: 350px; border: none; display: block; background: #000; }
+
+  .code-box { overflow: auto; max-height: 400px; padding: 10px 12px; font-family: 'Fira Code','Cascadia Code',monospace; font-size: 10px; line-height: 1.4; color: #c9d1d9; white-space: pre; tab-size: 2; background: #0d1117; }
+  .code-box.full { max-height: none; }
+  .spec-content { padding: 10px 12px; font-size: 11px; line-height: 1.5; color: #c9d1d9; background: #0d1117; max-height: 350px; overflow: auto; }
+  .spec-content.full { max-height: none; }
+
+  .action-bar { display: flex; gap: 12px; align-items: center; background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 14px 18px; margin-top: 12px; flex-wrap: wrap; }
+  .star { font-size: 22px; cursor: pointer; color: #334155; transition: .15s; }
+  .star:hover { transform: scale(1.2); }
+  .star.active { color: #fbbf24 !important; }
+
+  .btn { padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: #7b2ff7; color: #fff; }
+  .btn-success { background: #00e676; color: #000; }
+  .btn-danger { background: #ff5252; color: #fff; }
+  .btn-outline { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+
+  .adjust-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; }
+  .adjust-modal.open { display: flex; }
+  .adjust-panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 24px; max-width: 600px; width: 90%; max-height: 80vh; overflow: auto; }
+  .adjust-panel h2 { font-size: 16px; margin-bottom: 4px; }
+  .adjust-panel p.desc { font-size: 12px; color: #64748b; margin-bottom: 14px; }
+  .adjust-panel textarea { width: 100%; background: #0d1117; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 12px; color: #e2e8f0; font-size: 13px; min-height: 120px; font-family: system-ui,sans-serif; resize: vertical; }
+  .adjust-panel textarea:focus { outline: none; border-color: #7b2ff7; }
+  .adjust-panel .hint { font-size: 11px; color: #475569; margin-top: 6px; }
+  .adjust-panel .modal-actions { display: flex; gap: 10px; margin-top: 14px; justify-content: flex-end; }
+
+  .prompt-box { background: #0d1117; border-left: 3px solid #7b2ff7; padding: 12px 14px; margin: 8px; border-radius: 0 6px 6px 0; font-size: 12px; line-height: 1.5; color: #c9d1d9; max-height: 200px; overflow: auto; }
+  .no-select { text-align: center; padding: 60px 20px; }
+  .no-select h2 { font-size: 20px; color: #64748b; margin-bottom: 8px; }
+  .no-select p { font-size: 13px; color: #475569; }
+  .no-select .grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 10px; max-width: 800px; margin: 20px auto; }
+  .no-select .card-link { background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; padding: 14px; text-decoration: none; color: inherit; transition: all .2s; }
+  .no-select .card-link:hover { border-color: #7b2ff7; transform: translateY(-2px); }
+</style>
+</head>
+<body>
+<div class="container">
+  <nav class="navbar" style="margin-bottom:12px">
+    <span class="logo">⚡ PEGATON</span>
+    <a href="/">🏠 Hub</a>
+    <a href="/inversor">📊 Inversor</a>
+    <a href="/widget-auditoria">🧪 Auditoría</a>
+    <a href="/widget-evaluator" class="active">⭐ Evaluador</a>
+  </nav>
+
+  <div id="mainContent"></div>
+</div>
+
+<!-- Adjust Modal -->
+<div class="adjust-modal" id="adjustModal">
+  <div class="adjust-panel">
+    <h2>✏️ Solicitar ajuste</h2>
+    <p class="desc">Describe qué cambios quieres en el widget <strong id="adjustWidgetName"></strong>:</p>
+    <textarea id="adjustDesc" placeholder="Ej: El widget se ve bien pero el indicador de VIX debería estar más arriba, y los colores del semáforo son muy tenues..."></textarea>
+    <div class="hint">El PM recibirá tu solicitud y generará nuevas tareas para el programador.</div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeAdjust()">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitAdjust()">📨 Enviar solicitud</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentWidget = null;
+
+async function init() {
+  const params = new URLSearchParams(window.location.search);
+  const widgetId = params.get('widget');
+  if (!widgetId) { showPicker(); return; }
+  await loadWidgetDetail(widgetId);
+}
+
+function showPicker() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="detail-header"><h1>⭐ Evaluador</h1></div>
+    <div class="no-select">
+      <h2>Selecciona un widget para evaluar</h2>
+      <p>Ve a la <a href="/widget-auditoria" style="color:#58a6ff">Auditoría</a> para comparar equipos, o elige directamente:</p>
+      <div class="grid" id="pickerGrid">Cargando...</div>
+    </div>`;
+  fetch('/api/widgets').then(r=>r.json()).then(widgets => {
+    document.getElementById('pickerGrid').innerHTML = widgets.map(w => `
+      <a href="/widget-evaluator?widget=${w.id}" class="card-link">
+        <div style="font-weight:600;font-size:14px">${w.name}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px">${w.team_label||w.id} · ${w.pm||'?'}</div>
+        <div style="font-size:10px;color:#475569;margin-top:2px">⭐ ${w.rating > 0 ? w.rating+'/10' : 'Sin puntuar'}</div>
+      </a>
+    `).join('');
+  });
+}
+
+async function loadWidgetDetail(wid) {
+  document.getElementById('mainContent').innerHTML = '<div style="text-align:center;padding:60px;color:#64748b">Cargando...</div>';
+
+  // Fetch widget info
+  const r = await fetch('/api/widgets');
+  const widgets = await r.json();
+  currentWidget = widgets.find(w => w.id === wid);
+  if (!currentWidget) { document.getElementById('mainContent').innerHTML = '<div class="no-select"><h2>Widget no encontrado</h2></div>'; return; }
+  const w = currentWidget;
+
+  // Fetch widget data/code
+  let previewHtml = '<div style="padding:40px;text-align:center;color:#475569">Vista previa no disponible</div>';
+  let codeContent = '// Sin código disponible';
+  let codeLines = 0, codeChars = 0;
+  const dataUrl = w.endpoint || `/api/widgets/${wid}/data`;
+  try {
+    const rd = await fetch(dataUrl);
+    if (rd.ok) {
+      const d = await rd.json(); previewHtml = d.html || d.code_preview || previewHtml;
+      codeContent = d.html || d.code_preview || codeContent;
+      codeLines = codeContent.split('\n').length; codeChars = codeContent.length;
+    }
+  } catch(e) {}
+
+  // Fallback: load widget HTML from file if endpoint didn't provide it
+  if (!previewHtml || previewHtml === '<div style="padding:40px;text-align:center;color:#475569">Vista previa no disponible</div>') {
+    if (w.html_file) {
+      try {
+        const r2 = await fetch(`/widgets/${w.html_file}`);
+        if (r2.ok) {
+          previewHtml = await r2.text();
+          if (codeContent === '// Sin código disponible') {
+            codeContent = previewHtml;
+            codeLines = previewHtml.split('\n').length;
+            codeChars = previewHtml.length;
+          }
+        }
+      } catch(e) {}
+    }
+  }
+
+  // Try to get coding olympiad full code for fear-greed
+  if (wid.startsWith('fear-greed-')) {
+    const map = {'fear-greed-a':'equipo-a','fear-greed-b':'equipo-b','fear-greed-c':'equipo-c'};
+    try { const rf = await fetch(`/api/fullcode/${map[wid]}`); if(rf.ok){ const d=await rf.json(); codeContent=d.code||codeContent; codeLines=d.lines||0; codeChars=d.chars||0; } } catch(e) {}
+  }
+
+  // Try to load spec
+  let specContent = '<p style="color:#475569;font-size:11px">Spec no disponible</p>';
+  try { const rs = await fetch(`/harness/specs/widget-${wid}-spec.md`); if(rs.ok) specContent = formatSpec(await rs.text()); } catch(e) {}
+
+  // Build prompt info
+  const promptInfo = w.section ? `Brief para la sección "${w.name}" del dashboard de inversión. Los equipos compiten para desarrollar el mejor widget que se integrará en la página final.` : 'Brief de desarrollo de widget para el dashboard de inversión.';
+
+  const hyperlinked = highlightCode(codeContent);
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="detail-header">
+      <div class="breadcrumb"><a href="/widget-auditoria">🧪 Auditoría</a> / <a href="/widget-auditoria#">${w.name}</a> / ${w.team_label||wid}</div>
+      <h1>⭐ ${w.name} — ${w.team_label||wid}</h1>
+      <div class="team-badge">
+        <span>🧠 Experto: <strong>${w.expert||'?'}</strong></span>
+        <span class="pm">· PM: <strong>${w.pm||'?'}</strong></span>
+        <span class="dev">· Dev: <strong>${w.programmer||'?'}</strong></span>
+        <span>· Estado: <strong>${w.status}</strong></span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Widget Preview -->
+      <div class="card">
+        <div class="card-title">🖥️ Widget</div>
+        <iframe class="widget-frame" id="detailFrame" srcdoc="${escapeAttr(previewHtml)}"></iframe>
+      </div>
+
+      <!-- Código Fuente -->
+      <div class="card">
+        <div class="card-title">📝 Código Fuente <span class="right">${codeLines} líneas · ${codeChars.toLocaleString()} chars</span></div>
+        <div class="code-box" id="detailCode"><pre>${hyperlinked}</pre></div>
+        <div class="action-bar" style="border-radius:0;border:none;border-top:1px solid #1e293b;margin-top:0">
+          <span style="cursor:pointer;color:#58a6ff;font-size:11px" onclick="toggleFullCode()">📐 Ver completo</span>
+          <button class="copy-btn" onclick="copyDetailCode()">📋 Copiar</button>
+          <span style="font-size:10px;color:#475569;margin-left:auto">👨‍💻 ${w.programmer||'?'}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt / Requerimiento -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title">📋 Requerimiento Original (Brief)</div>
+      <div class="prompt-box">${promptInfo}</div>
+    </div>
+
+    <!-- PM Spec -->
+    <div class="card" style="margin-top:8px">
+      <div class="card-title">🧑‍💼 Análisis del PM — ${w.pm||'Pendiente'} ${w.pm ? `<span class="right" style="display:flex;gap:6px"><span style="cursor:pointer;color:#58a6ff;font-size:10px" onclick="toggleFullSpec()">📐 Ver completo</span><button class="copy-btn" onclick="copySpec()">📋 Copiar</button></span>` : ''}</div>
+      <div class="spec-content" id="detailSpec">${specContent}</div>
+    </div>
+
+    <!-- Decisiones -->
+    <div class="card" style="margin-top:8px">
+      <div class="card-title">💡 Decisiones Técnicas</div>
+      <div style="padding:10px 14px;font-size:12px;color:#64748b">
+        Las decisiones técnicas se registran cuando el PM completa la especificación.
+        ${wid.startsWith('fear-greed-') ? 'Para los equipos del concurso Fear & Greed, las decisiones están documentadas en la página de auditoría original.' : ''}
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:13px;color:#94a3b8">⭐ Puntuación:</span>
+        ${[1,2,3,4,5,6,7,8,9,10].map(s => 
+          `<span class="star ${s <= w.rating ? 'active' : ''}" onclick="rateWidget(${s})">★</span>`
+        ).join('')}
+        <span style="font-size:12px;color:#64748b">${w.rating > 0 ? w.rating+'/10' : 'Sin puntuar'}</span>
+      </div>
+      <button class="btn ${w.integrated ? 'btn-danger' : 'btn-success'}" onclick="toggleIntegrate()">
+        ${w.integrated ? '❌ Quitar del dashboard' : '✅ Integrar en dashboard'}
+      </button>
+      <button class="btn btn-primary" onclick="openAdjust()">✏️ Solicitar ajuste</button>
+    </div>
+  `;
+}
+
+async function rateWidget(stars) {
+  if (!currentWidget) return;
+  await fetch('/api/widgets/rate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({widget_id:currentWidget.id, stars})});
+  loadWidgetDetail(currentWidget.id);
+}
+
+async function toggleIntegrate() {
+  if (!currentWidget) return;
+  await fetch('/api/widgets/integrate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({widget_id:currentWidget.id})});
+  loadWidgetDetail(currentWidget.id);
+}
+
+// --- Adjust Modal ---
+function openAdjust() {
+  if (!currentWidget) return;
+  document.getElementById('adjustWidgetName').textContent = `${currentWidget.name} — ${currentWidget.team_label||currentWidget.id}`;
+  document.getElementById('adjustDesc').value = '';
+  document.getElementById('adjustModal').classList.add('open');
+}
+function closeAdjust() { document.getElementById('adjustModal').classList.remove('open'); }
+async function submitAdjust() {
+  const desc = document.getElementById('adjustDesc').value.trim();
+  if (!desc) { alert('Describe los cambios que necesitas'); return; }
+  closeAdjust();
+  try {
+    const r = await fetch('/api/widgets/adjust', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({widget_id: currentWidget.id, description: desc})
+    });
+    const result = await r.json();
+    if (result.id) {
+      loadWidgetDetail(currentWidget.id); // refresh to show history
+    } else {
+      alert('Error al guardar solicitud');
+    }
+  } catch(e) {
+    alert('Error de red: ' + e.message);
+  }
+}
+
+// --- UI helpers ---
+function escapeAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatSpec(text) {
+  if (!text) return '<p style="color:#475569">Spec vacía</p>';
+  let h = escapeAttr(text).replace(/### (.+)/g,'<span class="section-title">$1</span>').replace(/\n/g,'<br>');
+  return '<p>' + h + '</p>';
+}
+function highlightCode(code) {
+  if (!code) return '<span style="color:#475569">// Sin código</span>';
+  let h = escapeAttr(code);
+  h = h.replace(/\/\/(.*)/g,'<span style="color:#8b949e">//$1</span>');
+  h = h.replace(/("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')/g,'<span style="color:#a5d6ff">$1</span>');
+  const kw=['function','const','let','var','if','else','return','for','while','class','new','this','async','await','import','export','from','try','catch','throw','null','undefined','true','false'];
+  h = h.replace(new RegExp('\\b('+kw.join('|')+')\\b','g'),'<span style="color:#ff7b72;font-weight:600">$1</span>');
+  h = h.replace(/\b(\d+(?:\.\d+)?)\b/g,'<span style="color:#79c0ff">$1</span>');
+  return h;
+}
+function toggleFullCode() {
+  const el = document.getElementById('detailCode');
+  el.classList.toggle('full');
+  document.querySelector('#detailCode + .action-bar span:first-child').textContent = el.classList.contains('full') ? '📐 ▼ Mostrar menos' : '📐 Ver completo';
+}
+function toggleFullSpec() {
+  const el = document.getElementById('detailSpec');
+  el.classList.toggle('full');
+}
+async function copyDetailCode() {
+  const text = document.getElementById('detailCode').textContent;
+  try { await navigator.clipboard.writeText(text); } catch(e) { prompt('Copiar código:', text); }
+}
+async function copySpec() {
+  const text = document.getElementById('detailSpec').textContent;
+  try { await navigator.clipboard.writeText(text); } catch(e) { prompt('Copiar spec:', text); }
+}
+
+init();
+</script>
+</body>
+</html>

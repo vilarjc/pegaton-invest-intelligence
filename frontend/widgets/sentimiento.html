@@ -1,0 +1,46 @@
+<div class="sentimiento-widget" style="font-size:13px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div>
+      <div style="font-size:11px;color:#6b7a8f">Sentimiento Agregado</div>
+      <div style="font-size:28px;font-weight:700" id="senti-score">--</div>
+    </div>
+    <div style="width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px" id="senti-ring"></div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+    <span style="background:#0d1525;padding:4px 10px;border-radius:6px;font-size:11px" id="senti-action">--</span>
+    <span style="background:#0d1525;padding:4px 10px;border-radius:6px;font-size:11px" id="sienti-trend">--</span>
+  </div>
+  <div style="margin-top:8px;padding-top:8px;border-top:1px solid #1e2a45">
+    <div style="font-size:10px;color:#6b7a8f;margin-bottom:4px">Factores</div>
+    <div id="senti-factors" style="font-size:11px;color:#8b9bb5">Cargando...</div>
+  </div>
+</div>
+<script>
+(function(){
+  const el = document.currentScript.parentElement;
+  fetch('/api/v1/fear-greed')
+    .then(r=>r.json())
+    .then(d => {
+      const score = d.score || 50;
+      const ring = el.querySelector('#senti-ring');
+      const color = score >= 70 ? '#00e676' : score >= 45 ? '#ffc107' : '#ff5252';
+      ring.style.border = `3px solid ${color}`;
+      ring.style.color = color;
+      ring.textContent = score;
+      el.querySelector('#senti-score').textContent = d.action || 'Neutral';
+      el.querySelector('#senti-action').textContent = 'Acción: ' + (d.action || 'Mantener');
+      const trend = score > 60 ? '📈 Alcista' : score < 40 ? '📉 Bajista' : '➡️ Lateral';
+      el.querySelector('#sienti-trend').textContent = 'Tendencia: ' + trend;
+      const factors = el.querySelector('#senti-factors');
+      if (d.factores && Array.isArray(d.factores)) {
+        factors.innerHTML = d.factores.map(f => `<span>• ${f}</span>`).join('<br>');
+      } else {
+        factors.textContent = 'Factor general: ' + (d.reason || 'Mercado neutro');
+      }
+    })
+    .catch(() => {
+      el.querySelector('#senti-score').textContent = 'Error';
+      el.querySelector('#sienti-trend').textContent = 'Offline';
+    });
+})();
+</script>

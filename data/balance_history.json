@@ -1,0 +1,338 @@
+[
+  {
+    "timestamp": "2026-05-01T23:21:56.964062",
+    "total_balance": 6.03,
+    "granted_balance": 0.0,
+    "topped_up_balance": 6.03
+  },
+  {
+    "timestamp": "2026-05-02T00:01:18.070475",
+    "total_balance": 5.94,
+    "granted_balance": 0.0,
+    "topped_up_balance": 5.94
+  },
+  {
+    "timestamp": "2026-05-02T01:00:23.387088",
+    "total_balance": 5.94,
+    "granted_balance": 0.0,
+    "topped_up_balance": 5.94
+  },
+  {
+    "timestamp": "2026-05-02T14:00:31.328890",
+    "total_balance": 5.22,
+    "granted_balance": 0.0,
+    "topped_up_balance": 5.22
+  },
+  {
+    "timestamp": "2026-05-02T15:00:20.881407",
+    "total_balance": 5.06,
+    "granted_balance": 0.0,
+    "topped_up_balance": 5.06
+  },
+  {
+    "timestamp": "2026-05-02T16:00:48.711693",
+    "total_balance": 5.01,
+    "granted_balance": 0.0,
+    "topped_up_balance": 5.01
+  },
+  {
+    "timestamp": "2026-05-02T17:00:19.546206",
+    "total_balance": 4.9,
+    "granted_balance": 0.0,
+    "topped_up_balance": 4.9
+  },
+  {
+    "timestamp": "2026-05-02T18:00:42.842708",
+    "total_balance": 4.72,
+    "granted_balance": 0.0,
+    "topped_up_balance": 4.72
+  },
+  {
+    "timestamp": "2026-05-02T19:00:47.220471",
+    "total_balance": 4.57,
+    "granted_balance": 0.0,
+    "topped_up_balance": 4.57
+  },
+  {
+    "timestamp": "2026-05-02T20:00:24.129364",
+    "total_balance": 4.44,
+    "granted_balance": 0.0,
+    "topped_up_balance": 4.44
+  },
+  {
+    "timestamp": "2026-05-02T21:00:10.814368",
+    "total_balance": 4.32,
+    "granted_balance": 0.0,
+    "topped_up_balance": 4.32
+  },
+  {
+    "timestamp": "2026-05-02T22:00:47.915729",
+    "total_balance": 4.27,
+    "granted_balance": 0.0,
+    "topped_up_balance": 4.27
+  },
+  {
+    "timestamp": "2026-05-02T23:00:30.857850",
+    "total_balance": 4.02,
+    "granted_balance": 0.0,
+    "topped_up_balance": 4.02
+  },
+  {
+    "timestamp": "2026-05-03T00:01:00.667466",
+    "total_balance": 3.7,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.7
+  },
+  {
+    "timestamp": "2026-05-03T01:00:11.980240",
+    "total_balance": 3.44,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.44
+  },
+  {
+    "timestamp": "2026-05-03T02:00:23.778212",
+    "total_balance": 3.38,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.38
+  },
+  {
+    "timestamp": "2026-05-03T02:00:54.221999",
+    "total_balance": 3.38,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.38
+  },
+  {
+    "timestamp": "2026-05-03T03:01:07.780595",
+    "total_balance": 3.32,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.32
+  },
+  {
+    "timestamp": "2026-05-03T04:00:10.043607",
+    "total_balance": 3.24,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.24
+  },
+  {
+    "timestamp": "2026-05-03T05:00:51.952299",
+    "total_balance": 3.18,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.18
+  },
+  {
+    "timestamp": "2026-05-03T06:00:41.148456",
+    "total_balance": 3.11,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.11
+  },
+  {
+    "timestamp": "2026-05-03T07:00:20.033988",
+    "total_balance": 3.05,
+    "granted_balance": 0.0,
+    "topped_up_balance": 3.05
+  },
+  {
+    "timestamp": "2026-05-03T08:01:07.318125",
+    "total_balance": 2.95,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.95
+  },
+  {
+    "timestamp": "2026-05-03T09:01:00.394431",
+    "total_balance": 2.8,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.8
+  },
+  {
+    "timestamp": "2026-05-03T10:01:00.427881",
+    "total_balance": 2.73,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.73
+  },
+  {
+    "timestamp": "2026-05-03T11:01:00.284234",
+    "total_balance": 2.67,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.67
+  },
+  {
+    "timestamp": "2026-05-03T12:00:28.975579",
+    "total_balance": 2.62,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.62
+  },
+  {
+    "timestamp": "2026-05-03T13:00:59.642349",
+    "total_balance": 2.56,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.56
+  },
+  {
+    "timestamp": "2026-05-03T14:00:35.207280",
+    "total_balance": 2.49,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.49
+  },
+  {
+    "timestamp": "2026-05-03T15:00:44.210748",
+    "total_balance": 2.11,
+    "granted_balance": 0.0,
+    "topped_up_balance": 2.11
+  },
+  {
+    "timestamp": "2026-05-03T16:00:45.824854",
+    "total_balance": 1.59,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.59
+  },
+  {
+    "timestamp": "2026-05-03T17:00:53.896688",
+    "total_balance": 1.37,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.37
+  },
+  {
+    "timestamp": "2026-05-03T18:00:42.940419",
+    "total_balance": 1.31,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.31
+  },
+  {
+    "timestamp": "2026-05-03T19:00:53.902123",
+    "total_balance": 1.26,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.26
+  },
+  {
+    "timestamp": "2026-05-03T20:00:30.795213",
+    "total_balance": 1.18,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.18
+  },
+  {
+    "timestamp": "2026-05-03T21:00:43.276216",
+    "total_balance": 0.96,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.96
+  },
+  {
+    "timestamp": "2026-05-03T22:04:58.676593",
+    "total_balance": 0.79,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.79
+  },
+  {
+    "timestamp": "2026-05-03T23:00:38.372323",
+    "total_balance": 0.47,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.47
+  },
+  {
+    "timestamp": "2026-05-04T00:00:26.330978",
+    "total_balance": 0.25,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.25
+  },
+  {
+    "timestamp": "2026-05-04T01:01:06.601994",
+    "total_balance": 0.15,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.15
+  },
+  {
+    "timestamp": "2026-05-04T01:01:28.178929",
+    "total_balance": 0.15,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.15
+  },
+  {
+    "timestamp": "2026-05-04T02:00:34.745860",
+    "total_balance": 0.1,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.1
+  },
+  {
+    "timestamp": "2026-05-04T03:00:11.323152",
+    "total_balance": 0.04,
+    "granted_balance": 0.0,
+    "topped_up_balance": 0.04
+  },
+  {
+    "timestamp": "2026-05-05T00:12:48.357021",
+    "total_balance": -0.0,
+    "granted_balance": 0.0,
+    "topped_up_balance": -0.0
+  },
+  {
+    "timestamp": "2026-05-05T06:01:01.224780",
+    "total_balance": 1.88,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.88
+  },
+  {
+    "timestamp": "2026-05-05T06:01:13.884118",
+    "total_balance": 1.88,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.88
+  },
+  {
+    "timestamp": "2026-05-05T06:01:46.848392",
+    "total_balance": 1.86,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.86
+  },
+  {
+    "timestamp": "2026-05-05T06:02:02.440448",
+    "total_balance": 1.86,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.86
+  },
+  {
+    "timestamp": "2026-05-05T07:00:56.044523",
+    "total_balance": 1.74,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.74
+  },
+  {
+    "timestamp": "2026-05-05T08:00:48.077260",
+    "total_balance": 1.65,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.65
+  },
+  {
+    "timestamp": "2026-05-05T09:00:40.302962",
+    "total_balance": 1.62,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.62
+  },
+  {
+    "timestamp": "2026-05-05T10:00:14.675017",
+    "total_balance": 1.6,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.6
+  },
+  {
+    "timestamp": "2026-05-05T11:01:00.239818",
+    "total_balance": 1.57,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.57
+  },
+  {
+    "timestamp": "2026-05-05T12:00:47.660238",
+    "total_balance": 1.54,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.54
+  },
+  {
+    "timestamp": "2026-05-05T13:01:06.430606",
+    "total_balance": 1.51,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.51
+  },
+  {
+    "timestamp": "2026-05-05T14:00:55.211565",
+    "total_balance": 1.47,
+    "granted_balance": 0.0,
+    "topped_up_balance": 1.47
+  }
+]

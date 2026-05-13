@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentimiento de Noticias — PEGATON</title>
+<style>
+/* ── Reset & base ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/*
+  HU-NEWS-01: Widget Sentimiento de Noticias
+  Dark theme: bg #0a0e17, borders #1a2332
+  5 bandas: <20 rojo, <45 naranja, <55 amarillo, <75 verde, >=75 morado
+  Compatible con iframe (sin scrollbars)
+  Sin dependencias externas
+*/
+html, body {
+  overflow: hidden;               /* iframe-safe: sin scrollbars */
+  overscroll-behavior: contain;
+}
+body {
+  background: #0a0e17;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Widget shell ── */
+.widget {
+  width: 360px;
+  max-width: 100%;
+  background: #0e1520;
+  border: 1px solid #1a2332;
+  border-radius: 16px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Top bar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar-icon {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, #3b82f6, #a855f7);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.topbar-title {
+  font-size: 14px; font-weight: 700; letter-spacing: 0.2px;
+}
+.topbar-sub {
+  font-size: 10px; color: #64748b; margin-top: 1px;
+}
+
+/* ── Status pill ── */
+.status-pill {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600;
+  padding: 3px 10px; border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid #1a2332;
+  color: #64748b;
+  transition: all 0.3s;
+}
+.status-pill .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-pill.live    .dot { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+.status-pill.live    .txt { color: #22c55e; }
+.status-pill.cache   .dot { background: #f59e0b; box-shadow: 0 0 6px #f59e0b66; }
+.status-pill.cache   .txt { color: #f59e0b; }
+.status-pill.error   .dot { background: #ef4444; box-shadow: 0 0 6px #ef444466; }
+.status-pill.error   .txt { color: #ef4444; }
+.status-pill.loading .dot { background: #64748b; }
+.status-pill.loading .txt { color: #64748b; }
+
+/* ── Alert banner ── */
+.alert {
+  display: none;
+  align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.4px;
+  margin-bottom: 12px;
+  animation: alertPulse 2s ease-in-out infinite;
+}
+.alert.show { display: flex; }
+.alert.fear  { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.25); color: #f87171; }
+.alert.greed { background: rgba(168,85,247,0.12); border: 1px solid rgba(168,85,247,0.25); color: #c084fc; }
+@keyframes alertPulse {
+  0%,100% { opacity:1; } 50% { opacity:0.7; }
+}
+
+/* ── Gauge canvas ── */
+.gauge-wrap {
+  position: relative; width: 280px; height: 150px;
+  margin: 0 auto 6px; overflow: hidden;
+}
+.gauge-wrap canvas { display: block; width: 280px; height: 150px; }
+.gauge-center {
+  position: absolute; top: 52px; left: 0; width: 100%; text-align: center;
+  pointer-events: none;
+}
+.gauge-value {
+  font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -1.5px;
+}
+.gauge-label {
+  font-size: 13px; font-weight: 600; margin-top: 3px; opacity: 0.85;
+}
+
+/* ── Emotion badge ── */
+.emotion-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin-bottom: 4px;
+}
+.emotion-badge {
+  font-size: 17px; font-weight: 700; padding: 4px 14px;
+  border-radius: 20px; background: rgba(255,255,255,0.04);
+  border: 1px solid #1e3050;
+}
+.emotion-emoji { font-size: 22px; }
+
+/* ── Expand trigger ── */
+.expand-trigger {
+  text-align: center; padding: 6px 0 2px;
+  cursor: pointer; user-select: none;
+  transition: opacity 0.2s;
+}
+.expand-trigger:hover { opacity: 0.75; }
+.expand-trigger .arrow {
+  font-size: 11px; color: #4a5a70;
+  transition: transform 0.3s;
+}
+.expand-trigger.open .arrow { transform: rotate(180deg); }
+.expand-trigger .label { font-size: 11px; color: #4a5a70; }
+
+/* ── Breakdown panel ── */
+.panel {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.45s cubic-bezier(0.4,0,0.2,1);
+}
+.panel.open { max-height: 600px; }
+.panel-inner {
+  background: #111b2b; border-radius: 12px; padding: 16px;
+  border: 1px solid #1a2332; margin-top: 10px;
+}
+.section-title {
+  font-size: 11px; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  margin-bottom: 10px; padding-bottom: 6px;
+  border-bottom: 1px solid #1a2332;
+}
+.section-title:first-child { margin-top: 0; }
+
+/* ── Metric chips row ── */
+.metric-row {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.metric-chip {
+  flex: 1; min-width: 60px; text-align: center;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid #1a2332; border-radius: 8px;
+  padding: 8px 6px;
+}
+.metric-val { font-size: 15px; font-weight: 700; color: #e2e8f0; }
+.metric-lbl {
+  font-size: 9px; color: #64748b; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-top: 2px;
+}
+
+/* ── Source bars ── */
+.src-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 5px;
+}
+.src-name {
+  width: 70px; font-size: 10px; color: #8a99ad;
+  text-align: right; flex-shrink: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.src-track {
+  flex: 1; height: 4px; background: #1a2332; border-radius: 2px; overflow: hidden;
+}
+.src-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, #3b82f6, #a855f7);
+  transition: width 0.5s ease;
+}
+.src-count {
+  width: 28px; font-size: 10px; color: #64748b;
+  text-align: right; flex-shrink: 0;
+}
+
+/* ── Keyword chips ── */
+.kw-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
+.kw-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 9px; border-radius: 10px; font-size: 10px;
+  background: rgba(255,255,255,0.04); border: 1px solid #1e3050;
+  color: #c8d3e0; font-weight: 500;
+}
+.kw-chip .cnt { color: #64748b; font-size: 9px; }
+
+/* ── Distribution rows ── */
+.dist-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+}
+.dist-lbl {
+  width: 50px; font-size: 10px; font-weight: 600; text-align: right;
+  flex-shrink: 0;
+}
+.dist-lbl.fear { color: #f87171; }
+.dist-lbl.neutral { color: #fbbf24; }
+.dist-lbl.greed { color: #34d399; }
+.dist-track {
+  flex: 1; height: 6px; background: #1a2332; border-radius: 3px; overflow: hidden;
+}
+.dist-fill {
+  height: 100%; border-radius: 3px; transition: width 0.5s ease;
+}
+.dist-fill.fear { background: linear-gradient(90deg, #ef4444, #f87171); }
+.dist-fill.neutral { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.dist-fill.greed { background: linear-gradient(90deg, #10b981, #34d399); }
+.dist-val {
+  width: 24px; font-size: 10px; font-weight: 700; text-align: right;
+  flex-shrink: 0;
+}
+.dist-val.fear { color: #f87171; }
+.dist-val.neutral { color: #fbbf24; }
+.dist-val.greed { color: #34d399; }
+
+/* ── Footer ── */
+.footer {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; font-size: 10px; color: #3d4f66;
+}
+.footer .ts { font-variant-numeric: tabular-nums; }
+.footer .cache { font-style: italic; }
+
+/* ── Shimmer loading ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #111b2b 25%, #1a2332 50%, #111b2b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 400px) {
+  .widget { padding: 14px 12px 12px; }
+  .gauge-wrap { width: 240px; height: 130px; }
+  .gauge-wrap canvas { width: 240px; height: 130px; }
+  .gauge-center { top: 44px; }
+  .gauge-value { font-size: 36px; }
+  .metric-row { gap: 6px; }
+  .src-name { width: 56px; font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<div class="widget" id="root">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-icon">📰</div>
+      <div>
+        <div class="topbar-title">Sentimiento de Noticias</div>
+        <div class="topbar-sub">Análisis de medios financieros</div>
+      </div>
+    </div>
+    <div class="status-pill loading" id="statusPill">
+      <span class="dot"></span>
+      <span class="txt">Conectando</span>
+    </div>
+  </div>
+
+  <!-- Alert banner (EXTREME_FEAR / EXTREME_GREED) -->
+  <div class="alert" id="alert"></div>
+
+  <!-- Gauge -->
+  <div class="gauge-wrap">
+    <canvas id="cv" width="560" height="300"></canvas>
+    <div class="gauge-center">
+      <div class="gauge-value" id="gVal">—</div>
+      <div class="gauge-label" id="gLbl">Cargando…</div>
+    </div>
+  </div>
+
+  <!-- Emotion + Delta -->
+  <div class="emotion-row">
+    <span class="emotion-badge" id="eBadge">—</span>
+    <span class="emotion-emoji" id="eEmoji">⏳</span>
+    <span class="emotion-badge" id="dBadge" style="font-size:13px;">—</span>
+  </div>
+
+  <!-- Expand trigger -->
+  <div class="expand-trigger" id="expTrigger" onclick="toggle()">
+    <div class="label"><span id="expLbl">▼ Ver desglose</span></div>
+    <div class="arrow">▼</div>
+  </div>
+
+  <!-- Breakdown panel -->
+  <div class="panel" id="panel">
+    <div class="panel-inner">
+
+      <!-- Metrics -->
+      <div class="section-title">📊 Métricas</div>
+      <div class="metric-row">
+        <div class="metric-chip">
+          <div class="metric-val" id="mArt">—</div>
+          <div class="metric-lbl">Artículos</div>
+        </div>
+        <div class="metric-chip">
+          <div class="metric-val" id="mSrc">—</div>
+          <div class="metric-lbl">Fuentes</div>
+        </div>
+        <div class="metric-chip">
+          <div class="metric-val" id="mDom">—</div>
+          <div class="metric-lbl">Dominantes</div>
+        </div>
+      </div>
+
+      <!-- Sources -->
+      <div class="section-title">📰 Fuentes RSS</div>
+      <div id="srcList"></div>
+
+      <!-- Keywords -->
+      <div class="section-title" id="kwSec">🔑 Palabras clave</div>
+      <div class="kw-row" id="kwRow"></div>
+
+      <!-- Distribution -->
+      <div class="section-title" id="distSec">📈 Distribución</div>
+      <div id="distList"></div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span class="ts" id="ts">—</span>
+    <span class="cache" id="cache"></span>
+  </div>
+</div>
+
+<script>
+(function() {
+"use strict";
+
+/* ───────── Config ───────── */
+var API   = "/api/v1/news-sentiment";
+var MS    = 60000;            // refresh interval 60s
+var W     = 560;              // canvas internal resolution (2× CSS)
+var H     = 300;
+var cx    = W / 2;
+var cy    = H - 30;
+var rOut  = 240;
+var rIn   = 210;
+var a0    = Math.PI + 0.12;
+var a1    = 2 * Math.PI - 0.12;
+var rng   = a1 - a0;
+
+/* ───────── State ───────── */
+var cur   = 50;
+var tgt   = 50;
+var prev  = null;
+var raw   = null;
+var frame = null;
+var tick  = null;
+var count = 0;
+
+/* ───────── DOM refs ───────── */
+var $  = function(id){ return document.getElementById(id); };
+var cv    = $("cv");
+var ctx   = cv.getContext("2d");
+var $val  = $("gVal");
+var $lbl  = $("gLbl");
+var $eB   = $("eBadge");
+var $eE   = $("eEmoji");
+var $dB   = $("dBadge");
+var $st   = $("statusPill");
+var $alt  = $("alert");
+var $p    = $("panel");
+var $tr   = $("expTrigger");
+var $src  = $("srcList");
+var $kw   = $("kwRow");
+var $dist = $("distList");
+var $mArt = $("mArt");
+var $mSrc = $("mSrc");
+var $mDom = $("mDom");
+var $ts   = $("ts");
+var $cache= $("cache");
+
+/* ───────── Colour bands (AC: <20, <45, <55, <75, >=75) ───────── */
+var BANDS = [
+  { to: 20,  col: "#ff3b30",  name: "Pánico"     },   // EXTREME_FEAR
+  { to: 45,  col: "#ff9500",  name: "Miedo"       },
+  { to: 55,  col: "#ffcc02",  name: "Neutral"     },
+  { to: 75,  col: "#34c759",  name: "Optimista"   },
+  { to: 101, col: "#af52de",  name: "Euforia"     }    // EXTREME_GREED
+];
+
+function bandAt(s){
+  for (var i=0;i<BANDS.length;i++) if (s<BANDS[i].to) return BANDS[i];
+  return BANDS[BANDS.length-1];
+}
+function bandCol(s){ return bandAt(s).col; }
+
+/* ───────── Emoji / action (umbrales alineados con AC) ───────── */
+function actionInfo(s){
+  if (s<20)  return {e:"🔴",l:"Miedo Extremo"};
+  if (s<45)  return {e:"🟠",l:"Miedo"};
+  if (s<55)  return {e:"🟡",l:"Neutral"};
+  if (s<75)  return {e:"🟢",l:"Optimista"};
+  return      {e:"🟣",l:"Euforia Extrema"};
+}
+
+/* ───────── Normalise score ───────── */
+function norm(v){
+  if (typeof v==="number" && v>=-1 && v<=1 && v!==0 && v!==1 && v!==-1)
+    return Math.round((v+1)*50);
+  return Math.round(v);
+}
+
+/* ───────── Canvas gauge ───────── */
+function draw(s){
+  ctx.clearRect(0,0,W,H);
+
+  /* background track */
+  ctx.beginPath();
+  ctx.arc(cx,cy,rOut,a0,a1);
+  ctx.strokeStyle="#1a2332";
+  ctx.lineWidth=26;
+  ctx.lineCap="butt";
+  ctx.stroke();
+
+  /* full colour segments (dim) */
+  var seg=120;
+  for (var i=0;i<=seg;i++){
+    var t=i/seg;
+    var a=a0+t*rng;
+    ctx.beginPath();
+    ctx.arc(cx,cy,rOut,a-0.008,a);
+    ctx.strokeStyle=bandCol(t*100);
+    ctx.lineWidth=26;
+    ctx.globalAlpha=0.18;
+    ctx.lineCap="butt";
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+
+  /* active arc */
+  var p=Math.max(0,Math.min(1,s/100));
+  var ae=a0+p*rng;
+  var c=bandCol(s);
+
+  if (s>0){
+    /* glow */
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx,cy+2,rOut,a0,ae);
+    ctx.strokeStyle="rgba(0,0,0,0.35)";
+    ctx.lineWidth=26;
+    ctx.lineCap="butt";
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(cx,cy,rOut,a0,ae);
+    ctx.strokeStyle=c;
+    ctx.lineWidth=26;
+    ctx.lineCap="butt";
+    ctx.shadowColor=c;
+    ctx.shadowBlur=14;
+    ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+
+  /* inner mask */
+  ctx.beginPath();
+  ctx.arc(cx,cy,rIn,0,2*Math.PI);
+  ctx.fillStyle="#0e1520";
+  ctx.fill();
+
+  /* thin tick marks */
+  ctx.save();
+  for (var t=0;t<=100;t+=10){
+    var a=a0+(t/100)*rng;
+    var x1=cx+Math.sin(a)*(rIn+2);
+    var y1=cy-Math.cos(a)*(rIn+2);
+    var x2=cx+Math.sin(a)*(rIn+8);
+    var y2=cy-Math.cos(a)*(rIn+8);
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.strokeStyle="#3d4f66";
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  /* needle */
+  var nx=cx+Math.sin(ae)*(rOut-12);
+  var ny=cy-Math.cos(ae)*(rOut-12);
+
+  ctx.beginPath();
+  ctx.moveTo(cx+1,cy+3);
+  ctx.lineTo(nx+1,ny+3);
+  ctx.strokeStyle="rgba(0,0,0,0.3)";
+  ctx.lineWidth=3;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(nx,ny);
+  ctx.strokeStyle="#ffffff";
+  ctx.lineWidth=2.5;
+  ctx.lineCap="round";
+  ctx.stroke();
+
+  /* center jewel */
+  ctx.beginPath();
+  ctx.arc(cx,cy,5.5,0,2*Math.PI);
+  ctx.fillStyle=c;
+  ctx.fill();
+  ctx.strokeStyle="#ffffff55";
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+
+  /* outer jewel */
+  ctx.beginPath();
+  ctx.arc(cx,cy,10.5,0,2*Math.PI);
+  ctx.strokeStyle=c+"88";
+  ctx.lineWidth=2;
+  ctx.stroke();
+}
+
+/* ───────── Animation (lerp suave) ───────── */
+function animate(){
+  if (frame){ cancelAnimationFrame(frame); frame=null; }
+  var t0=performance.now();
+  var dur=750;
+  (function step(now){
+    var p=Math.min((now-t0)/dur,1);
+    var e=1-Math.pow(1-p,3);              // ease-out cubic
+    cur=cur+(tgt-cur)*e;
+    draw(cur);
+    $val.textContent=Math.round(cur);
+    if (p<1) frame=requestAnimationFrame(step);
+  })(performance.now());
+}
+
+/* ───────── Delta ───────── */
+function updDelta(s){
+  var d=0, dp="";
+  if (raw && typeof raw.delta==="number"){
+    d=raw.delta;
+    if (raw.delta_pct) dp=" "+raw.delta_pct;
+  } else if (prev!==null){
+    d=s-prev;
+    var pc=prev!==0?Math.round(d/prev*100):0;
+    dp= pc ? " ("+(pc>0?"+":"")+pc+"%)" : "";
+  }
+  if (raw && (typeof raw.delta==="number" || prev===null)) prev=s;
+
+  var sign=d>0?"+":"";
+  var txt=sign+d+dp;
+  $dB.textContent=txt;
+  $dB.className="emotion-badge"+(d>0?" positive":d<0?" negative":" zero");
+}
+
+/* ───────── Alert (EXTREME_FEAR <20, EXTREME_GREED >80) ───────── */
+function updAlert(a,s){
+  if (!a){ if(s<20)a="EXTREME_FEAR"; else if(s>80)a="EXTREME_GREED"; }
+  $alt.className="alert"+(a?" show":"");
+  if (a==="EXTREME_FEAR"){  $alt.className="alert fear show";  $alt.textContent="⚠ PÁNICO EXTREMO"; }
+  else if (a==="EXTREME_GREED"){ $alt.className="alert greed show"; $alt.textContent="🚀 EUFORIA EXTREMA"; }
+}
+
+/* ───────── Status ───────── */
+function setStatus(s){
+  $st.className="status-pill "+s;
+  var txt={loading:"Conectando",live:"En vivo",cache:"Cache",error:"Error"};
+  $st.querySelector(".txt").textContent=txt[s]||s;
+}
+
+/* ───────── Expand ───────── */
+var open=false;
+window.toggle=function(){
+  open=!open;
+  $p.classList.toggle("open",open);
+  $tr.classList.toggle("open",open);
+  $("expLbl").textContent=open?"▲ Ocultar desglose":"▼ Ver desglose";
+};
+
+/* ───────── Render helpers ───────── */
+function renderSources(src){
+  if (!src || !Object.keys(src).length){
+    $src.innerHTML='<span style="color:#64748b;font-size:11px">Sin datos de fuentes</span>';
+    $mSrc.textContent="—";
+    return;
+  }
+  var total=0;
+  for (var k in src) total+=src[k];
+  var sorted=Object.keys(src).sort(function(a,b){return src[b]-src[a];});
+  $mSrc.textContent=sorted.length;
+
+  var h="";
+  for (var i=0;i<sorted.length;i++){
+    var n=sorted[i].replace(/_/g," ");
+    var c=src[sorted[i]];
+    var p=total?(c/total*100).toFixed(0):0;
+    h+='<div class="src-row">'+
+       '<span class="src-name">'+n+'</span>'+
+       '<div class="src-track"><div class="src-fill" style="width:'+p+'%"></div></div>'+
+       '<span class="src-count">'+c+'</span></div>';
+  }
+  $src.innerHTML=h;
+}
+
+function renderKw(kw){
+  if (!kw || !kw.length){ $kwSec.style.display="none"; return; }
+  $kwSec.style.display="";
+  $mDom.textContent=Math.min(kw.length,6);
+  var h="";
+  for (var i=0;i<kw.length;i++){
+    h+='<span class="kw-chip">'+kw[i].word+'<span class="cnt">×'+kw[i].count+'</span></span>';
+  }
+  $kw.innerHTML=h;
+}
+
+function renderDist(d){
+  if (!d){ $distSec.style.display="none"; return; }
+  $distSec.style.display="";
+  var t=(d.fear||0)+(d.neutral||0)+(d.greed||0);
+  function row(lbl,cls,v){
+    var p=t?(v/t*100).toFixed(0):0;
+    return '<div class="dist-row">'+
+           '<span class="dist-lbl '+cls+'">'+lbl+'</span>'+
+           '<div class="dist-track"><div class="dist-fill '+cls+'" style="width:'+p+'%"></div></div>'+
+           '<span class="dist-val '+cls+'">'+v+'</span></div>';
+  }
+  $dist.innerHTML=row("Miedo","fear",d.fear||0)+row("Neutral","neutral",d.neutral||0)+row("Euforia","greed",d.greed||0);
+}
+
+function renderMetrics(data){
+  $mArt.textContent=data.total_articles||"—";
+  if (data.sources && typeof data.sources==="object"){
+    $mSrc.textContent=Object.keys(data.sources).length;
+  } else { $mSrc.textContent="—"; }
+}
+
+/* ───────── Timestamp ───────── */
+function updTime(ts){
+  if (!ts){ $ts.textContent="—"; return; }
+  try {
+    var d=new Date(ts);
+    var hh=d.getHours().toString().padStart(2,"0");
+    var mm=d.getMinutes().toString().padStart(2,"0");
+    var ss=d.getSeconds().toString().padStart(2,"0");
+    $ts.textContent=hh+":"+mm+":"+ss;
+  } catch(e){ $ts.textContent="—"; }
+}
+
+/* ───────── Main update ───────── */
+function apply(data){
+  raw=data;
+
+  /* score */
+  var s=norm(data.score);
+  s=Math.max(0,Math.min(100,s));
+  tgt=s;
+
+  /* animate gauge */
+  if (frame){ cancelAnimationFrame(frame); frame=null; }
+  animate();
+
+  /* colour & label */
+  var ai=actionInfo(s);
+  var c=bandCol(s);
+  $val.style.color=c;
+  $lbl.textContent=ai.l;
+  $lbl.style.color=c;
+  $eB.textContent=ai.l;
+  $eB.style.color=c;
+  $eB.style.borderColor=c+"44";
+  $eE.textContent=ai.e;
+
+  /* delta */
+  updDelta(s);
+
+  /* alert */
+  updAlert(data.alert, s);
+
+  /* metrics */
+  renderMetrics(data);
+
+  /* breakdown */
+  renderSources(data.sources);
+  renderKw(data.top_keywords);
+  renderDist(data.distribution);
+
+  /* time */
+  updTime(data.timestamp);
+
+  /* cache badge */
+  if (data.cacheado) {
+    $cache.textContent="📦 cache";
+  } else if (data.status==="ready") {
+    $cache.textContent="🔄 fresh";
+  } else {
+    $cache.textContent="";
+  }
+
+  /* status */
+  setStatus("live");
+}
+
+/* ───────── Fetch ───────── */
+function fetch(){
+  setStatus("loading");
+  fetch(API)
+    .then(function(r){
+      if (!r.ok) throw new Error("HTTP "+r.status);
+      return r.json();
+    })
+    .then(function(d){
+      apply(d);
+      count=0;
+    })
+    .catch(function(err){
+      console.error("[News] fetch:",err);
+      count++;
+      if (raw && count<=2){
+        setStatus("cache");
+      } else {
+        setStatus("error");
+        $val.textContent="—";
+        $lbl.textContent="Sin datos";
+        $eB.textContent="—";
+        $eE.textContent="⚠";
+      }
+    });
+}
+
+/* ── Refresh loop with countdown indicator ── */
+function startTimer(){
+  if (tick) clearInterval(tick);
+  var remain=MS/1000;
+  tick=setInterval(function(){
+    remain--;
+    if (remain<=0){
+      fetch();
+      remain=MS/1000;
+    }
+  },1000);
+}
+
+/* ── Bootstrap ── */
+fetch();
+startTimer();
+
+})();
+</script>
+</body>
+</html>

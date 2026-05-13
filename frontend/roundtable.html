@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON - Mesa Redonda</title><link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  :root{--card-bg:#131b2e;--border:#1e2a45;--bg:#0d1525}
+  body{background:#0a0e17;color:#e6edf5;font-family:'Segoe UI',sans-serif}
+  .container{max-width:1100px;margin:0 auto;padding:16px}
+
+  .roundtable-header { text-align:center;padding:20px 0 10px; }
+  .roundtable-header h1 { font-size:22px;margin:0;background:linear-gradient(135deg,#7b2ff7,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent; }
+  .roundtable-header p { color:var(--text-dim);font-size:13px;margin:4px 0; }
+
+  .symbol-selector { display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap;justify-content:center; }
+  .symbol-btn { padding:8px 18px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:14px;cursor:pointer;transition:all 0.2s;font-weight:500; }
+  .symbol-btn:hover { border-color:var(--accent); }
+  .symbol-btn.active { border-color:#7b2ff7;background:rgba(123,47,247,0.12); }
+  .symbol-input-group { display:flex;gap:6px; }
+  .symbol-input-group input { background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;width:100px; }
+  .symbol-input-group button { background:#7b2ff7;border:none;border-radius:8px;padding:8px 14px;color:#fff;cursor:pointer;font-size:13px;font-weight:600; }
+
+  .model-selector { display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0; }
+  .model-chip { padding:5px 12px;border-radius:16px;font-size:12px;border:1px solid var(--border);background:var(--bg);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:5px; }
+  .model-chip:hover { border-color:var(--accent); }
+  .model-chip.selected { border-color:#7b2ff7;background:rgba(123,47,247,0.12); }
+  .model-chip .dot { width:8px;height:8px;border-radius:50%;display:inline-block; }
+  .model-chip .dot.deepseek { background:#00d4ff; }
+  .model-chip .dot.gemini { background:#00e676; }
+  .model-chip .dot.openrouter { background:#ffc107; }
+  .model-chip .cost { font-size:9px;color:var(--text-dim); }
+
+  .analyze-btn { display:block;margin:16px auto;padding:12px 40px;border:none;border-radius:12px;
+    background:linear-gradient(135deg,#7b2ff7,#00d4ff);color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s; }
+  .analyze-btn:hover { transform:translateY(-2px);box-shadow:0 4px 20px rgba(123,47,247,0.3); }
+  .analyze-btn:disabled { opacity:0.5;cursor:not-allowed;transform:none; }
+
+  .loading-area { text-align:center;padding:40px;color:var(--text-dim); }
+
+  .consensus-banner { border-radius:14px;padding:20px;margin:12px 0;text-align:center;
+    border:2px solid; }
+  .consensus-banner.ALTA { border-color:#00e676;background:rgba(0,230,118,0.05); }
+  .consensus-banner.MEDIA { border-color:#ffc107;background:rgba(255,193,7,0.05); }
+  .consensus-banner.BAJA { border-color:#ff5252;background:rgba(255,82,82,0.05); }
+  .consensus-banner .c-score { font-size:52px;font-weight:700; }
+  .consensus-banner .c-action { font-size:20px;font-weight:700;margin:4px 0; }
+  .consensus-banner .c-reason { font-size:13px;color:var(--text-dim);max-width:600px;margin:8px auto;line-height:1.5; }
+  .consensus-banner .c-stats { display:flex;justify-content:center;gap:20px;font-size:12px;color:var(--text-dim);margin-top:8px; }
+
+  .model-result { background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;transition:all 0.2s; }
+  .model-result:hover { border-color:var(--accent); }
+  .model-result .mr-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:8px; }
+  .model-result .mr-name { font-size:15px;font-weight:600; }
+  .model-result .mr-model { font-size:11px;color:var(--text-dim); }
+  .model-result .mr-score { font-size:28px;font-weight:700; }
+  .model-result .mr-action { font-size:13px;font-weight:600;padding:3px 10px;border-radius:6px;display:inline-block; }
+  .model-result .mr-reasoning { font-size:12px;color:var(--text-dim);line-height:1.5;margin-top:6px; }
+  .model-result .mr-factors { display:flex;gap:6px;flex-wrap:wrap;margin-top:6px; }
+  .model-result .mr-factors span { font-size:11px;padding:3px 8px;border-radius:4px;background:var(--bg); }
+  .model-result .mr-cost { font-size:11px;color:#3a4a5f;margin-top:4px; }
+  .model-result .mr-error { color:#ff5252;font-size:13px;padding:8px;background:rgba(255,82,82,0.08);border-radius:8px; }
+  .model-result .mr-parse-warn { color:#ffc107;font-size:11px;margin-top:4px; }
+
+  .agreement-box { background:rgba(0,230,118,0.05);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:12px;margin:8px 0; }
+  .agreement-box h4 { color:#00e676;font-size:13px;margin:0 0 6px; }
+  .agreement-box li { font-size:12px;color:var(--text-dim);margin:3px 0; }
+
+  .disagreement-box { background:rgba(255,82,82,0.05);border:1px solid rgba(255,82,82,0.2);border-radius:10px;padding:12px;margin:8px 0; }
+  .disagreement-box h4 { color:#ff5252;font-size:13px;margin:0 0 6px; }
+  .disagreement-box li { font-size:12px;color:var(--text-dim);margin:3px 0; }
+
+  .expert-consult { background:rgba(123,47,247,0.08);border:1px dashed #7b2ff7;border-radius:12px;padding:14px;margin:10px 0;text-align:center; }
+  .expert-consult .ec-title { font-size:14px;font-weight:600;color:#7b2ff7;margin-bottom:4px; }
+  .expert-consult .ec-desc { font-size:12px;color:var(--text-dim); }
+
+  .debate-animation { display:none; }
+  .debate-animation.active { display:flex;justify-content:center;gap:20px;padding:20px; }
+  .debater { width:80px;text-align:center;animation:pulse 2s infinite; }
+  .debater .avatar { width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:20px; }
+  .debater .d-name { font-size:11px;color:var(--text-dim); }
+  .debater:nth-child(2) { animation-delay:0.3s; }
+  .debater:nth-child(3) { animation-delay:0.6s; }
+  .debater:nth-child(4) { animation-delay:0.9s; }
+  @keyframes pulse { 0%{opacity:0.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}100%{opacity:0.6;transform:scale(1)} }
+
+  .total-cost-bar { display:flex;justify-content:space-between;padding:8px 14px;background:var(--card);border-radius:8px;font-size:12px;margin-top:10px;color:var(--text-dim); }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <span class="logo">⚡ PEGATON</span>
+  <a href="/">🏠 Hub</a>
+  <a href="/investor">📊 Inversor</a>
+  <a href="/roundtable" class="active">🧠 Mesa Redonda</a>
+  <a href="/budget">💰 Modelos</a>
+  <a href="/eval">🏆 Eval</a>
+  <a href="/processes">⚙️ Procesos</a>
+  <a href="/health">🩺 Salud</a>
+  <a href="/agents">🤖 Agentes</a>
+  <a href="/projects">📁 Proyectos</a>
+</nav>
+
+<div class="container">
+  <div class="roundtable-header">
+    <h1>🧠 Mesa Redonda Multi-Modelo</h1>
+    <p>Varios modelos analizan el mismo activo, debaten y alcanzan un consenso</p>
+  </div>
+
+  <!-- Symbol Selector -->
+  <div class="symbol-selector">
+    <button class="symbol-btn active" onclick="selectSymbol('SPY',this)">📈 SPY</button>
+    <button class="symbol-btn" onclick="selectSymbol('EUR/USD',this)">💶 EUR/USD</button>
+    <button class="symbol-btn" onclick="selectSymbol('BTC/USD',this)">₿ BTC/USD</button>
+    <div class="symbol-input-group">
+      <input id="customSym" placeholder="Otro..." onkeydown="if(event.key==='Enter')selectCustom()">
+      <button onclick="selectCustom()">Ir</button>
+    </div>
+  </div>
+
+  <!-- Model Selector -->
+  <div class="section-title">🤖 Selecciona los modelos para la mesa</div>
+  <div class="model-selector" id="modelSelector">
+    <div class="loading">Cargando modelos disponibles...</div>
+  </div>
+
+  <!-- Analyze Button -->
+  <button class="analyze-btn" id="analyzeBtn" onclick="runRoundtable()">🚀 Iniciar Mesa Redonda</button>
+
+  <!-- Loading Animation -->
+  <div class="debate-animation" id="debateAnimation">
+    <div class="debater"><div class="avatar" style="background:rgba(0,212,255,0.2)">💬</div><div class="d-name">V4 Flash</div></div>
+    <div class="debater"><div class="avatar" style="background:rgba(255,193,7,0.2)">💭</div><div class="d-name">Chat</div></div>
+    <div class="debater"><div class="avatar" style="background:rgba(123,47,247,0.2)">🧠</div><div class="d-name">Reasoner</div></div>
+    <div class="debater"><div class="avatar" style="background:rgba(0,230,118,0.2)">🤔</div><div class="d-name">Experto</div></div>
+  </div>
+
+  <!-- Results Area -->
+  <div id="resultsArea"></div>
+
+  <div class="footer" style="margin-top:20px;">
+    PEGATON · Mesa Redonda Multi-Modelo · Los modelos debaten, tú decides
+  </div>
+</div>
+
+<script>
+let currentSymbol = 'SPY';
+let selectedModels = [];
+let allModels = [];
+
+async function loadModels() {
+  try {
+    const r = await fetch('/api/v1/roundtable/models?active_only=true');
+    const d = await r.json();
+    allModels = d.models || [];
+    
+    const div = document.getElementById('modelSelector');
+    let h = '';
+    for (const m of allModels) {
+      const provider = m.provider;
+      h += `<span class="model-chip selected" onclick="toggleModel('${m.id}',this)" data-id="${m.id}">
+        <span class="dot ${provider}"></span>${m.name}
+        <span class="cost">${m.input_price === 0 ? '🆓' : '$' + m.input_price.toFixed(2) + '/M'}</span>
+      </span>`;
+    }
+    if (!h) h = '<div class="loading">No hay modelos disponibles. Configura API keys en .env</div>';
+    div.innerHTML = h;
+    
+    // Select all by default
+    selectedModels = allModels.map(m => m.id);
+  } catch(e) {
+    document.getElementById('modelSelector').innerHTML = '<div style="color:#ff5252">Error cargando modelos</div>';
+    // Fallback: use DeepSeek models
+    selectedModels = ['deepseek-v4-flash', 'deepseek-chat'];
+  }
+}
+
+function toggleModel(id, el) {
+  el.classList.toggle('selected');
+  if (selectedModels.includes(id)) {
+    selectedModels = selectedModels.filter(m => m !== id);
+  } else {
+    selectedModels.push(id);
+  }
+}
+
+function selectSymbol(sym, btn) {
+  currentSymbol = sym;
+  document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+function selectCustom() {
+  const inp = document.getElementById('customSym');
+  const sym = inp.value.toUpperCase().trim();
+  if (!sym) return;
+  currentSymbol = sym;
+  document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
+  // Don't clear input - user might want to try another
+}
+
+async function runRoundtable() {
+  if (selectedModels.length === 0) {
+    alert('Selecciona al menos un modelo');
+    return;
+  }
+  
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analizando...';
+  
+  // Show debate animation
+  document.getElementById('debateAnimation').classList.add('active');
+  document.getElementById('resultsArea').innerHTML = '<div class="loading-area">🤖 Los modelos están analizando ' + currentSymbol + '...</div>';
+  
+  try {
+    const modelParam = selectedModels.join(',');
+    const r = await fetch(`/api/v1/roundtable/analyze/${encodeURIComponent(currentSymbol)}?models=${encodeURIComponent(modelParam)}`);
+    
+    if (!r.ok) {
+      const err = await r.text();
+      throw new Error(err);
+    }
+    
+    const data = await r.json();
+    document.getElementById('debateAnimation').classList.remove('active');
+    renderResults(data);
+  } catch(e) {
+    document.getElementById('debateAnimation').classList.remove('active');
+    document.getElementById('resultsArea').innerHTML = '<div class="loading-area" style="color:#ff5252">❌ Error: ' + e.message + '</div>';
+    console.error(e);
+  }
+  
+  btn.disabled = false;
+  btn.textContent = '🚀 Iniciar Mesa Redonda';
+}
+
+function scoreColor(s) {
+  if (s >= 80) return '#00c853';
+  if (s >= 60) return '#00bcd4';
+  if (s >= 40) return '#ffc107';
+  if (s >= 20) return '#ff6d00';
+  return '#d50000';
+}
+
+function getActionEmoji(a) {
+  const map = {COMPRAR:'🔵',ACUMULAR:'🔵',MANTENER:'🟡',REDUCIR:'🟠',EVITAR:'🔴'};
+  return map[a] || '⚪';
+}
+
+function renderResults(data) {
+  const c = data.consensus || {};
+  const models = data.models || [];
+  
+  // Consensus Banner
+  const confClass = c.confidence || 'MEDIA';
+  const confColor = confClass === 'ALTA' ? '#00e676' : confClass === 'MEDIA' ? '#ffc107' : '#ff5252';
+  
+  let h = `
+    <div class="consensus-banner ${confClass}">
+      <div class="c-score" style="color:${scoreColor(c.consensus_score)}">${c.consensus_score}</div>
+      <div class="c-action" style="color:${scoreColor(c.consensus_score)}">${getActionEmoji(c.consensus_action)} ${c.consensus_action}</div>
+      <div style="font-size:13px;color:var(--text-dim);margin:2px 0;">Riesgo: <strong>${c.consensus_risk}</strong></div>
+      <div class="c-reason">${c.final_reasoning || ''}</div>
+      <div class="c-stats">
+        <span>🎯 Confianza: <strong style="color:${confColor}">${confClass}</strong></span>
+        <span>🤖 <strong>${data.models_used || 0}</strong> modelos</span>
+        <span>💰 <strong>$${(data.total_cost || 0).toFixed(6)}</strong></span>
+        <span>📊 Dispersión: <strong>${c.score_spread || 0} pts</strong></span>
+      </div>
+    </div>`;
+  
+  // Agreements
+  if (c.agreements && c.agreements.length > 0) {
+    h += `<div class="agreement-box"><h4>✅ Puntos de Acuerdo</h4><ul>`;
+    for (const a of c.agreements) {
+      h += `<li>${a}</li>`;
+    }
+    h += `</ul></div>`;
+  }
+  
+  // Disagreements
+  if (c.disagreements && c.disagreements.length > 0) {
+    h += `<div class="disagreement-box"><h4>⚠️ Puntos de Discrepancia</h4><ul>`;
+    for (const d of c.disagreements) {
+      h += `<li>${d}</li>`;
+    }
+    h += `</ul></div>`;
+  }
+  
+  // Expert consultation suggestion
+  if (c.needs_expert_consult) {
+    h += `<div class="expert-consult">
+      <div class="ec-title">🧠 Consultar Agente Experto</div>
+      <div class="ec-desc">${c.expert_suggestion || 'Las señales contradictorias recomiendan consultar a un especialista antes de actuar.'}</div>
+    </div>`;
+  }
+  
+  // Individual model results
+  h += `<div class="section-title" style="margin-top:16px;">🤖 Análisis Individual por Modelo</div>`;
+  
+  for (const m of models) {
+    if (m.error) {
+      h += `<div class="model-result" style="border-color:rgba(255,82,82,0.3);">
+        <div class="mr-header">
+          <div><div class="mr-name">${m.model_name || m.model}</div><div class="mr-model">${m.provider}</div></div>
+        </div>
+        <div class="mr-error">❌ ${m.error}</div>
+      </div>`;
+      continue;
+    }
+    
+    const score = m.score;
+    const action = m.action || '—';
+    const risk = m.risk || '—';
+    const sc = scoreColor(score);
+    
+    h += `<div class="model-result" style="border-left:3px solid ${sc}">
+      <div class="mr-header">
+        <div>
+          <div class="mr-name">${m.model_name || m.model}</div>
+          <div class="mr-model">${m.provider} · Riesgo: ${risk}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="mr-score" style="color:${sc}">${score}</div>
+          <div class="mr-action" style="background:${sc}20;color:${sc}">${getActionEmoji(action)} ${action}</div>
+        </div>
+      </div>`;
+    
+    if (m.reasoning) {
+      h += `<div class="mr-reasoning">${m.reasoning}</div>`;
+    }
+    
+    if (m.key_factors && m.key_factors.length > 0) {
+      h += `<div class="mr-factors">`;
+      for (const f of m.key_factors) {
+        if (f !== 'Error de conexión' && !f.startsWith('Parseo')) {
+          h += `<span>🔑 ${f}</span>`;
+        }
+      }
+      h += `</div>`;
+    }
+    
+    h += `<div class="mr-cost">⚡ ${m.total_tokens || 0} tokens · $${(m.cost || 0).toFixed(6)}</div>`;
+    
+    if (m.parse_fallback) {
+      h += `<div class="mr-parse-warn">⚠️ Respuesta parseada automáticamente — el modelo no siguió el formato JSON exacto</div>`;
+    }
+    
+    h += `</div>`;
+  }
+  
+  // Total cost
+  h += `<div class="total-cost-bar">
+    <span>🔄 ${data.models_used || 0} modelos convocados</span>
+    <span>📄 ${data.total_tokens || 0} tokens totales</span>
+    <span>💰 Coste total: <strong>$${(data.total_cost || 0).toFixed(6)}</strong></span>
+  </div>`;
+  
+  document.getElementById('resultsArea').innerHTML = h;
+}
+
+// Init
+loadModels();
+</script>
+</body>
+</html>

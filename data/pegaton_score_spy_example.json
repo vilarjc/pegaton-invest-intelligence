@@ -1,0 +1,164 @@
+{
+  "symbol": "SPY",
+  "pegaton_score": 51.2,
+  "action": "\ud83d\udfe1 MANTENER",
+  "macro_score": 49.0,
+  "technical_score": 52.6,
+  "factors": {
+    "macro": [
+      {
+        "name": "CPIAUCSL",
+        "score": 50.0,
+        "weight": 0.1,
+        "contribution": 5.0,
+        "direction": "neutral"
+      },
+      {
+        "name": "DGS10",
+        "score": 45.0,
+        "weight": 0.1,
+        "contribution": 4.5,
+        "direction": "bajista"
+      },
+      {
+        "name": "FEDFUNDS",
+        "score": 35.0,
+        "weight": 0.2,
+        "contribution": 7.0,
+        "direction": "bajista"
+      },
+      {
+        "name": "INDPRO",
+        "score": 60.0,
+        "weight": 0.1,
+        "contribution": 6.0,
+        "direction": "alcista"
+      },
+      {
+        "name": "PAYEMS",
+        "score": 60.0,
+        "weight": 0.15,
+        "contribution": 9.0,
+        "direction": "alcista"
+      },
+      {
+        "name": "PCEPI",
+        "score": 50.0,
+        "weight": 0.1,
+        "contribution": 5.0,
+        "direction": "neutral"
+      },
+      {
+        "name": "UMCSENT",
+        "score": 35.0,
+        "weight": 0.1,
+        "contribution": 3.5,
+        "direction": "bajista"
+      },
+      {
+        "name": "UNRATE",
+        "score": 60.0,
+        "weight": 0.15,
+        "contribution": 9.0,
+        "direction": "alcista"
+      }
+    ],
+    "technical": [
+      {
+        "name": "RSI(14)",
+        "score": 16.1,
+        "weight": 0.3,
+        "contribution": 4.84,
+        "direction": "bajista"
+      },
+      {
+        "name": "MACD",
+        "score": 65.0,
+        "weight": 0.25,
+        "contribution": 16.25,
+        "direction": "alcista"
+      },
+      {
+        "name": "SMA50",
+        "score": 70.0,
+        "weight": 0.25,
+        "contribution": 17.5,
+        "direction": "alcista"
+      },
+      {
+        "name": "SMA200",
+        "score": 70.0,
+        "weight": 0.2,
+        "contribution": 14.0,
+        "direction": "alcista"
+      }
+    ],
+    "summary": {
+      "factores_alcistas": 6,
+      "factores_bajistas": 4,
+      "factor_dominante": {
+        "name": "SMA50",
+        "direction": "alcista",
+        "contribution": 17.5
+      }
+    }
+  },
+  "macro_details": {
+    "indicators": {
+      "CPIAUCSL": {
+        "value": 330.293,
+        "date": "2026-03-01",
+        "score": 50.0
+      },
+      "DGS10": {
+        "value": 4.43,
+        "date": "2026-05-05",
+        "score": 45.0
+      },
+      "FEDFUNDS": {
+        "value": 3.64,
+        "date": "2026-04-01",
+        "score": 35.0
+      },
+      "INDPRO": {
+        "value": 101.7898,
+        "date": "2026-03-01",
+        "score": 60.0
+      },
+      "PAYEMS": {
+        "value": 158637.0,
+        "date": "2026-03-01",
+        "score": 60.0
+      },
+      "PCEPI": {
+        "value": 130.344,
+        "date": "2026-03-01",
+        "score": 50.0
+      },
+      "UMCSENT": {
+        "value": 53.3,
+        "date": "2026-03-01",
+        "score": 35.0
+      },
+      "UNRATE": {
+        "value": 4.3,
+        "date": "2026-03-01",
+        "score": 60.0
+      }
+    }
+  },
+  "technical_details": {
+    "rsi": 75.8,
+    "rsi_score": 16.1,
+    "macd_bullish": true,
+    "macd_histogram": 1.4144,
+    "macd_score": 65.0,
+    "sma50_above": true,
+    "sma50_distance": 7.51,
+    "sma50_score": 70.0,
+    "sma200_above": true,
+    "sma200_distance": 9.09,
+    "sma200_score": 70.0,
+    "last_close": 733.83002
+  }
+}

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC/USDT Candlestick Chart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0e17;
+            color: #e1e5eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .chart-container {
+            width: 100%;
+            max-width: 1200px;
+            background-color: #141922;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #2a2e39;
+        }
+
+        .chart-header {
+            padding: 20px;
+            border-bottom: 1px solid #2a2e39;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #f0b90b;
+        }
+
+        .price-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .current-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #e1e5eb;
+        }
+
+        .price-change {
+            font-size: 1rem;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .positive {
+            background-color: rgba(0, 200, 83, 0.15);
+            color: #00c853;
+        }
+
+        .negative {
+            background-color: rgba(255, 82, 82, 0.15);
+            color: #ff5252;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            min-height: 500px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: rgba(20, 25, 34, 0.95);
+            border: 1px solid #2a2e39;
+            border-radius: 4px;
+            padding: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.85rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            min-width: 180px;
+        }
+
+        .tooltip-header {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #f0b90b;
+            border-bottom: 1px solid #2a2e39;
+            padding-bottom: 5px;
+        }
+
+        .tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-label {
+            color: #8a8f9c;
+        }
+
+        .tooltip-value {
+            font-weight: 500;
+        }
+
+        .controls {
+            padding: 15px 20px;
+            border-top: 1px solid #2a2e39;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        .sma7-color {
+            background-color: #ff9800;
+        }
+
+        .sma21-color {
+            background-color: #2196f3;
+        }
+
+        .instructions {
+            color: #8a8f9c;
+        }
+
+        @media (max-width: 768px) {
+            .chart-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .chart-wrapper {
+                height: 60vh;
+                min-height: 400px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <div class="chart-header">
+            <div class="chart-title">BTC/USDT</div>
+            <div class="price-info">
+                <div class="current-price">$78,664.66</div>
+                <div class="price-change positive">+0.56%</div>
+            </div>
+        </div>
+        <div class="chart-wrapper">
+            <canvas id="chartCanvas"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+        <div class="controls">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color sma7-color"></div>
+                    <span>SMA-7</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color sma21-color"></div>
+                    <span>SMA-21</span>
+                </div>
+            </div>
+            <div class="instructions">Scroll to zoom, drag to pan</div>
+        </div>
+    </div>
+
+    <script>
+        // Data from Binance API (last 30 days)
+        const BTC_DATA = [
+            {"date":"2026-04-03","open":66901.99,"high":67370.42,"low":66282.0,"close":66964.3,"volume":11429.13131},
+            {"date":"2026-04-04","open":66964.29,"high":67562.93,"low":66775.91,"close":67300.42,"volume":7373.51613},
+            {"date":"2026-04-05","open":67300.42,"high":69136.2,"low":66611.66,"close":69034.18,"volume":11733.46752},
+            {"date":"2026-04-06","open":69034.18,"high":70351.46,"low":68300.0,"close":68853.66,"volume":20281.61044},
+            {"date":"2026-04-07","open":68853.66,"high":72761.0,"low":67732.01,"close":71924.22,"volume":23750.49661},
+            {"date":"2026-04-08","open":71924.22,"high":72857.0,"low":70707.23,"close":71069.93,"volume":19802.68627},
+            {"date":"2026-04-09","open":71069.93,"high":73145.0,"low":70466.0,"close":71787.97,"volume":18158.42159},
+            {"date":"2026-04-10","open":71787.98,"high":73434.0,"low":71426.15,"close":72962.7,"volume":17372.63288},
+            {"date":"2026-04-11","open":72962.71,"high":73790.0,"low":72513.09,"close":73043.16,"volume":9070.94374},
+            {"date":"2026-04-12","open":73043.16,"high":73137.24,"low":70505.88,"close":70740.98,"volume":13472.46801},
+            {"date":"2026-04-13","open":70741.56,"high":74900.0,"low":70566.99,"close":74417.99,"volume":24230.21625},
+            {"date":"2026-04-14","open":74418.0,"high":76038.0,"low":73795.47,"close":74131.55,"volume":26532.94456},
+            {"date":"2026-04-15","open":74131.55,"high":75425.0,"low":73514.0,"close":74809.99,"volume":14425.04167},
+            {"date":"2026-04-16","open":74809.99,"high":75534.76,"low":73309.85,"close":75154.29,"volume":17088.68777},
+            {"date":"2026-04-17","open":75154.28,"high":78333.0,"low":74529.4,"close":77072.0,"volume":25941.36694},
+            {"date":"2026-04-18","open":77072.01,"high":77420.08,"low":75445.16,"close":75691.76,"volume":9141.84456},
+            {"date":"2026-04-19","open":75691.76,"high":76240.66,"low":73762.9,"close":73801.79,"volume":11369.82232},
+            {"date":"2026-04-20","open":73801.8,"high":76558.62,"low":73724.31,"close":75840.97,"volume":16993.41034},
+            {"date":"2026-04-21","open":75840.97,"high":76927.57,"low":74821.57,"close":76336.15,"volume":14912.57132},
+            {"date":"2026-04-22","open":76336.14,"high":79472.82,"low":76132.95,"close":78178.23,"volume":19737.51225},
+            {"date":"2026-04-23","open":78178.22,"high":78662.5,"low":76960.0,"close":78257.48,"volume":16970.79501},
+            {"date":"2026-04-24","open":78257.48,"high":78581.93,"low":77264.08,"close":77437.13,"volume":12675.14315},
+            {"date":"2026-04-25","open":77437.13,"high":77885.35,"low":77140.23,"close":77625.0,"volume":5685.1142},
+            {"date":"2026-04-26","open":77625.0,"high":78961.0,"low":77326.51,"close":78657.55,"volume":7963.56162},
+            {"date":"2026-04-27","open":78657.55,"high":79485.66,"low":76459.64,"close":77371.32,"volume":16046.92418},
+            {"date":"2026-04-28","open":77371.32,"high":77478.0,"low":75666.6,"close":76342.77,"volume":13210.72383},
+            {"date":"2026-04-29","open":76342.78,"high":77904.93,"low":74937.52,"close":75780.0,"volume":18279.93022},
+            {"date":"2026-04-30","open":75780.0,"high":76669.14,"low":75323.65,"close":76346.57,"volume":10381.81607},
+            {"date":"2026-05-01","open":76346.58,"high":78914.12,"low":76320.42,"close":78231.13,"volume":17315.46502},
+            {"date":"2026-05-02","open":78231.13,"high":79199.48,"low":78040.0,"close":78664.66,"volume":6123.6215}
+        ];
+
+        // Chart configuration
+        const CONFIG = {
+            colors: {
+                background: '#141922',
+                grid: '#2a2e39',
+                text: '#8a8f9c',
+                bullish: '#00c853',
+                bearish: '#ff5252',
+                sma7: '#ff9800',
+                sma21: '#2196f3',
+                volume: '#2a2e39',
+                volumeBullish: 'rgba(0, 200, 83, 0.5)',
+                volumeBearish: 'rgba(255, 82, 82, 0.5)',
+                tooltipBackground: 'rgba(20, 25, 34, 0.95)'
+            },
+            chart: {
+                padding: { top: 20, right: 60, bottom: 100, left: 60 },
+                volumeHeight: 0.2, // 20% of chart height for volume
+                candleWidth: 8,
+                candleSpacing: 4,
+                smaLineWidth: 2
+            }
+        };
+
+        // Calculate Simple Moving Averages
+        function calculateSMA(data, period) {
+            const sma = [];
+            for (let i = 0; i < data.length; i++) {
+                if (i < period - 1) {
+                    sma.push(null);
+                } else {
+                    let sum = 0;
+                    for (let j = i - period + 1; j <= i; j++) {
+                        sum += data[j].close;
+                    }
+                    sma.push(sum / period);
+                }
+            }
+            return sma;
+        }
+
+        // Initialize chart
+        class CandlestickChart {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.tooltip = document.getElementById('tooltip');
+                
+                // Data
+                this.data = BTC_DATA;
+                this.sma7 = calculateSMA(this.data, 7);
+                this.sma21 = calculateSMA(this.data, 21);
+                
+                // View state
+                this.view = {
+                    startIndex: 0,
+                    endIndex: this.data.length - 1,
+                    minPrice: 0,
+                    maxPrice: 0,
+                    offsetX: 0,
+                    isDragging: false,
+                    lastMouseX: 0
+                };
+                
+                // Responsive setup
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                // Interaction events
+                this.setupEvents();
+                
+                // Initial draw
+                this.updateView();
+                this.draw();
+            }
+            
+            resizeCanvas() {
+                const container = this.canvas.parentElement;
+                const dpr = window.devicePixelRatio || 1;
+                
+                this.canvas.width = container.clientWidth * dpr;
+                this.canvas.height = container.clientHeight * dpr;
+                
+                this.ctx.scale(dpr, dpr);
+                
+                this.canvas.style.width = container.clientWidth + 'px';
+                this.canvas.style.height = container.clientHeight + 'px';
+                
+                this.updateView();
+                this.draw();
+            }
+            
+            updateView() {
+                // Calculate price range
+                const visibleData = this.data.slice(this.view.startIndex, this.view.endIndex + 1);
+                if (visibleData.length === 0) return;
+                
+                let minPrice = Infinity;
+                let maxPrice = -Infinity;
+                
+                visibleData.forEach(d => {
+                    minPrice = Math.min(minPrice, d.low);
+                    maxPrice = Math.max(maxPrice, d.high);
+                });
+                
+                // Add some padding
+                const priceRange = maxPrice - minPrice;
+                minPrice -= priceRange * 0.1;
+                maxPrice += priceRange * 0.1;
+                
+                this.view.minPrice = minPrice;
+                this.view.maxPrice = maxPrice;
+            }
+            
+            getChartArea() {
+                const canvasWidth = this.canvas.width / (window.devicePixelRatio || 1);
+                const canvasHeight = this.canvas.height / (window.devicePixelRatio || 1);
+                
+                return {
+                    x: CONFIG.chart.padding.left,
+                    y: CONFIG.chart.padding.top,
+                    width: canvasWidth - CONFIG.chart.padding.left - CONFIG.chart.padding.right,
+                    height: canvasHeight - CONFIG.chart.padding.top - CONFIG.chart.padding.bottom
+                };
+            }
+            
+            getPriceY(price) {
+                const chartArea = this.getChartArea();
+                const priceRange = this.view.maxPrice - this.view.minPrice;
+                return chartArea.y + chartArea.height * (1 - (price - this.view.minPrice) / priceRange);
+            }
+            
+            getDateX(index) {
+                const chartArea = this.getChartArea();
+                const visibleCount = this.view.endIndex - this.view.startIndex + 1;
+                const step = chartArea.width / visibleCount;
+                return chartArea.x + (index - this.view.startIndex) * step + step / 2;
+            }
+            
+            drawGrid() {
+                const ctx = this.ctx;
+                const chartArea = this.getChartArea();
+                
+                // Draw horizontal grid lines (price levels)
+                ctx.strokeStyle = CONFIG.colors.grid;
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([2, 2]);
+                
+                const priceRange = this.view.maxPrice - this.view.minPrice;
+                const gridLines = 5;
+                const step = priceRange / gridLines;
+                
+                for (let i = 0; i <= gridLines; i++) {
+                    const price = this.view.minPrice + step * i;
+                    const y = this.getPriceY(price);
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(chartArea.x, y);
+                    ctx.lineTo(chartArea.x + chartArea.width, y);
+                    ctx.stroke();
+                    
+                    // Price label
+                    ctx.fillStyle = CONFIG.colors.text;
+                    ctx.font = '11px sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('$' + price.toFixed(0), chartArea.x - 5, y + 4);
+                }
+                
+                // Draw vertical grid lines (dates)
+                const visibleCount = this.view.endIndex - this.view.startIndex + 1;
+                const dateStep = Math.max(1, Math.floor(visibleCount / 6)); // Show ~6 date labels
+                
+                for (let i = this.view.startIndex; i <= this.view.endIndex; i += dateStep) {
+                    const x = this.getDateX(i);
+                    const date = this.data[i].date.slice(5); // MM-DD
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(x, chartArea.y);
+                    ctx.lineTo(x, chartArea.y + chartArea.height);
+                    ctx.stroke();
+                    
+                    // Date label
+                    ctx.fillStyle = CONFIG.colors.text;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(date, x, chartArea.y + chartArea.height + 15);
+                }
+                
+                ctx.setLineDash([]);
+            }
+            
+            drawVolume() {
+                const ctx = this.ctx;
+                const chartArea = this.getChartArea();
+                const volumeHeight = chartArea.height * CONFIG.chart.volumeHeight;
+                const volumeY = chartArea.y + chartArea.height - volumeHeight;
+                
+                // Find max volume in visible range for scaling
+                let maxVolume = 0;
+                for (let i = this.view.startIndex; i <= this.view.endIndex; i++) {
+                    maxVolume = Math.max(maxVolume, this.data[i].volume);
+                }
+                
+                // Draw volume bars
+                for (let i = this.view.startIndex; i <= this.view.endIndex; i++) {
+                    const d = this.data[i];
+                    const x = this.getDateX(i);
+                    const barWidth = Math.max(1, (chartArea.width / (this.view.endIndex - this.view.startIndex + 1)) - 2);
+                    
+                    const barHeight = (d.volume / maxVolume) * volumeHeight;
+                    const y = volumeY + volumeHeight - barHeight;
+                    
+                    // Color based on price movement
+                    ctx.fillStyle = d.close >= d.open ? CONFIG.colors.volumeBullish : CONFIG.colors.volumeBearish;
+                    
+                    ctx.fillRect(x - barWidth/2, y, barWidth, barHeight);
+                }
+                
+                // Volume label
+                ctx.fillStyle = CONFIG.colors.text;
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('Volume', chartArea.x, volumeY - 5);
+            }
+            
+            drawCandlesticks() {
+                const ctx = this.ctx;
+                const chartArea = this.getChartArea();
+                const candleWidth = Math.max(1, (chartArea.width / (this.view.endIndex - this.view.startIndex + 1)) - CONFIG.chart.candleSpacing);
+                
+                for (let i = this.view.startIndex; i <= this.view.endIndex; i++) {
+                    const d = this.data[i];
+                    const x = this.getDateX(i);
+                    
+                    // Candlestick colors
+                    const isBullish = d.close >= d.open;
+                    ctx.fillStyle = isBullish ? CONFIG.colors.bullish : CONFIG.colors.bearish;
+                    ctx.strokeStyle = isBullish ? CONFIG.colors.bullish : CONFIG.colors.bearish;
+                    
+                    // Draw wick
+                    ctx.beginPath();
+                    ctx.moveTo(x, this.getPriceY(d.high));
+                    ctx.lineTo(x, this.getPriceY(d.low));
+                    ctx.stroke();
+                    
+                    // Draw body
+                    const bodyTop = this.getPriceY(Math.max(d.open, d.close));
+                    const bodyBottom = this.getPriceY(Math.min(d.open, d.close));
+                    const bodyHeight = Math.max(1, bodyBottom - bodyTop); // Ensure at least 1px
+                    
+                    ctx.fillRect(x - candleWidth/2, bodyTop, candleWidth, bodyHeight);
+                }
+            }
+            
+            drawMovingAverages() {
+                const ctx = this.ctx;
+                const chartArea = this.getChartArea();
+                
+                // Draw SMA-7
+                this.drawLine(this.sma7, CONFIG.colors.sma7, CONFIG.chart.smaLineWidth);
+                
+                // Draw SMA-21
+                this.drawLine(this.sma21, CONFIG.colors.sma21, CONFIG.chart.smaLineWidth);
+            }
+            
+            drawLine(data, color, lineWidth) {
+                const ctx = this.ctx;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.beginPath();
+                
+                let started = false;
+                
+                for (let i = this.view.startIndex; i <= this.view.endIndex; i++) {
+                    if (data[i] === null) continue;
+                    
+                    const x = this.getDateX(i);
+                    const y = this.getPriceY(data[i]);
+                    
+                    if (!started) {
+                        ctx.moveTo(x, y);
+                        started = true;
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                ctx.stroke();
+            }
+            
+            drawCrosshair(x, y) {
+                const ctx = this.ctx;
+                const chartArea = this.getChartArea();
+                
+                ctx.strokeStyle = CONFIG.colors.text;
+                ctx.lineWidth = 0.5;
+                ctx.setLineDash([3, 3]);
+                
+                // Vertical line
+                ctx.beginPath();
+                ctx.moveTo(x, chartArea.y);
+                ctx.lineTo(x, chartArea.y + chartArea.height);
+                ctx.stroke();
+                
+                // Horizontal line
+                ctx.beginPath();
+                ctx.moveTo(chartArea.x, y);
+                ctx.lineTo(chartArea.x + chartArea.width, y);
+                ctx.stroke();
+                
+                ctx.setLineDash([]);
+            }
+            
+            drawTooltip(x, y) {
+                const chartArea = this.getChartArea();
+                const dpr = window.devicePixelRatio || 1;
+                
+                // Find nearest data point
+                const visibleCount = this.view.endIndex - this.view.startIndex + 1;
+                const step = chartArea.width / visibleCount;
+                const index = Math.round((x - chartArea.x) / step) + this.view.startIndex;
+                
+                if (index < 0 || index >= this.data.length) return;
+                
+                const d = this.data[index];
+                const isBullish = d.close >= d.open;
+                
+                // Update tooltip content
+                this.tooltip.innerHTML = `
+                    <div class="tooltip-header">${d.date}</div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Open:</span>
+                        <span class="tooltip-value">$${d.open.toFixed(2)}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">High:</span>
+                        <span class="tooltip-value">$${d.high.toFixed(2)}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Low:</span>
+                        <span class="tooltip-value">$${d.low.toFixed(2)}</span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Close:</span>
+                        <span class="tooltip-value" style="color: ${isBullish ? CONFIG.colors.bullish : CONFIG.colors.bearish}">
+                            $${d.close.toFixed(2)}
+                        </span>
+                    </div>
+                    <div class="tooltip-row">
+                        <span class="tooltip-label">Volume:</span>
+                        <span class="tooltip-value">${d.volume.toFixed(2)}</span>
+                    </div>
+                `;
+                
+                // Position tooltip
+                const tooltipWidth = this.tooltip.offsetWidth;
+                const tooltipHeight = this.tooltip.offsetHeight;
+                let tooltipX = x + 15;
+                let tooltipY = y - tooltipHeight - 10;
+                
+                // Adjust if tooltip goes off screen
+                if (tooltipX + tooltipWidth > chartArea.width) {
+                    tooltipX = x - tooltipWidth - 15;
+                }
+                if (tooltipY < 0) {
+                    tooltipY = y + 15;
+                }
+                
+                this.tooltip.style.left = (tooltipX / dpr) + 'px';
+                this.tooltip.style.top = (tooltipY / dpr) + 'px';
+                this.tooltip.style.opacity = '1';
+            }
+            
+            draw() {
+                const ctx = this.ctx;
+                const canvasWidth = this.canvas.width / (window.devicePixelRatio || 1);
+                const canvasHeight = this.canvas.height / (window.devicePixelRatio || 1);
+                
+                // Clear canvas
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                
+                // Draw chart components
+                this.drawGrid();
+                this.drawVolume();
+                this.drawCandlesticks();
+                this.drawMovingAverages();
+            }
+            
+            setupEvents() {
+                const canvas = this.canvas;
+                
+                // Mouse wheel zoom
+                canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    
+                    const mouseX = e.offsetX;
+                    const chartArea = this.getChartArea();
+                    const visibleCount = this.view.endIndex - this.view.startIndex + 1;
+                    
+                    // Calculate zoom
+                    const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+                    const newCount = Math.max(5, Math.min(this.data.length, Math.round(visibleCount * zoomFactor)));
+                    
+                    // Adjust start/end indices keeping mouse position fixed
+                    const mouseRatio = (mouseX - chartArea.x) / chartArea.width;
+                    const mouseIndex = this.view.startIndex + mouseRatio * visibleCount;
+                    
+                    let newStart = Math.round(mouseIndex - mouseRatio * newCount);
+                    let newEnd = newStart + newCount - 1;
+                    
+                    // Clamp to data bounds
+                    if (newStart < 0) {
+                        newStart = 0;
+                        newEnd = newCount - 1;
+                    }
+                    if (newEnd >= this.data.length) {
+                        newEnd = this.data.length - 1;
+                        newStart = newEnd - newCount + 1;
+                    }
+                    
+                    this.view.startIndex = Math.max(0, newStart);
+                    this.view.endIndex = Math.min(this.data.length - 1, newEnd);
+                    
+                    this.updateView();
+                    this.draw();
+                });
+                
+                // Mouse drag for panning
+                canvas.addEventListener('mousedown', (e) => {
+                    this.view.isDragging = true;
+                    this.view.lastMouseX = e.offsetX;
+                    canvas.style.cursor = 'grabbing';
+                });
+                
+                canvas.addEventListener('mousemove', (e) => {
+                    const chartArea = this.getChartArea();
+                    const x = e.offsetX;
+                    const y = e.offsetY;
+                    
+                    // Check if mouse is over chart area
+                    if (x >= chartArea.x && x <= chartArea.x + chartArea.width &&
+                        y >= chartArea.y && y <= chartArea.y + chartArea.height) {
+                        
+                        // Handle dragging
+                        if (this.view.isDragging) {
+                            const dx = x - this.view.lastMouseX;
+                            const visibleCount = this.view.endIndex - this.view.startIndex + 1;
+                            const chartWidth = chartArea.width;
+                            const indexDelta = (dx / chartWidth) * visibleCount;
+                            
+                            let newStart = Math.round(this.view.startIndex - indexDelta);
+                            let newEnd = Math.round(this.view.endIndex - indexDelta);
+                            
+                            // Clamp to data bounds
+                            if (newStart < 0) {
+                                newStart = 0;
+                                newEnd = visibleCount - 1;
+                            }
+                            if (newEnd >= this.data.length) {
+                                newEnd = this.data.length - 1;
+                                newStart = newEnd - visibleCount + 1;
+                            }
+                            
+                            if (newStart >= 0 && newEnd < this.data.length) {
+                                this.view.startIndex = newStart;
+                                this.view.endIndex = newEnd;
+                                this.updateView();
+                                this.draw();
+                            }
+                            
+                            this.view.lastMouseX = x;
+                        }
+                        
+                        // Draw crosshair and tooltip
+                        this.draw();
+                        this.drawCrosshair(x, y);
+                        this.drawTooltip(x, y);
+                    } else {
+                        this.tooltip.style.opacity = '0';
+                    }
+                });
+                
+                canvas.addEventListener('mouseup', () => {
+                    this.view.isDragging = false;
+                    canvas.style.cursor = 'crosshair';
+                });
+                
+                canvas.addEventListener('mouseleave', () => {
+                    this.view.isDragging = false;
+                    this.tooltip.style.opacity = '0';
+                    canvas.style.cursor = 'crosshair';
+                    this.draw(); // Redraw without crosshair
+                });
+                
+                // Touch events for mobile
+                let touchStartX = 0;
+                let touchStartY = 0;
+                let touchStartStartIndex = 0;
+                let touchStartEndIndex = 0;
+                
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    if (e.touches.length === 1) {
+                        const touch = e.touches[0];
+                        const rect = canvas.getBoundingClientRect();
+                        const x = touch.clientX - rect.left;
+                        const y = touch.clientY - rect.top;
+                        
+                        // Check if touch is on chart
+                        const chartArea = this.getChartArea();
+                        if (x >= chartArea.x && x <= chartArea.x + chartArea.width &&
+                            y >= chartArea.y && y <= chartArea.y + chartArea.height) {
+                            
+                            touchStartX = x;
+                            touchStartY = y;
+                            touchStartStartIndex = this.view.startIndex;
+                            touchStartEndIndex = this.view.endIndex;
+                            
+                            // Draw crosshair and tooltip
+                            this.draw();
+                            this.drawCrosshair(x, y);
+                            this.drawTooltip(x, y);
+                        }
+                    }
+                });
+                
+                canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (e.touches.length === 1) {
+                        const touch = e.touches[0];
+                        const rect = canvas.getBoundingClientRect();
+                        const x = touch.clientX - rect.left;
+                        const y = touch.clientY - rect.top;
+                        
+                        const chartArea = this.getChartArea();
+                        
+                        // Handle panning
+                        if (touchStartX !== 0) {
+                            const dx = x - touchStartX;
+                            const visibleCount = this.view.endIndex - this.view.startIndex + 1;
+                            const chartWidth = chartArea.width;
+                            const indexDelta = (dx / chartWidth) * visibleCount;
+                            
+                            let newStart = Math.round(touchStartStartIndex - indexDelta);
+                            let newEnd = Math.round(touchStartEndIndex - indexDelta);
+                            
+                            // Clamp to data bounds
+                            if (newStart < 0) {
+                                newStart = 0;
+                                newEnd = visibleCount - 1;
+                            }
+                            if (newEnd >= this.data.length) {
+                                newEnd = this.data.length - 1;
+                                newStart = newEnd - visibleCount + 1;
+                            }
+                            
+                            if (newStart >= 0 && newEnd < this.data.length) {
+                                this.view.startIndex = newStart;
+                                this.view.endIndex = newEnd;
+                                this.updateView();
+                                this.draw();
+                            }
+                        }
+                        
+                        // Draw crosshair and tooltip
+                        this.draw();
+                        this.drawCrosshair(x, y);
+                        this.drawTooltip(x, y);
+                    }
+                });
+                
+                canvas.addEventListener('touchend', () => {
+                    touchStartX = 0;
+                    this.tooltip.style.opacity = '0';
+                    this.draw();
+                });
+            }
+        }
+        
+        // Initialize chart when page loads
+        window.addEventListener('load', () => {
+            new CandlestickChart('chartCanvas');
+        });
+    </script>
+</body>
+</html>

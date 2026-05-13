@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEGATON HUB</title>
+<link rel="stylesheet" href="/frontend/css/style.css">
+<style>
+  .hero { text-align: center; padding: 30px 0 10px; }
+  .hero .logo { font-size: 26px; font-weight: 700; background: linear-gradient(135deg,#00d4ff,#7b2ff7,#ff6d00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero .subtitle { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+
+  .section-header { display:flex; justify-content:space-between; align-items:center; margin:20px 0 10px; }
+  .section-header h2 { font-size:14px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin:0; }
+
+  .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+
+  .project-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+    text-decoration: none; color: inherit; transition: all 0.25s; position: relative; cursor: pointer;
+    display: flex; flex-direction: column;
+  }
+  .project-card:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: 0 8px 24px rgba(0,212,255,0.08); }
+  .project-card .p-header { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .project-card .p-icon { font-size: 32px; width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:var(--bg); border-radius:12px; }
+  .project-card .p-title { flex:1; }
+  .project-card .p-title h3 { font-size:16px; margin:0; }
+  .project-card .p-title .p-status { font-size:11px; color:var(--text-dim); margin-top:2px; }
+  .project-card .p-stats { display:flex; gap:12px; margin:8px 0; font-size:12px; flex-wrap:wrap; }
+  .project-card .p-stats span { color:var(--text-dim); }
+  .project-card .p-stats strong { color:var(--text); }
+  .project-card .p-tasks { margin-top:auto; border-top:1px solid var(--border); padding-top:10px; }
+  .project-card .p-tasks .task-item { font-size:12px; color:var(--text-dim); padding:3px 0; display:flex; gap:6px; align-items:center; }
+  .project-card .p-tasks .task-item .dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+  .project-card .tag { position:absolute; top:12px; right:12px; font-size:9px; padding:2px 8px; border-radius:10px; }
+
+  .system-bar { display:flex; gap:20px; flex-wrap:wrap; background:var(--card); border-radius:14px; padding:14px 18px; border:1px solid var(--border); margin-bottom:8px; font-size:12px; align-items:center; }
+  .system-bar .dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .system-bar .dot.green { background:#00e676; }
+  .system-bar .sep { color:var(--border); }
+
+  .quick-links { display:flex; gap:8px; flex-wrap:wrap; }
+  .quick-links a { padding:6px 14px; border-radius:8px; font-size:12px; text-decoration:none; background:var(--card); border:1px solid var(--border); color:var(--text-dim); transition:all 0.2s; }
+  .quick-links a:hover { border-color:var(--accent); color:var(--text); }
+
+  .agent-budget-mini { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+  .agent-badge { font-size:10px; padding:2px 8px; border-radius:6px; background:var(--bg); display:flex; align-items:center; gap:4px; }
+
+  .budget-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); }
+  .budget-row:last-child { border-bottom:none; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <span class="logo">⚡ PEGATON</span>
+    <a href="/" class="active">🏠 Hub</a>
+    <a href="/inversor">📊 Inversor</a>
+    <a href="/widget-auditoria">🧪 Auditoría</a>
+    <a href="/widget-evaluator">⭐ Evaluador</a>
+  </nav>
+<div class="container">
+
+  <div class="hero">
+    <div class="logo">⚡ PEGATON INTELLIGENCE</div>
+    <div class="subtitle">Centro de Comando · Proyectos · Agentes · Automatización</div>
+  </div>
+
+  <!-- System Bar -->
+  <div class="system-bar" id="systemBar">
+    <span><span class="dot green pulse"></span>Sistema <strong id="sysStatus">Cargando...</strong></span>
+    <span class="sep">|</span>
+    <span>CPU: <strong id="cpuStat">--</strong></span>
+    <span>RAM: <strong id="ramStat">--</strong></span>
+    <span>Disco: <strong id="diskStat">--</strong></span>
+    <span class="sep">|</span>
+    <span>💰 <strong id="budgetBalance">$--</strong> DeepSeek</span>
+    <span class="sep">|</span>
+    <span id="dataTimestamp"></span>
+  </div>
+
+  <!-- PROJECTS SECTION -->
+  <div class="section-header">
+    <h2>📂 Proyectos</h2>
+    <span style="font-size:11px;color:var(--text-dim)">Click para ver detalle y tareas</span>
+  </div>
+
+  <div class="project-grid" id="projectGrid">
+    <!-- Populated by JS -->
+    <a href="/coding-olympiad.html" class="project-card" style="grid-column:1/-1;margin-bottom:6px;border-left:3px solid #6366f1">
+    <div class="p-header">
+      <div class="p-icon">🏆</div>
+      <div class="p-title">
+        <h3>Coding Olympiad</h3>
+        <div class="p-status">Evaluaci&oacute;n visual de modelos</div>
+      </div>
+    </div>
+    <div class="p-stats">
+      <span>🎯 <strong>6</strong> modelos evaluados</span>
+      <span>📄 <strong>3,115</strong> l&iacute;neas</span>
+      <span>💰 <strong>$0.0000</strong> gastado</span>
+    </div>
+    <div class="p-tasks">
+      <div class="task-item"><span class="dot" style="background:#f43f5e"></span>🥇 Owl Alpha &mdash; 179.56s &middot; GRATIS</div>
+      <div class="task-item"><span class="dot" style="background:#0ea5e9"></span>🥈 Qwen3 Coder &mdash; 71.27s &middot; GRATIS</div>
+      <div class="task-item"><span class="dot" style="background:#6366f1"></span>🥉 Nemotron 3 Super 120B &mdash; 202.36s &middot; GRATIS</div>
+    </div>
+  </a>
+    <div class="loading" style="grid-column:1/-1">Cargando proyectos...</div>
+  </div>
+
+  <!-- BUDGET OVERVIEW -->
+  <div class="section-header" style="margin-top:24px;">
+    <h2>💰 Presupuesto por Proyecto</h2>
+    <a href="/budget" style="font-size:12px;color:var(--accent);text-decoration:none;">Ver detalle →</a>
+  </div>
+
+  <div class="card" id="budgetOverview" style="margin-bottom:16px;">
+    <div class="loading">Cargando presupuesto...</div>
+  </div>
+
+  <!-- QUICK LINKS -->
+  <div class="section-header" style="margin-top:8px;">
+    <h2>🔧 Acceso Rápido</h2>
+  </div>
+  <div class="quick-links">
+    <a href="/investor">📊 Inversor</a>
+    <a href="/budget">💰 Modelos</a>
+    <a href="/agents">🤖 Agentes</a>
+    <a href="/health">🩺 Salud</a>
+    <a href="/processes">⚙️ Procesos</a>
+    <a href="/projects">📁 Proyectos / Docs</a>
+  </div>
+
+  <div class="footer" style="margin-top:20px;">
+    PEGATON v0.3 · Multi-Project Hub · Actualizado cada 30s · DeepSeek $0.14/M IN · $0.28/M OUT
+  </div>
+
+</div>
+
+<script>
+const API = '/api/v1/system';
+const SCORE_API = '/api/v1/score';
+
+// === PROJECT DEFINITIONS ===
+const PROJECTS = [
+  {
+    id: 'pegaton-roundtable',
+    name: 'Mesa Redonda Multi-Modelo',
+    icon: '🧠',
+    desc: 'Agentes homólogos con DeepSeek Flash, Chat, Reasoner y más. Debate, consenso y decisión final',
+    status: '🟢 Activo',
+    tag: 'NUEVO',
+    tagColor: 'rgba(123,47,247,0.12);color:#7b2ff7',
+    route: '/roundtable',
+    agents: ['Flash (DeepSeek V4 Flash)', 'Analista (DeepSeek Chat)', 'Reasoner (DeepSeek V4 Flash)', 'Consenso-Algoritmo'],
+  },
+  {
+    id: 'pegaton-inversor',
+    name: 'Agente Inversor',
+    icon: '📊',
+    desc: 'Señales en vivo, Pegaton Score multi-activo, análisis macro y técnico, watchlist, portfolio tracker',
+    status: '🟢 Activo',
+    tag: 'LIVE',
+    tagColor: 'rgba(0,212,255,0.12);color:#00d4ff',
+    route: '/investor',
+    agents: ['PM (DeepSeek V4 Flash)', 'Macro (DeepSeek Chat)', 'Técnico (DeepSeek Chat)', 'Programador (DeepSeek V4 Flash)'],
+  },
+  {
+    id: 'pegaton-model-router',
+    name: 'Model Router',
+    icon: '🧠',
+    desc: 'Enrutamiento inteligente de modelos según complejidad, coste y calidad de respuesta',
+    status: '🟡 Diseño',
+    tag: 'ARQ',
+    tagColor: 'rgba(123,47,247,0.12);color:#7b2ff7',
+    route: '/agents',
+    agents: ['Router (DeepSeek V4 Flash)'],
+  },
+  {
+    id: 'pegaton-mobile',
+    name: 'PEGATON Mobile',
+    icon: '📱',
+    desc: 'App Android (Flutter) para acceso móvil a señales, watchlist y portfolio',
+    status: '⚪ Planeado',
+    tag: 'FUTURO',
+    tagColor: 'rgba(58,74,95,1);color:#8b9bb5',
+    route: '/projects',
+    agents: [],
+  },
+];
+
+// === TASKS PER PROJECT ===
+const PROJECT_TASKS = {
+  'pegaton-roundtable': [
+    { text: 'Añadir Gemini como modelo homólogo', status: 'pending', color: '#ffc107' },
+    { text: 'Añadir OpenRouter (NanoTron 3 gratis)', status: 'pending', color: '#ffc107' },
+    { text: 'Integrar consulta a agente experto (geoeconomía)', status: 'idea', color: '#7b2ff7' },
+    { text: 'Histórico de mesas redondas con resultados', status: 'idea', color: '#7b2ff7' },
+  ],
+  'pegaton-inversor': [
+    { text: 'Agentes homólogos multi-modelo con consenso', status: 'idea', color: '#7b2ff7' },
+    { text: 'Backtesting histórico del Pegaton Score', status: 'pending', color: '#ffc107' },
+    { text: 'Alertas Telegram en cambios de score', status: 'pending', color: '#ffc107' },
+    { text: 'Gráficos de velas OHLCV con indicadores', status: 'pending', color: '#ffc107' },
+    { text: 'Pesos dinámicos macro/técnico según régimen', status: 'idea', color: '#7b2ff7' },
+    { text: 'Agente de geoeconomía (aranceles, guerras)', status: 'idea', color: '#7b2ff7' },
+  ],
+  'pegaton-model-router': [
+    { text: 'Evaluación automática de modelos (coste/calidad)', status: 'idea', color: '#7b2ff7' },
+    { text: 'Mesa redonda: homólogos debaten y consensuan', status: 'idea', color: '#7b2ff7' },
+    { text: 'Previsión de gasto semanal por agente', status: 'in_progress', color: '#00d4ff' },
+    { text: 'Migración automática a modelos gratuitos', status: 'idea', color: '#7b2ff7' },
+  ],
+};
+
+async function loadSystem() {
+  try {
+    const [health, budget, db] = await Promise.all([
+      fetch(`${API}/health`).then(r=>r.json()),
+      fetch(`${API}/budget`).then(r=>r.json()),
+      fetch(`${API}/database-stats`).then(r=>r.json()),
+    ]);
+
+    document.getElementById('sysStatus').textContent = health.status === 'healthy' ? '🟢 Online' : '🔴 Error';
+    document.getElementById('cpuStat').textContent = `${health.cpu?.percent || '?'}%`;
+    document.getElementById('ramStat').textContent = `${health.ram?.used_gb || '?'}/${health.ram?.total_gb || '?'}GB`;
+    document.getElementById('diskStat').textContent = `${health.disk?.used_gb || '?'}/${health.disk?.total_gb || '?'}GB`;
+    document.getElementById('budgetBalance').textContent = `$${(budget.live_balance || 0).toFixed(2)}`;
+
+    const latestDate = db.precios_ohlcv?.latest_date || '';
+    document.getElementById('dataTimestamp').textContent = latestDate ? `📅 Datos: ${latestDate}` : '';
+  } catch(e) {}
+}
+
+async function loadScores() {
+  try {
+    const r = await fetch(`${SCORE_API}/`);
+    return await r.json();
+  } catch(e) { return {}; }
+}
+
+function renderProjects(scores) {
+  const grid = document.getElementById('projectGrid');
+
+  let h = '';
+  for (const p of PROJECTS) {
+    const tasks = PROJECT_TASKS[p.id] || [];
+    const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress');
+    const ideas = tasks.filter(t => t.status === 'idea');
+
+    // Agent cost estimate (simplified)
+    const agentCount = p.agents.length;
+    const weeklyEstimate = agentCount * 0.15; // ~$0.15/week per agent for Flash model
+
+    h += `<a href="${p.route}" class="project-card" style="border-color:${p.status.includes('Activo') ? 'var(--accent)' : 'var(--border)'}">
+      <div class="tag" style="background:${p.tagColor}">${p.tag}</div>
+      <div class="p-header">
+        <div class="p-icon">${p.icon}</div>
+        <div class="p-title">
+          <h3>${p.name}</h3>
+          <div class="p-status">${p.status}</div>
+        </div>
+      </div>
+      <div class="p-stats">
+        <span>🤖 <strong>${agentCount}</strong> agentes</span>
+        <span>💰 ~<strong>$${weeklyEstimate.toFixed(2)}</strong>/sem</span>
+        <span>📋 <strong>${pendingTasks.length}</strong> tareas</span>
+      </div>
+      <div class="p-stats">
+        ${p.agents.slice(0,3).map(a => `<span class="agent-badge">${a}</span>`).join('')}
+        ${p.agents.length > 3 ? `<span class="agent-badge">+${p.agents.length-3}</span>` : ''}
+      </div>
+      <div class="p-tasks">
+        ${pendingTasks.slice(0,3).map(t => `<div class="task-item"><span class="dot" style="background:${t.color}"></span>${t.text}</div>`).join('')}
+        ${ideas.length > 0 ? `<div class="task-item" style="color:#7b2ff7;font-size:11px;">💡 ${ideas.length} ideas en cartera</div>` : ''}
+        ${pendingTasks.length > 3 ? `<div class="task-item" style="color:var(--accent);font-size:11px;">+${pendingTasks.length-3} tareas más...</div>` : ''}
+      </div>
+    </a>`;
+  }
+
+  grid.innerHTML = h;
+}
+
+function renderBudget(scores) {
+  const div = document.getElementById('budgetOverview');
+
+  // Fetch budget data
+  fetch(`${API}/budget`).then(r=>r.json()).then(d => {
+    const balance = d.live_balance || 0;
+    const spent = d.spent || 0;
+
+    // Per-project estimates (tokens spent per project)
+    const tasks = d.tracker?.tasks || [];
+
+    // Aggregate by model
+    const byModel = {};
+    for (const t of tasks) {
+      if (!byModel[t.model]) byModel[t.model] = { tokens_in:0, tokens_out:0, cost:0, count:0 };
+      byModel[t.model].tokens_in += t.tokens_in || 0;
+      byModel[t.model].tokens_out += t.tokens_out || 0;
+      byModel[t.model].cost += t.cost || 0;
+      byModel[t.model].count++;
+    }
+
+    let h = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;">
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:22px;font-weight:700;color:#00e676">$${balance.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--text-dim)">Saldo DeepSeek</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:22px;font-weight:700;color:#ffc107">$${spent.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--text-dim)">Gastado total</div>
+      </div>
+      <div style="text-align:center;padding:10px;background:var(--bg);border-radius:10px;">
+        <div style="font-size:22px;font-weight:700;color:var(--accent)">~${balance > 0 && spent > 0 ? Math.round(balance / (spent / Math.max(new Date().getDate(),1))) : '?'}d</div>
+        <div style="font-size:11px;color:var(--text-dim)">Proyección restante</div>
+      </div>
+    </div>`;
+
+    // Per-project cost
+    h += '<div class="budget-row" style="font-weight:600;color:var(--text-dim);font-size:11px;text-transform:uppercase"><span>Proyecto</span><span>Modelos</span><span>Tokens</span><span>Coste</span></div>';
+    for (const p of PROJECTS) {
+      const pTasks = tasks.filter(t => t.project === p.id) || [];
+      const pCost = pTasks.reduce((sum,t) => sum + (t.cost||0), 0);
+      const pTokens = pTasks.reduce((sum,t) => sum + (t.tokens_in||0) + (t.tokens_out||0), 0);
+      const pModels = [...new Set(pTasks.map(t=>t.model))];
+      h += `<div class="budget-row">
+        <span>${p.icon} ${p.name}</span>
+        <span style="font-size:11px;color:var(--text-dim)">${pModels.length} modelos</span>
+        <span>${pTokens.toLocaleString()}</span>
+        <span><strong>$${pCost.toFixed(3)}</strong></span>
+      </div>`;
+    }
+
+    h += `<div class="budget-row" style="font-weight:700;border-top:2px solid var(--border);margin-top:4px;">
+      <span>TOTAL</span><span></span>
+      <span>${tasks.reduce((s,t) => s+(t.tokens_in||0)+(t.tokens_out||0),0).toLocaleString()}</span>
+      <span>$${tasks.reduce((s,t) => s+(t.cost||0),0).toFixed(3)}</span>
+    </div>`;
+
+    // Model breakdown
+    if (Object.keys(byModel).length > 0) {
+      h += '<div style="margin-top:10px;font-size:11px;color:var(--text-dim);display:flex;gap:10px;flex-wrap:wrap;">';
+      for (const [model, info] of Object.entries(byModel)) {
+        const pct = tasks.reduce((s,t) => s+(t.cost||0),0) > 0 ? (info.cost / tasks.reduce((s,t) => s+(t.cost||0),0) * 100).toFixed(0) : 0;
+        h += `<span>${model}: $${info.cost.toFixed(3)} (${pct}%)</span>`;
+      }
+      h += '</div>';
+    } else {
+      h += '<div style="margin-top:8px;font-size:11px;color:#3a4a5f">Activa el tracking automático para ver desglose por proyecto y modelo.</div>';
+    }
+
+    div.innerHTML = h;
+  }).catch(() => {
+    div.innerHTML = '<div class="loading">Error cargando presupuesto</div>';
+  });
+}
+
+// INIT
+loadSystem();
+renderProjects({});
+renderBudget({});
+setInterval(() => {
+  loadSystem();
+  renderBudget({});
+}, 30000);
+</script>
+</body>
+</html>

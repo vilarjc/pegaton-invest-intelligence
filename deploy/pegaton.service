@@ -1,0 +1,15 @@
+[Unit]
+Description=PEGATON INVEST INTELLIGENCE
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/pegaton_invest_intelligence
+ExecStart=/root/pegaton_invest_intelligence/venv/bin/python /root/pegaton_invest_intelligence/backend/app/main.py
+Restart=always
+RestartSec=10
+EnvironmentFile=/root/pegaton_invest_intelligence/.env
+
+[Install]
+WantedBy=multi-user.target

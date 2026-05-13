@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔍 Fear & Greed — Equipos A, B, C</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0e17; color: #e2e8f0; font-family: system-ui; padding: 20px; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { margin-bottom: 4px; }
+    .subtitle { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 4px; background: #0f172a; border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+    .tab { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; background: transparent; color: #64748b; font-weight: 500; transition: .15s; }
+    .tab:hover { color: #e2e8f0; }
+    .tab.active { background: #1e293b; color: #e2e8f0; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .split { display: flex; gap: 16px; height: 600px; }
+    .split > div { flex: 1; background: #0f172a; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden; display: flex; flex-direction: column; }
+    .split h3 { padding: 10px 14px; background: #1a2332; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; border-bottom: 1px solid #1e293b; flex-shrink: 0; }
+    iframe { width: 100%; flex: 1; border: none; background: #000; }
+    .code-box { flex: 1; overflow: auto; padding: 12px; font-family: monospace; font-size: 11px; line-height: 1.5; color: #c9d1d9; white-space: pre-wrap; }
+    .meta { display: flex; gap: 12px; padding: 8px 14px; background: #161b22; font-size: 10px; color: #8b949e; border-top: 1px solid #1e293b; flex-shrink: 0; }
+    .meta span { display: flex; align-items: center; gap: 4px; }
+    .decision { background: #1e293b; border-radius: 8px; padding: 12px; margin: 10px 0; border-left: 3px solid #6366f1; }
+    .decision strong { color: #e2e8f0; }
+    .decision em { color: #64748b; font-size: 11px; }
+    .decision .why { color: #94a3b8; margin-top: 4px; font-size: 13px; }
+    .copy-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-left: auto; }
+    .copy-btn:hover { background: #334155; color: #e2e8f0; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🔍 Fear & Greed — Auditoría de Equipos</h1>
+  <div class="subtitle">3 equipos · mismo prompt · 3 widgets · evalúa cuál funciona mejor</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('a')">🧠 Equipo A — Gemini + HY3</button>
+    <button class="tab" onclick="switchTab('b')">💎 Equipo B — Nemotron + Owl</button>
+    <button class="tab" onclick="switchTab('c')">🔮 Equipo C — DeepSeek V4 Flash ×2</button>
+  </div>
+
+  <div id="panel-a" class="panel active"></div>
+  <div id="panel-b" class="panel"></div>
+  <div id="panel-c" class="panel"></div>
+</div>
+
+<script>
+const TEAMS = {
+  a: { label: 'Gemini 2.5 Flash + Tencent HY3', file: 'fear-greed-equipo-a.html', color: '#10b981' },
+  b: { label: 'Nemotron 3 Super + Owl Alpha', file: 'fear-greed-equipo-b.html', color: '#6366f1' },
+  c: { label: 'DeepSeek V4 Flash ×2', file: 'fear-greed-equipo-c.html', color: '#a855f7' }
+};
+
+async function loadPanel(id) {
+  const panel = document.getElementById('panel-' + id);
+  const team = TEAMS[id];
+  
+  panel.innerHTML = '<div class="split"><div><h3>🖥️ Widget</h3><iframe src="/widgets/' + team.file + '"></iframe><div class="meta"><span>' + team.label + '</span><span style="color:#475569">|</span><span>' + team.file + '</span></div></div><div><h3>📝 Código Fuente</h3><div class="code-box">Cargando código...</div></div></div><h3 style="margin-top:16px;color:#94a3b8">💡 Decisiones Técnicas</h3><div id="decisions-' + id + '"><p style="color:#475569;padding:10px">Cargando decisiones...</p></div>';
+  
+  // Load code
+  try {
+    const r = await fetch('/widgets/' + team.file);
+    const code = await r.text();
+    const box = panel.querySelector('.code-box');
+    box.textContent = code;
+  } catch(e) {
+    panel.querySelector('.code-box').textContent = '❌ Error al cargar: ' + e.message;
+  }
+  
+  // Decisions from DB
+  document.getElementById('decisions-' + id).innerHTML =
+    '<div class="decision"><strong>RSS feeds vacíos</strong> <em>(Gemini 2.5 Flash — PM)</em><div class="why">Los feeds RSS de CNBC/Reuters devolvían arrays vacíos. Se optó por parsear HTML directo de las portadas financieras como fallback.</div></div>' +
+    '<div class="decision"><strong>Stack 100% gratuito</strong> <em>(Gemini 2.5 Flash — PM)</em><div class="why">Se priorizó yfinance + FRED + RSS scraping sobre cualquier API de pago. Coste operativo $0/mes.</div></div>';
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.tab[onclick*="' + id + '"]').classList.add('active');
+  document.getElementById('panel-' + id).classList.add('active');
+  loadPanel(id);
+}
+
+// Load first tab
+loadPanel('a');
+
+<div class="split" style="margin-top:12px">
+  <div style="background:#0f172a;border-radius:12px;border:1px solid #1e293b;overflow:hidden;display:flex;flex-direction:column;width:100%">
+    <h3 style="padding:10px 14px;background:#1a2332;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8;border-bottom:1px solid #1e293b;flex-shrink:0">📰 Sentimiento de Noticias — VADER · 6 fuentes RSS</h3>
+    <iframe id="news-dash-frame" src="/widgets/news-sentimiento.html" style="width:100%;flex:1;border:none;background:#000"></iframe>
+    <div class="meta">
+      <span>📄 news-sentimiento.html</span>
+      <span style="cursor:pointer;color:#58a6ff" onclick="document.getElementById('news-dash-frame').src='/widgets/news-sentimiento.html?t='+Date.now()">⟳ recargar</span>
+    </div>
+  </div>
+</div>
+</script>
+</body>
+</html>

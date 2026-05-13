@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Requerimientos — Pegaton Invest Intelligence</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .req-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .req-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .req-header h1 { font-size: 1.8em; color: #00d4ff; }
+        .req-stats { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .req-stat-card { background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 15px 20px; min-width: 120px; text-align: center; }
+        .req-stat-card .stat-num { font-size: 2em; font-weight: bold; }
+        .req-stat-card .stat-label { font-size: 0.85em; color: #888; margin-top: 5px; }
+        .stat-pending .stat-num { color: #ff9800; }
+        .stat-classified .stat-num { color: #2196f3; }
+        .stat-decomposed .stat-num { color: #9c27b0; }
+        .stat-in_progress .stat-num { color: #ff5722; }
+        .stat-done .stat-num { color: #4caf50; }
+        .stat-blocked .stat-num { color: #f44336; }
+        .kanban-board { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
+        .kanban-column { min-width: 280px; max-width: 350px; flex-shrink: 0; }
+        .kanban-column-header { background: #16213e; padding: 12px; border-radius: 8px 8px 0 0; text-align: center; font-weight: bold; font-size: 0.95em; }
+        .kanban-column.pending .kanban-column-header { background: #e65100; color: #fff; }
+        .kanban-column.classified .kanban-column-header { background: #1565c0; color: #fff; }
+        .kanban-column.decomposed .kanban-column-header { background: #6a1b9a; color: #fff; }
+        .kanban-column.in_progress .kanban-column-header { background: #bf360c; color: #fff; }
+        .kanban-column.done .kanban-column-header { background: #2e7d32; color: #fff; }
+        .kanban-column.blocked .kanban-column-header { background: #b71c1c; color: #fff; }
+        .kanban-cards { background: #1a1a2e; border-radius: 0 0 8px 8px; padding: 10px; min-height: 200px; }
+        .kanban-card { background: #2d2d44; border: 1px solid #444; border-radius: 6px; padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+        .kanban-card:hover { border-color: #00d4ff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,212,255,0.15); }
+        .kanban-card .card-code { font-size: 0.75em; color: #00d4ff; font-weight: bold; }
+        .kanban-card .card-title { font-size: 0.9em; margin: 4px 0; color: #fff; }
+        .kanban-card .card-meta { font-size: 0.75em; color: #888; }
+        .kanban-card .card-progress { margin-top: 6px; }
+        .kanban-card .card-progress-bar { background: #333; border-radius: 4px; height: 6px; overflow: hidden; }
+        .kanban-card .card-progress-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .progress-green { background: #4caf50; }
+        .progress-yellow { background: #ff9800; }
+        .progress-red { background: #f44336; }
+        .filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center; }
+        .filters select, .filters input { background: #1a1a2e; color: #fff; border: 1px solid #444; padding: 6px 10px; border-radius: 4px; }
+        .filter-btn { background: #00d4ff; color: #000; border: none; padding: 6px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .filter-btn:hover { background: #00b8d4; }
+        .req-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; }
+        .req-modal.active { display: flex; justify-content: center; align-items: flex-start; padding: 40px 20px; }
+        .req-modal-content { background: #1a1a2e; border: 1px solid #333; border-radius: 12px; max-width: 600px; width: 100%; padding: 30px; position: relative; }
+        .req-modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.5em; color: #fff; cursor: pointer; background: none; border: none; }
+        .req-modal h2 { color: #00d4ff; margin-bottom: 15px; }
+        .req-modal .field { margin-bottom: 12px; }
+        .req-modal label { display: block; font-size: 0.85em; color: #888; margin-bottom: 4px; }
+        .req-modal input, .req-modal select, .req-modal textarea { width: 100%; padding: 8px; background: #2d2d44; color: #fff; border: 1px solid #444; border-radius: 4px; }
+        .req-modal textarea { min-height: 80px; resize: vertical; }
+        .btn-submit { background: #00d4ff; color: #000; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95em; margin-top: 10px; }
+        .btn-submit:hover { background: #00b8d4; }
+        .btn-danger { background: #f44336; color: #fff; }
+        .task-list { margin-top: 15px; }
+        .task-list h3 { color: #00d4ff; font-size: 0.95em; margin-bottom: 8px; }
+        .task-item { background: #2d2d44; padding: 8px 12px; border-radius: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; }
+        .task-item .code { color: #00d4ff; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="req-container">
+        <div class="req-header">
+            <h1>📋 Gestión de Requerimientos</h1>
+            <button class="filter-btn" onclick="openModal('create')">+ Nuevo Requerimiento</button>
+        </div>
+
+        <div id="stats" class="req-stats">
+            <div class="req-stat-card stat-pending"><div class="stat-num" id="s-pending">-</div><div class="stat-label">Pendientes</div></div>
+            <div class="req-stat-card stat-classified"><div class="stat-num" id="s-classified">-</div><div class="stat-label">Clasificados</div></div>
+            <div class="req-stat-card stat-decomposed"><div class="stat-num" id="s-decomposed">-</div><div class="stat-label">Descompuestos</div></div>
+            <div class="req-stat-card stat-in_progress"><div class="stat-num" id="s-in_progress">-</div><div class="stat-label">En Progreso</div></div>
+            <div class="req-stat-card stat-done"><div class="stat-num" id="s-done">-</div><div class="stat-label">Completados</div></div>
+            <div class="req-stat-card stat-blocked"><div class="stat-num" id="s-blocked">-</div><div class="stat-label">Bloqueados</div></div>
+        </div>
+
+        <div class="filters">
+            <select id="filter-type"><option value="">Todos los tipos</option><option value="feature">Feature</option><option value="bug">Bug</option><option value="mejora">Mejora</option></select>
+            <select id="filter-priority"><option value="">Todas las prioridades</option><option value="P0">P0 Crítico</option><option value="P1">P1 Alto</option><option value="P2">P2 Medio</option><option value="P3">P3 Bajo</option></select>
+            <button class="filter-btn" onclick="loadRequirements()">🔄 Actualizar</button>
+        </div>
+
+        <div id="kanban" class="kanban-board"></div>
+    </div>
+
+    <!-- Modal -->
+    <div id="req-modal" class="req-modal">
+        <div class="req-modal-content">
+            <button class="req-modal-close" onclick="closeModal()">×</button>
+            <h2 id="modal-title">Nuevo Requerimiento</h2>
+            <form id="req-form" onsubmit="submitRequirement(event)">
+                <input type="hidden" id="edit-id" value="">
+                <div class="field">
+                    <label>Tipo</label>
+                    <select id="f-type" required>
+                        <option value="feature">Feature</option>
+                        <option value="bug">Bug</option>
+                        <option value="mejora">Mejora</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Prioridad del Cliente</label>
+                    <select id="f-client-priority">
+                        <option value="critical">Crítica</option>
+                        <option value="high">Alta</option>
+                        <option value="medium" selected>Media</option>
+                        <option value="low">Baja</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Prioridad Interna (post-clasificación)</label>
+                    <select id="f-priority">
+                        <option value="P0">P0 - Crítico</option>
+                        <option value="P1">P1 - Alto</option>
+                        <option value="P2" selected>P2 - Medio</option>
+                        <option value="P3">P3 - Bajo</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Título</label>
+                    <input type="text" id="f-title" required placeholder="Título corto del requerimiento">
+                </div>
+                <div class="field">
+                    <label>Descripción</label>
+                    <textarea id="f-description" placeholder="Describe el requerimiento en detalle..."></textarea>
+                </div>
+                <button type="submit" class="btn-submit">Guardar</button>
+            </form>
+            <div id="modal-tasks" class="task-list" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/api/v1';
+
+        async function loadRequirements(filters = {}) {
+            const params = new URLSearchParams(filters).toString();
+            const res = await fetch(`${API}/requirements?${params}`);
+            const data = await res.json();
+            renderStats(data.requirements);
+            renderKanban(data.requirements);
+        }
+
+        function renderStats(reqs) {
+            const counts = { pending: 0, classified: 0, decomposed: 0, in_progress: 0, done: 0, blocked: 0 };
+            reqs.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+            ['pending','classified','decomposed','in_progress','done','blocked'].forEach(s => {
+                const el = document.getElementById('s-' + s);
+                if (el) el.textContent = counts[s] || 0;
+            });
+        }
+
+        const statusOrder = ['pending','classified','decomposed','in_progress','done','blocked'];
+
+        function renderKanban(reqs) {
+            const board = document.getElementById('kanban');
+            board.innerHTML = '';
+            statusOrder.forEach(status => {
+                const col = document.createElement('div');
+                col.className = `kanban-column ${status}`;
+                col.innerHTML = `<div class="kanban-column-header">${status.toUpperCase()} (${reqs.filter(r=>r.status===status).length})</div><div class="kanban-cards" id="col-${status}"></div>`;
+                board.appendChild(col);
+                const cards = reqs.filter(r => r.status === status).sort((a,b) => {
+                    const p = {'P0':0,'P1':1,'P2':2,'P3':3};
+                    return (p[a.internal_priority]||99) - (p[b.internal_priority]||99);
+                });
+                cards.forEach(r => {
+                    const card = document.createElement('div');
+                    card.className = 'kanban-card';
+                    const pct = r.progress?.pct || 0;
+                    const pColor = pct >= 100 ? 'progress-green' : pct > 50 ? 'progress-yellow' : 'progress-red';
+                    card.innerHTML = `
+                        <div class="card-code">${r.req_code} | ${r.internal_priority}</div>
+                        <div class="card-title">${r.title}</div>
+                        <div class="card-meta">${r.req_type} · ${r.source} · ${new Date(r.created_at).toLocaleDateString()}</div>
+                        <div class="card-progress"><div class="card-progress-bar"><div class="card-progress-fill ${pColor}" style="width:${pct}%"></div></div></div>
+                        <div class="card-meta" style="margin-top:4px">${pct}% completado · ${r.tasks_done||0}/${r.tasks_count||0} tareas</div>
+                    `;
+                    card.onclick = () => openDetail(r.id);
+                    document.getElementById('col-' + status).appendChild(card);
+                });
+            });
+        }
+
+        async function openDetail(id) {
+            const res = await fetch(`${API}/requirements/${id}`);
+            const data = await res.json();
+            const r = data.requirement;
+            document.getElementById('edit-id').value = r.id;
+            document.getElementById('f-type').value = r.req_type;
+            document.getElementById('f-client-priority').value = r.client_priority;
+            document.getElementById('f-priority').value = r.internal_priority;
+            document.getElementById('f-title').value = r.title;
+            document.getElementById('f-description').value = r.description || '';
+            document.getElementById('modal-title').textContent = `📝 ${r.req_code} — ${r.title}`;
+
+            // Show linked tasks
+            const tasksDiv = document.getElementById('modal-tasks');
+            if (r.linked_tasks && r.linked_tasks.length) {
+                tasksDiv.style.display = 'block';
+                tasksDiv.innerHTML = '<h3>📌 Tareas Derivadas</h3>' + r.linked_tasks.map(t =>
+                    `<div class="task-item"><span class="code">${t.code}</span><span>${t.title}</span><span style="color:${t.status==='done'?'#4caf50':'#ff9800'}">${t.status}</span></div>`
+                ).join('');
+            } else {
+                tasksDiv.style.display = 'none';
+            }
+
+            document.getElementById('req-modal').classList.add('active');
+        }
+
+        function openModal(mode) {
+            if (mode === 'create') {
+                document.getElementById('modal-title').textContent = 'Nuevo Requerimiento';
+                document.getElementById('req-form').reset();
+                document.getElementById('edit-id').value = '';
+                document.getElementById('modal-tasks').style.display = 'none';
+            }
+            document.getElementById('req-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('req-modal').classList.remove('active');
+        }
+
+        async function submitRequirement(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const body = {
+                source: document.getElementById('f-type').value,
+                req_type: document.getElementById('f-type').value,
+                client_priority: document.getElementById('f-client-priority').value,
+                title: document.getElementById('f-title').value,
+                description: document.getElementById('f-description').value,
+                internal_priority: document.getElementById('f-priority').value,
+            };
+            const url = id ? `${API}/requirements/${id}/classify?priority=${body.internal_priority}` : `${API}/requirements`;
+            const method = id ? 'PUT' : 'POST';
+            await fetch(url, { method, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(body) });
+            closeModal();
+            loadRequirements(getFilters());
+        }
+
+        function getFilters() {
+            return {
+                type: document.getElementById('filter-type').value,
+                priority: document.getElementById('filter-priority').value
+            };
+        }
+
+        // Init
+        loadRequirements();
+        // Auto-refresh every 60s
+        setInterval(() => loadRequirements(getFilters()), 60000);
+    </script>
+</body>
+</html>

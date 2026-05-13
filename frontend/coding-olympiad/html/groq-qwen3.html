@@ -1,0 +1,291 @@
+<think>
+Okay, I need to create a single HTML file that displays a candlestick chart using the provided BTC_DATA. Let me start by understanding the requirements.
+
+First, the chart must show candlesticks with open, high, low, close, and volume. Then, include SMA-7 and SMA-21 moving averages. Tooltips on hover, volume bars below, responsive design with a dark theme, and zoom/pan functionality. No external libraries, just Canvas 2D.
+
+Alright, so I'll need to use the HTML5 Canvas element. Let me outline the steps:
+
+1. Parse the BTC_DATA array. Each entry has date, open, high, low, close, volume. I need to process this data to calculate the SMAs.
+
+For SMA-7 and SMA-21: For each data point, calculate the average of the previous 7 and 21 closes. But since the data is in order, I can loop through and compute these moving averages. Need to handle the initial points where there aren't enough data points.
+
+Next, the candlestick chart. Each candlestick is represented by high, low, open, close. The body is between open and close. If close > open, it's a bullish candle (green), else bearish (red). The wicks are from low to open/close.
+
+The volume bars below can be simple bars showing the volume for each day. Maybe color them based on whether the day was up or down.
+
+Tooltips on hover: When the user hovers over a candlestick, show the date, OHLC, and volume. Need to track mouse position and determine which candle is under the cursor.
+
+Zoom with wheel and pan with drag. For zooming, I'll need to adjust the scale of the chart. Panning would involve translating the canvas. But since the canvas is redrawn on each interaction, I need to track the current zoom and pan state.
+
+Dark theme: Use dark background, light text, maybe some accent colors for the candles and SMAs.
+
+Responsive design: The canvas should adjust to the window size. Maybe set its width and height to 100% of the container, but need to handle resizing with JavaScript.
+
+Now, let's think about the structure of the HTML. The canvas element will be the main component. Then, the JavaScript will handle all the drawing and interactivity.
+
+First, process the data. Let's calculate the SMAs. For each index i >= 6 (for SMA-7), sum the previous 7 closes and divide by 7. Similarly for SMA-21. Store these as separate arrays.
+
+Then, the canvas drawing. The chart will have two main parts: the price chart (candlesticks and SMAs) and the volume bars below.
+
+For the price chart, determine the y-axis scale based on the max and min prices. But since the user can zoom, maybe we need to track the visible range. However, for simplicity, maybe initially set the scale based on the data, and then adjust when zooming.
+
+But with zooming, the visible data range changes. So perhaps I need to track which data points are currently visible and adjust the drawing accordingly.
+
+Wait, but implementing zoom and pan can be complex. How to handle that? One approach is to track the current x-scale (zoom level) and x-pan (translation). For each redraw, determine which candles are within the current view and draw them accordingly.
+
+Alternatively, for simplicity, maybe use a basic zoom that adjusts the scale factor. However, the user wants wheel to zoom and drag to pan. Let's think about how to implement that.
+
+For the canvas, I'll need to handle mouse events:
+
+- On wheel: Zoom in/out. Adjust the scale factor. Maybe zoom around the mouse position.
+
+- On mousedown: Start panning. Then, on mousemove while dragging, translate the canvas. On mouseup, stop panning.
+
+But canvas transformations can be tricky. Each time we zoom or pan, we need to adjust the transformation matrix. However, keeping track of the current scale and pan might be easier. For example, have variables like scale and offsetX, offsetY. When drawing, apply these transformations.
+
+But when dealing with mouse coordinates, need to reverse the transformations to get the correct data points.
+
+This seems complex. Maybe start with a basic implementation without zoom/pan, then add it later.
+
+Let me outline the steps again:
+
+1. Preprocess the BTC_DATA to calculate SMAs.
+
+2. Set up the canvas element with dark background.
+
+3. Draw the candlesticks, SMAs, and volume bars.
+
+4. Add tooltips on hover.
+
+5. Implement zoom and pan.
+
+Starting with preprocessing the data. Let's write functions to calculate SMA-7 and SMA-21.
+
+For each data point, starting from index 6 (since SMA-7 needs 7 data points), calculate the average of the previous 7 closes. Similarly for SMA-21 from index 20.
+
+Then, for the candlesticks, each candle has open, high, low, close. The body is between open and close. The wicks are from low to open (if open < close) or low to close (if close < open), and from high to close or open.
+
+Now, for the canvas drawing:
+
+The canvas will need to be sized to fit the window. Maybe set its width and height to 100% of the window, but in HTML, canvas has a fixed size. Alternatively, set it to a fixed size and handle resizing with JavaScript.
+
+But for responsiveness, better to adjust the canvas size on window resize. However, since the user wants a single HTML file, I'll need to handle that with JavaScript.
+
+So, in the HTML, set the canvas to have a certain width and height, but then in JS, adjust it to fit the container. Alternatively, set the canvas's width and height attributes dynamically based on the window size.
+
+But for simplicity, perhaps use a fixed size for the canvas and let the user scroll if needed. However, the requirement says it should be responsive. Hmm.
+
+Maybe set the canvas to fill the window, and adjust its dimensions on window resize. So, in the JS, add an event listener for resize and redraw the chart.
+
+Now, for the drawing functions:
+
+First, determine the visible data range. Initially, all data is visible. Then, when zooming, adjust the x-axis scale.
+
+But for the initial implementation, let's assume all data is visible. Then, add zoom and pan later.
+
+For the y-axis scale, find the min and max of the high and low prices, then add some padding. Similarly for the volume bars.
+
+Now, for the candlesticks:
+
+Each candlestick is represented as a vertical line (wick) from low to high. Then, the body is between open and close. The body's color depends on whether it's up or down.
+
+The width of each candle can be calculated based on the number of data points and the canvas width.
+
+For example, if the canvas is 800px wide and there are 30 data points, each candle is about 20px wide. But with zooming, the width can change.
+
+But with zoom, the width of each candle is scaled accordingly.
+
+Now, for the SMAs, draw lines for SMA-7 and SMA-21 on the same chart. The lines can be different colors, maybe dashed for one.
+
+The volume bars are drawn below the price chart. Each bar's height is proportional to the volume of that day, and color depends on whether the day was up or down.
+
+Tooltips on hover: When the user moves the mouse over the chart, determine which candle is under the cursor and display the data. Need to calculate the mouse position relative to the canvas, then find the corresponding data index.
+
+For zooming with the wheel: When the user scrolls, adjust the scale. For example, increasing the scale when scrolling up (zoom in), decreasing when scrolling down (zoom out). The zoom should be centered around the mouse position.
+
+Panning with drag: When the user clicks and drags, translate the view. This requires tracking the mouse down position, then updating the offset as the mouse moves.
+
+Now, implementing all this in JavaScript with Canvas.
+
+Let me start writing the code.
+
+First, the HTML structure:
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>BTC/USDT Candlestick Chart</title>
+    <style>
+        /* Dark theme styles */
+        body {
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: monospace;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<canvas id="chart"></canvas>
+<script>
+    // JavaScript code here
+</script>
+</body>
+</html>
+
+Now, in the script section, first define the BTC_DATA array as given.
+
+Then, process the data to calculate SMAs.
+
+Function to calculate SMA:
+
+function calculateSMA(data, period) {
+    const sma = [];
+    for (let i = 0; i < data.length; i++) {
+        if (i < period - 1) {
+            sma.push(null); // Not enough data
+        } else {
+            let sum = 0;
+            for (let j = i - period + 1; j <= i; j++) {
+                sum += data[j].close;
+            }
+            sma.push(sum / period);
+        }
+    }
+    return sma;
+}
+
+But wait, the data is in order from earliest to latest. So for each i, we take the previous period data points.
+
+Once the SMAs are calculated, we can store them as arrays.
+
+Then, set up the canvas. Get the canvas element and context.
+
+Next, handle the drawing. Need to determine the visible range, scale, etc.
+
+But for initial drawing, let's assume full scale.
+
+Variables to track zoom and pan:
+
+let scale = 1;
+let offsetX = 0;
+let isDragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+But for the initial code, perhaps start with scale = 1 and offsetX = 0.
+
+Now, the drawing function:
+
+function drawChart() {
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Determine visible data range based on zoom and pan
+    // For simplicity, let's assume all data is visible initially
+
+    // Find min and max prices for y-axis
+    let minPrice = Math.min(...BTC_DATA.map(d => d.low));
+    let maxPrice = Math.max(...BTC_DATA.map(d => d.high));
+
+    // Find min and max volume for volume bars
+    let minVolume = Math.min(...BTC_DATA.map(d => d.volume));
+    let maxVolume = Math.max(...BTC_DATA.map(d => d.volume));
+
+    // Calculate SMAs
+    const sma7 = calculateSMA(BTC_DATA, 7);
+    const sma21 = calculateSMA(BTC_DATA, 21);
+
+    // Draw price chart (candlesticks and SMAs)
+    const candleWidth = (width / BTC_DATA.length) * scale;
+    const padding = 40; // Left, right, top, bottom padding
+    const chartHeight = height - padding * 2;
+    const chartWidth = width - padding * 2;
+
+    // Y-axis for price
+    const priceRange = maxPrice - minPrice;
+    function priceToY(price) {
+        return height - padding - (price - minPrice) / priceRange * chartHeight;
+    }
+
+    // X-axis for dates
+    function indexToX(index) {
+        return padding + index * (chartWidth / (BTC_DATA.length - 1)) * scale + offsetX;
+    }
+
+    // Draw candlesticks
+    ctx.save();
+    ctx.translate(offsetX, 0); // Apply pan
+
+    for (let i = 0; i < BTC_DATA.length; i++) {
+        const data = BTC_DATA[i];
+        const x = indexToX(i);
+        const w = candleWidth;
+
+        const open = data.open;
+        const close = data.close;
+        const high = data.high;
+        const low = data.low;
+
+        // Draw wick
+        ctx.beginPath();
+        ctx.moveTo(x, priceToY(high));
+        ctx.lineTo(x, priceToY(low));
+        ctx.strokeStyle = '#444';
+        ctx.stroke();
+
+        // Draw body
+        if (close >= open) {
+            ctx.fillStyle = '#26a69a'; // Green for bullish
+        } else {
+            ctx.fillStyle = '#ef5350'; // Red for bearish
+        }
+        const bodyTop = close >= open ? open : close;
+        const bodyBottom = close >= open ? close : open;
+        ctx.fillRect(x - w/2, priceToY(bodyTop), w, priceToY(bodyBottom) - priceToY(bodyTop));
+    }
+
+    // Draw SMAs
+    ctx.strokeStyle = '#ffa726';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < sma7.length; i++) {
+        if (sma7[i] === null) continue;
+        const x = indexToX(i);
+        const y = priceToY(sma7[i]);
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = '#90caf9';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]); // Dashed for SMA-21
+    ctx.beginPath();
+    for (let i = 0; i < sma21.length; i++) {
+        if (sma21[i] === null) continue;
+        const x = indexToX(i);
+        const y = priceToY(sma21[i]);
+        if (i === 0) {
+            ctx.moveTo(x, y);
+        } else {
+            ctx.lineTo(x, y);
+        }
+    }
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset
+
+    ctx.restore
