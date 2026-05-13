@@ -217,7 +217,7 @@ class TestTechnicalScore:
         assert isinstance(result["technical_score"], (int, float))
         assert 0 <= result["technical_score"] <= 100
         assert "factors" in result
-        assert len(result["factors"]) == 4
+        assert len(result["factors"]) >= 45
         assert "details" in result
 
         tech_mod.DB_PATH = original

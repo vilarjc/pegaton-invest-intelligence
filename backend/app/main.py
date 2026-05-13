@@ -55,6 +55,10 @@ app.include_router(requirements_router, prefix="/api/v1", tags=["requirements"])
 from backend.app.api.v1.endpoints.news_sentiment import router as news_sentiment_router
 app.include_router(news_sentiment_router, prefix="/api/v1", tags=["news-sentiment"])
 
+# Realtime WebSocket router  (P0-01)
+from backend.app.api.v1.endpoints.realtime import router as realtime_router
+app.include_router(realtime_router, prefix="/api/v1", tags=["realtime"])
+
 # Static files (frontend)
 from backend.app.static import setup_static_files, FRONTEND_DIR
 setup_static_files(app)
@@ -70,12 +74,6 @@ async def serve_widget(widget_path: str):
         return FileResponse(widget_file)
     from fastapi.responses import HTMLResponse
     return HTMLResponse("<h1>Widget not found</h1>", status_code=404)
-# Future routers:
-# from app.api.v1.endpoints import macro, technical, watchlist, portfolio
-# app.include_router(macro.router, prefix="/api/v1/macro", tags=["macro"])
-# app.include_router(technical.router, prefix="/api/v1/technical", tags=["technical"])
-# app.include_router(watchlist.router, prefix="/api/v1/watchlist", tags=["watchlist"])
-# app.include_router(portfolio.router, prefix="/api/v1/portfolio", tags=["portfolio"])
 
 if __name__ == "__main__":
     import uvicorn

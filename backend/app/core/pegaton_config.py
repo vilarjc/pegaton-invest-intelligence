@@ -254,3 +254,8 @@ ACTIONS = [
 FACTOR_ALCISTA = 55    # score >= 55 → alcista
 FACTOR_BAJISTA = 45    # score <= 45 → bajista
                        # between 45-55 → neutral
+
+# ── Central DB Path ──────────────────────────────────────────
+def get_db_path() -> str:
+    """Retorna la ruta a la base de datos principal de Pegaton."""
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "pegaton.db")
