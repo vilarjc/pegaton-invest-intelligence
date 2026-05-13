@@ -59,20 +59,30 @@ app.include_router(news_sentiment_router, prefix="/api/v1", tags=["news-sentimen
 from backend.app.api.v1.endpoints.realtime import router as realtime_router
 app.include_router(realtime_router, prefix="/api/v1", tags=["realtime"])
 
+# === NEW: P0-02 — Backtest router ===
+from backend.app.api.v1.endpoints.backtest import router as backtest_router
+app.include_router(backtest_router, prefix="/api/v1", tags=["backtest"])
+
+# === NEW: P0-03 — Alerts router ===
+from backend.app.api.v1.endpoints.alerts import router as alerts_router
+app.include_router(alerts_router, prefix="/api/v1", tags=["alerts"])
+
+# === NEW: P0-04 — Risk/Sizing router ===
+from backend.app.api.v1.endpoints.risk import router as risk_router
+app.include_router(risk_router, prefix="/api/v1", tags=["risk"])
+
 # Static files (frontend)
 from backend.app.static import setup_static_files, FRONTEND_DIR
 setup_static_files(app)
 
 # Widget route for Fear & Greed
 from fastapi.responses import FileResponse
-import os
 
 @app.get("/widget/{widget_path:path}")
 async def serve_widget(widget_path: str):
     widget_file = os.path.join(FRONTEND_DIR, "widgets", widget_path)
     if os.path.isfile(widget_file):
         return FileResponse(widget_file)
-    from fastapi.responses import HTMLResponse
     return HTMLResponse("<h1>Widget not found</h1>", status_code=404)
 
 if __name__ == "__main__":
