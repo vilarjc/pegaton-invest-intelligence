@@ -1,44 +1,79 @@
 """
-Risk Sizing — Calculadora de tamaño de posición.
+Sizing Engine — Cálculo de tamaño de posición.
 P0-04: Position Sizing | EP-FR-001
 """
 import math
-from typing import Dict, Optional
-from dataclasses import dataclass
+from typing import Optional, Dict, Any, List
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
 class SizingResult:
-    suggested_shares: float
-    risk_amount: float
-    entry_price: float
-    stop_loss_price: float
-    rr_ratio: float
-    max_position_value: float
-    portfolio_impact_pct: float
-    risk_pct: float
-    method: str
+    """Resultado de un cálculo de position sizing."""
+
+    def __init__(
+        self,
+        shares: float = 0.0,
+        position_value: float = 0.0,
+        risk_amount: float = 0.0,
+        stop_loss: Optional[float] = None,
+        risk_per_share: Optional[float] = None,
+        method: str = "unknown",
+        metadata: Optional[Dict] = None,
+    ):
+        self.shares = shares
+        self.position_value = position_value
+        self.risk_amount = risk_amount
+        self.stop_loss = stop_loss
+        self.risk_per_share = risk_per_share
+        self.method = method
+        self.metadata = metadata or {}
+
+    def __repr__(self) -> str:
+        return (
+            f"SizingResult(method={self.method}, shares={self.shares:.4f}, "
+            f"value={self.position_value:.2f}, risk=${self.risk_amount:.2f})"
+        )
+
+    @property
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "shares": round(self.shares, 6),
+            "position_value": round(self.position_value, 2),
+            "risk_amount": round(self.risk_amount, 2),
+            "stop_loss": self.stop_loss,
+            "risk_per_share": self.risk_per_share,
+            "method": self.method,
+            "metadata": self.metadata,
+        }
 
 
 class PositionSizer:
     """
-    Calculadora de tamaño de posición con múltiples métodos:
-    - Fixed % Risk: tamaño basado en % de capital arriesgado
-    - Kelly Criterion: f* = (bp - q) / b
-    - Volatility Adjusted: ajustado por volatilidad del activo
+    Calculadora de tamaño de posición con múltiples métodos.
+
+    Métodos soportados:
+      - fixed_risk: Riesgo fijo por operación (% del capital)
+      - kelly: Criterio de Kelly para sizing óptimo
+      - volatility: Ajustado por volatilidad del activo
+      - atr: Basado en ATR (Average True Range)
     """
 
     def __init__(self, account_balance: float, risk_pct: float = 0.01):
         """
         Args:
             account_balance: Capital total de la cuenta
-            risk_pct: Porcentaje de capital a arriesgar por trade (default 1%)
+            risk_pct: Porcentaje del capital a arriesgar por operación (default 1%)
         """
+        if account_balance <= 0:
+            raise ValueError(f"account_balance debe ser positivo, got {account_balance}")
+        if not (0.0 < risk_pct <= 1.0):
+            raise ValueError(f"risk_pct debe estar entre 0 y 1, got {risk_pct}")
+
         self.account_balance = account_balance
         self.risk_pct = risk_pct
+        self.max_risk_amount = account_balance * risk_pct
 
     def calculate_fixed_risk(
         self,
@@ -47,8 +82,7 @@ class PositionSizer:
         risk_pct: Optional[float] = None,
     ) -> SizingResult:
         """
-        Fixed % Risk method.
-        position_size = (account_balance × risk_pct) / (entry_price × stop_loss_pct)
+        Calcula el tamaño de posición basado en riesgo fijo.
 
         Args:
             entry_price: Precio de entrada
@@ -56,40 +90,37 @@ class PositionSizer:
             risk_pct: Override del riesgo porcentual (opcional)
 
         Returns:
-            SizingResult con todos los parámetros calculados
+            SizingResult con el cálculo
         """
-        risk = risk_pct if risk_pct is not None else self.risk_pct
-        risk_amount = self.account_balance * risk
-        stop_pct = abs(entry_price - stop_loss_price) / entry_price
+        if entry_price <= 0:
+            raise ValueError(f"entry_price debe ser positivo, got {entry_price}")
+        if stop_loss_price <= 0:
+            raise ValueError(f"stop_loss_price debe ser positivo, got {stop_loss_price}")
 
-        if stop_pct == 0:
-            logger.warning("Stop loss al mismo precio que entrada")
-            return SizingResult(
-                suggested_shares=0,
-                risk_amount=0,
-                entry_price=entry_price,
-                stop_loss_price=stop_loss_price,
-                rr_ratio=0,
-                max_position_value=0,
-                portfolio_impact_pct=0,
-                risk_pct=risk,
-                method="fixed_risk",
-            )
+        risk_amount = self.account_balance * (risk_pct or self.risk_pct)
+        risk_per_share = abs(entry_price - stop_loss_price)
 
-        position_value = risk_amount / stop_pct
-        shares = position_value / entry_price
-        max_loss = shares * (entry_price - stop_loss_price)
+        if risk_per_share == 0:
+            logger.warning("Entry price == stop loss price, riesgo por share = 0")
+            shares = 0.0
+        else:
+            shares = risk_amount / risk_per_share
+
+        position_value = shares * entry_price
 
         return SizingResult(
-            suggested_shares=round(shares, 2),
+            shares=round(shares, 6),
+            position_value=round(position_value, 2),
             risk_amount=round(risk_amount, 2),
-            entry_price=entry_price,
-            stop_loss_price=stop_loss_price,
-            rr_ratio=round((entry_price - stop_loss_price) / stop_loss_price * (1 / stop_pct), 2) if stop_pct > 0 else 0,
-            max_position_value=round(position_value, 2),
-            portfolio_impact_pct=round((position_value / self.account_balance) * 100, 2),
-            risk_pct=risk,
+            stop_loss=stop_loss_price,
+            risk_per_share=round(risk_per_share, 6),
             method="fixed_risk",
+            metadata={
+                "account_balance": self.account_balance,
+                "risk_pct": risk_pct or self.risk_pct,
+                "entry_price": entry_price,
+                "stop_loss_price": stop_loss_price,
+            },
         )
 
     def calculate_kelly(
@@ -98,94 +129,99 @@ class PositionSizer:
         losses: int,
         avg_win: float,
         avg_loss: float,
-    ) -> Dict[str, float]:
+        max_fraction: float = 0.25,
+    ) -> SizingResult:
         """
-        Kelly Criterion: f* = (bp - q) / b
-        Donde b = avg_win / avg_loss, p = win_rate, q = 1 - p
+        Calcula el tamaño de posición usando el Criterio de Kelly.
 
         Args:
-            wins: Número de trades ganadores
-            losses: Número de trades perdedores
-            avg_win: Ganancia media por trade ganador
-            avg_loss: Pérdida media por trade perdedor (valor positivo)
+            wins: Número de operaciones ganadoras
+            losses: Número de operaciones perdedoras
+            avg_win: Ganancia promedio por trade ganador
+            avg_loss: Pérdida promedio por trade perdedor (valor positivo)
+            max_fraction: Fracción máxima de capital a arriesgar (default 25%)
 
         Returns:
-            Dict con kelly_fraction, expected_edge, y recommended_shares
+            SizingResult con el cálculo
         """
-        total = wins + losses
-        if total == 0 or avg_loss == 0:
-            return {
-                "kelly_fraction": 0.0,
-                "expected_edge": 0.0,
-                "recommended_shares": 0.0,
-                "win_rate": 0.0,
-                "interpretation": "datos insuficientes",
-            }
+        if wins + losses == 0:
+            raise ValueError("Se necesitan al menos algunas operaciones (wins + losses > 0)")
+        if avg_loss <= 0:
+            raise ValueError(f"avg_loss debe ser positivo, got {avg_loss}")
 
-        win_rate = wins / total
-        loss_rate = losses / total
-        b = avg_win / avg_loss if avg_loss > 0 else 0
+        win_rate = wins / (wins + losses)
+        win_loss_ratio = avg_win / avg_loss
 
-        # Kelly = (bp - q) / b
-        kelly = (b * win_rate - loss_rate) / b if b > 0 else 0
+        # Kelly formula: f* = (bp - q) / b
+        # where b = win/loss ratio, p = win rate, q = loss rate
+        kelly_pct = (win_rate * win_loss_ratio - (1 - win_rate)) / win_loss_ratio
+        kelly_pct = max(0.0, kelly_pct)  # Floor at 0
+        kelly_pct = min(kelly_pct, max_fraction)  # Cap at max_fraction
 
-        # Cap Kelly a 25% (half-kelly común en práctica)
-        kelly_capped = max(0, min(kelly, 0.25))
+        risk_amount = self.account_balance * kelly_pct
+        shares = risk_amount / avg_loss if avg_loss > 0 else 0.0
 
-        recommended_value = self.account_balance * kelly_capped
-
-        interpretation = (
-            "agresivo" if kelly > 0.15 else
-            "moderado" if kelly > 0.05 else
-            "conservador" if kelly > 0 else
-            "no apostar"
+        return SizingResult(
+            shares=round(shares, 6),
+            position_value=round(shares * avg_win if avg_win > 0 else risk_amount, 2),
+            risk_amount=round(risk_amount, 2),
+            method="kelly",
+            metadata={
+                "account_balance": self.account_balance,
+                "win_rate": round(win_rate, 4),
+                "win_loss_ratio": round(win_loss_ratio, 4),
+                "raw_kelly_pct": round(kelly_pct, 6),
+                "capped_kelly_pct": round(kelly_pct, 6),
+                "wins": wins,
+                "losses": losses,
+                "avg_win": avg_win,
+                "avg_loss": avg_loss,
+            },
         )
-
-        return {
-            "kelly_fraction": round(kelly, 4),
-            "kelly_capped": round(kelly_capped, 4),
-            "expected_edge": round(b * win_rate - loss_rate, 4),
-            "win_rate": round(win_rate, 4),
-            "recommended_value": round(recommended_value, 2),
-            "interpretation": interpretation,
-        }
 
     def calculate_volatility_adjusted(
         self,
         asset_volatility: float,
         benchmark_volatility: float,
         base_size_value: float,
-    ) -> Dict[str, float]:
+    ) -> SizingResult:
         """
-        Position sizing ajustado por volatilidad.
-        Reduce el tamaño cuando la volatilidad del activo es alta
-        y aumenta cuando es baja (inversamente proporcional).
+        Calcula el tamaño ajustado por volatilidad relativa.
 
         Args:
-            asset_volatility: Volatilidad anualizada del activo (ej: 0.30 = 30%)
-            benchmark_volatility: Volatilidad del benchmark (ej: 0.15 = 15%)
-            base_size_value: Tamaño base de la posición en $
+            asset_volatility: Volatilidad del activo (std dev de retornos)
+            benchmark_volatility: Volatilidad del benchmark de referencia
+            base_size_value: Valor base de la posición
 
         Returns:
-            Dict con adjusted_size y ratio de ajuste
+            SizingResult con el cálculo
         """
-        if benchmark_volatility == 0:
-            return {
-                "adjusted_size": base_size_value,
-                "adjustment_ratio": 1.0,
-                "note": "volatilidad benchmark = 0, sin ajuste",
-            }
+        if benchmark_volatility <= 0:
+            raise ValueError(f"benchmark_volatility debe ser positivo, got {benchmark_volatility}")
+        if base_size_value <= 0:
+            raise ValueError(f"base_size_value debe ser positivo, got {base_size_value}")
 
-        ratio = benchmark_volatility / asset_volatility if asset_volatility > 0 else 1.0
-        # Cap ratio entre 0.25 y 4.0
-        ratio = max(0.25, min(ratio, 4.0))
-        adjusted_size = base_size_value * ratio
+        # Ratio de volatilidad: si el activo es más volátil, reducir tamaño
+        vol_ratio = asset_volatility / benchmark_volatility if asset_volatility > 0 else 1.0
 
-        return {
-            "adjusted_size": round(adjusted_size, 2),
-            "adjustment_ratio": round(ratio, 4),
-            "original_size": base_size_value,
-        }
+        # Invertir el ratio: más volatil → posición más pequeña
+        vol_adjustment = 1.0 / max(vol_ratio, 0.1)
+        adjusted_value = base_size_value * vol_adjustment
+
+        return SizingResult(
+            shares=0.0,  # Se necesita precio para calcular shares
+            position_value=round(adjusted_value, 2),
+            risk_amount=round(base_size_value * self.risk_pct, 2),
+            method="volatility",
+            metadata={
+                "asset_volatility": asset_volatility,
+                "benchmark_volatility": benchmark_volatility,
+                "vol_ratio": round(vol_ratio, 4),
+                "vol_adjustment": round(vol_adjustment, 4),
+                "base_size_value": base_size_value,
+                "adjusted_value": round(adjusted_value, 2),
+            },
+        )
 
     def calculate_atr_position(
         self,
@@ -195,33 +231,45 @@ class PositionSizer:
         multiplier: float = 1.5,
     ) -> SizingResult:
         """
-        ATR-based position sizing.
-        Stop loss = entry - (ATR × multiplier)
+        Calcula el tamaño de posición basado en ATR.
 
         Args:
-            atr: Average True Range actual
+            atr: Valor actual del ATR
             entry_price: Precio de entrada
-            risk_pct: % de capital a arriesgar
-            multiplier: Multiplicador del ATR para el stop
+            risk_pct: Porcentaje de riesgo (opcional, usa el de la instancia)
+            multiplier: Multiplicador del ATR para el stop loss
 
         Returns:
-            SizingResult con los cálculos
+            SizingResult con el cálculo
         """
-        risk = risk_pct if risk_pct is not None else self.risk_pct
-        stop_distance = atr * multiplier
-        stop_loss_price = entry_price - stop_distance
+        if atr <= 0:
+            raise ValueError(f"ATR debe ser positivo, got {atr}")
+        if entry_price <= 0:
+            raise ValueError(f"entry_price debe ser positivo, got {entry_price}")
 
-        if entry_price == 0:
-            return SizingResult(
-                suggested_shares=0,
-                risk_amount=0,
-                entry_price=entry_price,
-                stop_loss_price=stop_loss_price,
-                rr_ratio=0,
-                max_position_value=0,
-                portfolio_impact_pct=0,
-                risk_pct=risk,
-                method="atr",
-            )
+        risk_amount = self.account_balance * (risk_pct or self.risk_pct)
+        stop_loss_distance = atr * multiplier
+        stop_loss_price = entry_price - stop_loss_distance
 
-        return self.calculate_fixed_risk(entry_price, stop_loss_price, risk)
+        if stop_loss_distance == 0:
+            shares = 0.0
+        else:
+            shares = risk_amount / stop_loss_distance
+
+        position_value = shares * entry_price
+
+        return SizingResult(
+            shares=round(shares, 6),
+            position_value=round(position_value, 2),
+            risk_amount=round(risk_amount, 2),
+            stop_loss=round(stop_loss_price, 4),
+            risk_per_share=round(stop_loss_distance, 6),
+            method="atr",
+            metadata={
+                "atr": atr,
+                "entry_price": entry_price,
+                "multiplier": multiplier,
+                "stop_loss_distance": round(stop_loss_distance, 6),
+                "stop_loss_price": round(stop_loss_price, 4),
+            },
+        )

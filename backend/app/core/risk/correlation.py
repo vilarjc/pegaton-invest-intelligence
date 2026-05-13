@@ -1,141 +1,130 @@
 """
-Risk Correlation — Análisis de correlación entre activos.
-P0-04: Position Sizing | EP-FR-001
+Correlation Engine — Matriz de correlación y métricas de diversificación.
+P0-04: Risk Management | EP-FR-001
 """
-from typing import Dict, List, Any, Optional
+import math
+from typing import Dict, List, Any
 import logging
 
 logger = logging.getLogger(__name__)
 
-try:
-    import pandas as pd
-    import numpy as np
-    HAS_DEPS = True
-except ImportError:
-    HAS_DEPS = False
 
-
-def calculate_correlation_matrix(assets_returns: Dict[str, List[float]]) -> Dict[str, Dict[str, float]]:
+def calculate_correlation_matrix(
+    assets: Dict[str, List[float]],
+) -> Dict[str, Dict[str, float]]:
     """
-    Calcula la matriz de correlación entre múltiples activos.
+    Calcula la matriz de correlación entre activos.
 
     Args:
-        assets_returns: Dict {ticker: [returns_list]}
+        assets: Dict {ticker: [retornos...]}
 
     Returns:
-        Matriz de correlación como dict anidado {ticker_a: {ticker_b: corr}}
+        Dict {ticker1: {ticker2: correlación, ...}, ...}
     """
-    if not HAS_DEPS:
-        return _fallback_correlation(assets_returns)
-
-    tickers = list(assets_returns.keys())
-    if len(tickers) < 2:
+    if len(assets) < 2:
         return {}
 
-    # Alinear longitudes
-    min_len = min(len(r) for r in assets_returns.values())
+    # Validar que todos tengan la misma longitud
+    lengths = {k: len(v) for k, v in assets.items()}
+    min_len = min(lengths.values())
     if min_len < 2:
+        logger.warning("Se necesitan al menos 2 retornos por activo")
         return {}
 
-    df = pd.DataFrame({t: r[:min_len] for t, r in assets_returns.items()})
-    corr = df.corr()
+    # Recortar al mínimo común
+    trimmed = {k: v[:min_len] for k, v in assets.items()}
 
-    return {t: {t2: round(corr.loc[t, t2], 4) for t2 in tickers} for t in tickers}
+    tickers = list(trimmed.keys())
+    matrix: Dict[str, Dict[str, float]] = {}
 
-
-def _fallback_correlation(assets_returns: Dict[str, List[float]]) -> Dict[str, Dict[str, float]]:
-    """Correlación sin pandas — cálculo manual con numpy básico."""
-    tickers = list(assets_returns.keys())
-    if len(tickers) < 2:
-        return {}
-
-    def pearson(x, y):
-        n = min(len(x), len(y))
-        if n < 2:
-            return 0.0
-        x, y = x[:n], y[:n]
-        mx = sum(x) / n
-        my = sum(y) / n
-        num = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y))
-        dx = sum((xi - mx) ** 2 for xi in x) ** 0.5
-        dy = sum((yi - my) ** 2 for yi in y) ** 0.5
-        if dx * dy == 0:
-            return 0.0
-        return num / (dx * dy)
-
-    result = {}
     for t1 in tickers:
-        result[t1] = {}
+        matrix[t1] = {}
         for t2 in tickers:
             if t1 == t2:
-                result[t1][t2] = 1.0
+                matrix[t1][t2] = 1.0
             else:
-                result[t1][t2] = round(pearson(assets_returns[t1], assets_returns[t2]), 4)
-    return result
+                corr = _pearson(trimmed[t1], trimmed[t2])
+                matrix[t1][t2] = round(corr, 6)
+
+    return matrix
+
+
+def _pearson(x: List[float], y: List[float]) -> float:
+    """Calcula el coeficiente de correlación de Pearson."""
+    n = len(x)
+    if n < 2:
+        return 0.0
+
+    mean_x = sum(x) / n
+    mean_y = sum(y) / n
+
+    num = sum((xi - mean_x) * (yi - mean_y) for xi, yi in zip(x, y))
+
+    den_x = sum((xi - mean_x) ** 2 for xi in x)
+    den_y = sum((yi - mean_y) ** 2 for yi in y)
+
+    den = math.sqrt(den_x * den_y)
+    if den == 0:
+        return 0.0
+
+    return num / den
 
 
 def diversification_ratio(
     weights: Dict[str, float],
-    covariance_matrix: Dict[str, Dict[str, float]],
+    cov_matrix: Dict[str, Dict[str, float]],
 ) -> float:
     """
-    Diversification Ratio = Σ(w_i × σ_i) / σ_portfolio
-
-    Un ratio > 1 indica diversificación efectiva.
-    """
-    tickers = list(weights.keys())
-    if len(tickers) < 2:
-        return 0.0
-
-    # Varianza del portafolio: w'Σw
-    portfolio_var = 0.0
-    for i, t1 in enumerate(tickers):
-        for j, t2 in enumerate(tickers):
-            w1 = weights.get(t1, 0)
-            w2 = weights.get(t2, 0)
-            cov = covariance_matrix.get(t1, {}).get(t2, 0)
-            portfolio_var += w1 * w2 * cov
-
-    portfolio_std = portfolio_var ** 0.5
-
-    # Σ(w_i × σ_i)
-    weighted_stds = 0.0
-    for ticker in tickers:
-        w = weights.get(ticker, 0)
-        std = covariance_matrix.get(ticker, {}).get(ticker, 0) ** 0.5
-        weighted_stds += w * std
-
-    if portfolio_std == 0:
-        return 0.0
-
-    return round(weighted_stds / portfolio_std, 4)
-
-
-def max_concentration_risk(
-    positions: Dict[str, float],
-    threshold: float = 0.3,
-) -> List[Dict[str, Any]]:
-    """
-    Detecta concentración excesiva en un solo activo.
+    Calcula el ratio de diversificación (Herfindahl-Hirschman inverso).
 
     Args:
-        positions: Dict {ticker: allocation_pct} (suma a 1.0)
-        threshold: Máxima concentración permitida (default 30%)
+        weights: {ticker: peso} (deben sumar 1.0)
+        cov_matrix: Matriz de covarianza
 
     Returns:
-        Lista de warnings por activo que excede el umbral
+        Ratio de diversificación (1 = máxima, 0 = mínima)
     """
-    warnings = []
-    for ticker, allocation in positions.items():
-        if allocation > threshold:
-            warnings.append({
-                "ticker": ticker,
-                "allocation": allocation,
-                "threshold": threshold,
-                "excess": round(allocation - threshold, 4),
-                "severity": "high" if allocation > threshold * 2 else "medium",
-            })
-    return warnings
+    if not weights:
+        return 0.0
+
+    tickers = list(weights.keys())
+    n = len(tickers)
+
+    # Suma ponderada de varianzas
+    weighted_var = 0.0
+    for i, t1 in enumerate(tickers):
+        for j, t2 in enumerate(tickers):
+            w_i = weights.get(t1, 0)
+            w_j = weights.get(t2, 0)
+            cov_ij = cov_matrix.get(t1, {}).get(t2, 0)
+            weighted_var += w_i * w_j * cov_ij
+
+    # Varianza media de los activos individuales
+    avg_individual_var = 0.0
+    for t in tickers:
+        w = weights.get(t, 0)
+        var = cov_matrix.get(t, {}).get(t, 0)
+        avg_individual_var += w * var
+
+    if avg_individual_var == 0:
+        return 0.0
+
+    return round(weighted_var / avg_individual_var, 6)
+
+
+def max_concentration_risk(weights: Dict[str, float]) -> float:
+    """
+    Calcula el riesgo de concentración máximo (peso del activo más grande).
+
+    Args:
+        weights: {ticker: peso}
+
+    Returns:
+        Peso máximo como fracción (0-1)
+    """
+    if not weights:
+        return 0.0
+    return max(weights.values())
 
 
 def correlation_alert(
@@ -143,26 +132,37 @@ def correlation_alert(
     threshold: float = 0.8,
 ) -> List[Dict[str, Any]]:
     """
-    Detecta pares de activos con correlación alta (riesgo de concentración).
+    Genera alertas por correlaciones altas entre activos.
 
     Args:
         corr_matrix: Matriz de correlación
-        threshold: Correlación máxima permitida (default 0.8)
+        threshold: Umbral de correlación para alerta (default 0.8)
 
     Returns:
-        Lista de pares con correlación superior al umbral
+        Lista de alertas
     """
     alerts = []
     tickers = list(corr_matrix.keys())
+    seen = set()
 
     for i, t1 in enumerate(tickers):
-        for t2 in tickers[i + 1:]:
-            corr = corr_matrix.get(t1, {}).get(t2, 0)
-            if abs(corr) >= threshold:
+        for j, t2 in enumerate(tickers):
+            if i >= j:
+                continue
+            pair = tuple(sorted([t1, t2]))
+            if pair in seen:
+                continue
+            seen.add(pair)
+
+            corr = abs(corr_matrix[t1][t2])
+            if corr >= threshold:
                 alerts.append({
-                    "pair": f"{t1}/{t2}",
-                    "correlation": corr,
+                    "pair": pair,
+                    "correlation": round(corr_matrix[t1][t2], 4),
+                    "abs_correlation": round(corr, 4),
                     "threshold": threshold,
-                    "type": "high_positive" if corr > 0 else "high_negative",
+                    "message": f"Correlación {pair[0]}/{pair[1]} = {corr_matrix[t1][t2]:.4f} (≥ {threshold})",
+                    "severity": "high" if corr >= 0.95 else "medium",
                 })
+
     return alerts

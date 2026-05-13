@@ -2,7 +2,7 @@
 Drawdown Monitor — Cálculo y seguimiento de drawdown.
 P0-04: Position Sizing | EP-FR-001
 """
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
 
 logger = logging.getLogger(__name__)
